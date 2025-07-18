@@ -6,7 +6,7 @@
   Transform your SMS transactions into financial insights with on-device AI
   
   <p>
-    <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue">
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
     <img alt="Android" src="https://img.shields.io/badge/Android-14+-3DDC84">
     <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2.0-7F52FF">
     <img alt="Privacy" src="https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B">
@@ -98,7 +98,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-Apache License 2.0 - see [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE)
 
 ---
 
