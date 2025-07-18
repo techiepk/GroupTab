@@ -3,101 +3,44 @@
   
   # PennyWise AI
   
-  ### Transform your SMS transactions into financial insights with on-device AI
-  
-  <p align="center">
-    <a href="#-quick-start">🚀 Quick Start</a> •
-    <a href="#-features">✨ Features</a> •
-    <a href="#-screenshots">📸 Screenshots</a> •
-    <a href="#-privacy">🔒 Privacy</a>
-  </p>
+  ### Your SMS transactions, automatically tracked and organized by on-device AI
   
   <p align="center">
     <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue">
     <img alt="Android" src="https://img.shields.io/badge/Android-14+-3DDC84?logo=android">
     <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-1.9.0-7F52FF?logo=kotlin">
-    <img alt="AI" src="https://img.shields.io/badge/AI-On--Device-FF6B6B">
+    <img alt="AI" src="https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B">
   </p>
 </div>
 
 ---
 
-## ✨ Core Features
+## 🎬 See It In Action
 
-### 🤖 **AI-Powered Transaction Parsing**
-MediaPipe LLM analyzes SMS messages locally on your device to extract transaction details with high accuracy. No cloud processing required.
-
-<details>
-<summary>View AI parsing in action</summary>
-
-![AI Parsing](screenshots/ai.png)
-</details>
-
-### 📊 **Smart Analytics & Insights**  
-Get instant spending breakdowns, trend analysis, and personalized financial insights. Track where your money goes with beautiful visualizations.
-
-<details>
-<summary>View Analytics dashboard</summary>
-
-![Analytics](screenshots/analytics.png)
-</details>
-
-### 🔄 **Automatic Subscription Detection**
-Never miss a recurring payment. PennyWise automatically identifies and tracks your subscriptions from transaction patterns.
-
-<details>
-<summary>View Subscription tracking</summary>
-
-![Subscriptions](screenshots/subscription.png)
-</details>
-
-### 🏷️ **Intelligent Transaction Grouping**
-Transactions are automatically categorized by merchant and type. Create custom groups for better organization.
-
-### 💬 **AI Financial Assistant**
-Chat with your personal finance AI to get insights, ask questions about spending patterns, and receive budgeting advice.
+![Demo Video](screenshots/demo.mp4)
 
 ---
 
-## 🚀 Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/pennywiseai-tracker.git
-cd pennywiseai-tracker
-
-# Build with Gradle
-./gradlew assembleDebug
-
-# Install on device
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
----
-
-## 📱 Installation
-
-### Download from Play Store
+## 🔒 Your Privacy, Our Priority
 
 <div align="center">
-<a href="https://play.google.com/store/apps/details?id=com.pennywiseai.tracker">
-<img src="https://img.shields.io/badge/Download_on_Play_Store-414141?style=for-the-badge&logo=google-play&logoColor=white" alt="Get it on Google Play" />
-</a>
-<p><em>Available for Android 14 and above</em></p>
+  <table>
+    <tr>
+      <td align="center" width="33%">
+        <h3>🏠 100% On-Device AI</h3>
+        <p>MediaPipe LLM runs locally.<br/>Your data never leaves your phone.</p>
+      </td>
+      <td align="center" width="33%">
+        <h3>🔐 Zero Cloud Processing</h3>
+        <p>No servers. No uploads.<br/>Complete data sovereignty.</p>
+      </td>
+      <td align="center" width="33%">
+        <h3>📖 Open Source</h3>
+        <p>Fully transparent.<br/>Audit the code yourself.</p>
+      </td>
+    </tr>
+  </table>
 </div>
-
-### Build from Source
-
-#### Prerequisites
-- Android Studio Arctic Fox or newer
-- Android SDK 35
-- JDK 21
-
-#### Firebase Setup
-1. Create a project at [Firebase Console](https://console.firebase.google.com)
-2. Add Android app with package: `com.pennywiseai.tracker`
-3. Download `google-services.json` to `/app` directory
-4. Enable Crashlytics and Performance Monitoring
 
 ---
 
@@ -114,19 +57,74 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 <tr>
 <td align="center"><b>Dashboard</b></td>
 <td align="center"><b>Analytics</b></td>
-<td align="center"><b>AI Assistant</b></td>
+<td align="center"><b>AI Chat</b></td>
 <td align="center"><b>Subscriptions</b></td>
 </tr>
 </table>
 </div>
 
-## 🎥 Demo Video
+---
 
-![Demo Video](screenshots/demo.mp4)
+## ✨ Features That Matter
+
+### 🤖 **Intelligent SMS Parsing**
+Automatically reads and categorizes transaction SMS from any Indian bank. Powered by MediaPipe's on-device LLM for instant, private processing.
+
+### 📊 **Visual Spending Insights**
+Beautiful charts and analytics that help you understand your spending patterns. Track trends, identify outliers, and make informed decisions.
+
+### 🔄 **Smart Subscription Tracking**
+Never miss a recurring payment again. AI automatically detects and monitors your subscriptions from transaction patterns.
+
+### 💬 **Personal Finance Assistant**
+Chat with AI about your spending. Get insights, budgeting tips, and answers to your financial questions - all processed locally.
+
+### 🏷️ **Auto-Categorization**
+Transactions are intelligently grouped by merchant and type. Create custom categories for personalized organization.
+
+### 📤 **Export Your Data**
+Your data, your control. Export transactions as CSV or PDF anytime. Perfect for tax filing or personal records.
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Quick Start
+
+### Option 1: Download APK
+Coming soon on Play Store!
+
+### Option 2: Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/pennywiseai-tracker.git
+cd pennywiseai-tracker
+
+# Build debug APK
+./gradlew assembleDebug
+
+# Install on connected device
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+#### Prerequisites
+- Android Studio Arctic Fox or newer
+- Android SDK 35
+- JDK 21
+- Android device with API 34+ (Android 14)
+
+#### Firebase Setup (Optional)
+<details>
+<summary>Enable crash reporting and analytics</summary>
+
+1. Create project at [Firebase Console](https://console.firebase.google.com)
+2. Add Android app with package: `com.pennywiseai.tracker`
+3. Download `google-services.json` to `/app` directory
+4. Enable Crashlytics and Performance Monitoring
+</details>
+
+---
+
+## 🛠️ Built With
 
 <table align="center">
 <tr>
@@ -139,57 +137,27 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 <br>Android
 </td>
 <td align="center" width="96">
+<img src="https://raw.githubusercontent.com/google/material-design-icons/master/android/drawable-xxxhdpi/ic_palette_black_48dp.png" width="48" height="48" alt="Material" />
+<br>Material 3
+</td>
+<td align="center" width="96">
+<img src="https://www.gstatic.com/devrel-devsite/prod/v89af556f3a8aa0deb9b97c5b7a1259b9ad2b219bfcc2460506822d38ec992beb/ml/images/lockup.svg" height="48" alt="MediaPipe" />
+<br>MediaPipe
+</td>
+<td align="center" width="96">
 <img src="https://skillicons.dev/icons?i=firebase" width="48" height="48" alt="Firebase" />
 <br>Firebase
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=sqlite" width="48" height="48" alt="SQLite" />
-<br>Room DB
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=materialui" width="48" height="48" alt="Material" />
-<br>Material 3
 </td>
 </tr>
 </table>
 
-### Key Technologies
-
-- **AI Engine**: MediaPipe Generative AI (On-device LLM)
-- **Architecture**: MVVM with Repository Pattern
-- **Database**: Room with Coroutines
-- **UI**: Material Design 3 with View Binding
-- **Background**: WorkManager for periodic scanning
-- **Analytics**: MPAndroidChart for visualizations
-
----
-
-## 🔒 Privacy First
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <h3>🏠 100% On-Device</h3>
-        <p>All AI processing happens locally.<br/>Your data never leaves your phone.</p>
-      </td>
-      <td align="center">
-        <h3>🔐 Zero Data Collection</h3>
-        <p>No user data is collected or stored.<br/>Only anonymized crash reports.</p>
-      </td>
-      <td align="center">
-        <h3>📖 Open Source</h3>
-        <p>Fully transparent codebase.<br/>Audit the code yourself.</p>
-      </td>
-    </tr>
-  </table>
-</div>
+**Architecture**: MVVM • Room DB • Coroutines • WorkManager • View Binding
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Run tests
@@ -197,46 +165,24 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 # Check code style
 ./gradlew ktlintCheck
-
-# Format code
-./gradlew ktlintFormat
 ```
-
-### Development Setup
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-```
-Copyright 2024 PennyWise AI
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-```
-
-See [LICENSE](LICENSE) for full details.
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
   <p>
-    <a href="https://github.com/yourusername/pennywiseai-tracker/releases">📥 Releases</a> •
+    <a href="https://github.com/yourusername/pennywiseai-tracker/releases">📥 Download</a> •
     <a href="https://github.com/yourusername/pennywiseai-tracker/issues">🐛 Report Bug</a> •
     <a href="https://github.com/yourusername/pennywiseai-tracker/issues">💡 Request Feature</a>
   </p>
   
-  <p>Built with ❤️ for better financial awareness</p>
-  
-  <br/>
+  <p><strong>Built with ❤️ for financial awareness</strong></p>
   
   <sub>Made in India 🇮🇳</sub>
 </div>
