@@ -5,8 +5,6 @@
   
   ### Transform your SMS transactions into financial insights with on-device AI
   
-  ![PennyWise Dashboard](screenshots/dashboard.png)
-  
   <p align="center">
     <a href="#-quick-start">🚀 Quick Start</a> •
     <a href="#-features">✨ Features</a> •
@@ -124,7 +122,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 🎥 Demo Video
 
-https://github.com/yourusername/pennywiseai-tracker/assets/youruserid/demo.mp4
+![Demo Video](screenshots/demo.mp4)
 
 ---
 
