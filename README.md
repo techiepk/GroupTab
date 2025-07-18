@@ -47,15 +47,11 @@ All processing happens on your device using MediaPipe's LLM. Your financial data
 </tr>
 </table>
 
-## Demo
-
-View the app in action: [demo.mp4](screenshots/demo.mp4)
-
 ## Quick Start
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/pennywiseai-tracker.git
+git clone https://github.com/sarim2000/pennywiseai-tracker.git
 cd pennywiseai-tracker
 
 # Build APK
@@ -107,7 +103,7 @@ Apache License 2.0 - see [LICENSE](LICENSE)
 ---
 
 <p align="center">
-<a href="https://github.com/yourusername/pennywiseai-tracker/releases">Download</a> •
-<a href="https://github.com/yourusername/pennywiseai-tracker/issues">Report Bug</a> •
-<a href="https://github.com/yourusername/pennywiseai-tracker/issues">Request Feature</a>
+<a href="https://github.com/sarim2000/pennywiseai-tracker/releases">Download</a> •
+<a href="https://github.com/sarim2000/pennywiseai-tracker/issues">Report Bug</a> •
+<a href="https://github.com/sarim2000/pennywiseai-tracker/issues">Request Feature</a>
 </p>
