@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="branding/app-store/ic_launcher_180.png" alt="PennyWise Logo" width="120" height="120">
+  <img src="branding/app-store/ic_launcher_180.png" alt="PennyWise Logo" width="80" height="80">
   
   # PennyWise AI
   
-  ### Your SMS transactions, automatically tracked and organized by on-device AI
+  #### Transform your SMS transactions into financial insights with on-device AI
   
   <p align="center">
     <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue">
