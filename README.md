@@ -124,11 +124,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 🎥 Demo Video
 
-<div align="center">
-  
-[![Watch Demo](https://img.shields.io/badge/▶️_Watch_Demo-FF0000?style=for-the-badge)](screenshots/demo.mp4)
-
-</div>
+https://github.com/yourusername/pennywiseai-tracker/assets/youruserid/demo.mp4
 
 ---
 
