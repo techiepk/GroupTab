@@ -8,7 +8,7 @@
   <p>
     <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue">
     <img alt="Android" src="https://img.shields.io/badge/Android-14+-3DDC84">
-    <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-1.9.0-7F52FF">
+    <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2.0-7F52FF">
     <img alt="Privacy" src="https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B">
   </p>
 </div>
@@ -47,6 +47,10 @@ All processing happens on your device using MediaPipe's LLM. Your financial data
 </tr>
 </table>
 
+## Demo
+
+View the app in action: [demo.mp4](screenshots/demo.mp4)
+
 ## Quick Start
 
 ```bash
@@ -82,7 +86,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ## Tech Stack
 
 <p align="center">
-<img src="https://skillicons.dev/icons?i=kotlin,android,firebase,sqlite" height="32" />
+<img src="https://skillicons.dev/icons?i=kotlin,firebase" height="32" />
 </p>
 
 **Architecture**: MVVM • Room • Coroutines • MediaPipe AI • Material Design 3

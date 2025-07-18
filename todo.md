@@ -32,8 +32,7 @@
 - [ ] Create app listing content
 - [ ] Prepare screenshots (min 2, max 8)
 - [ ] Write app description (short & full)
-- [ ] Create feature graphic (1
-- [ ] 024x500)
+- [ ] Create feature graphic (1024x500)
 - [ ] Set up Google Play Developer account ($25)
 
 ### Repository Setup
