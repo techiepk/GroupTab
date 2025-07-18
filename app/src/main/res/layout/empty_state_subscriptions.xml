@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="48dp">
+
+    <!-- Icon -->
+    <ImageView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:src="@drawable/ic_autorenew"
+        app:tint="?android:attr/textColorSecondary"
+        android:alpha="0.3" />
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="No subscriptions found"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="We'll automatically detect recurring payments like Netflix, Spotify, or gym memberships from your transaction history."
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="16sp"
+        android:textAlignment="center"
+        android:lineSpacingMultiplier="1.3" />
+
+    <!-- Sample subscription examples -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:text="Examples we detect:"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Sample list -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorSurfaceVariant"
+        android:padding="16dp"
+        android:alpha="0.7">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📺 Netflix - ₹649/month"
+            android:textSize="14sp"
+            android:paddingVertical="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🎵 Spotify - ₹119/month"
+            android:textSize="14sp"
+            android:paddingVertical="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💪 Gym membership - ₹2000/month"
+            android:textSize="14sp"
+            android:paddingVertical="4dp" />
+
+    </LinearLayout>
+
+    <!-- Help text -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="💡 Scan your messages first to discover your subscriptions automatically"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="14sp"
+        android:textAlignment="center"
+        android:textStyle="italic" />
+
+</LinearLayout>

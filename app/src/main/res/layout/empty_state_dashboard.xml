@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <!-- Illustration -->
+    <ImageView
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:src="@drawable/ic_empty_dashboard"
+        android:contentDescription="@string/empty_dashboard_illustration" />
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Welcome to PennyWise AI!"
+        android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Your personal AI-powered financial assistant is ready to help you track and understand your spending."
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textAlignment="center"
+        android:lineSpacingMultiplier="1.3" />
+
+    <!-- Feature highlights -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:cardCornerRadius="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🤖 AI automatically finds transactions in your SMS"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface"
+                android:paddingVertical="8dp"
+                android:drawablePadding="12dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📊 Smart categorization and insights"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface"
+                android:paddingVertical="8dp"
+                android:drawablePadding="12dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔒 All processing happens on your device"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface"
+                android:paddingVertical="8dp"
+                android:drawablePadding="12dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💳 Track subscriptions automatically"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface"
+                android:paddingVertical="8dp"
+                android:drawablePadding="12dp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- CTA Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/start_scanning_button"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="32dp"
+        android:text="Start Scanning Messages"
+        android:textSize="16sp"
+        android:backgroundTint="?attr/colorPrimary"
+        android:contentDescription="Start scanning SMS messages for transactions"
+        app:icon="@drawable/ic_scan_messages"
+        app:iconGravity="textStart"
+        app:cornerRadius="28dp" />
+
+    <!-- Secondary action -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/learn_more_button"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="How does it work?"
+        android:contentDescription="Learn more about how transaction scanning works"
+        android:textColor="?attr/colorPrimary" />
+
+</LinearLayout>

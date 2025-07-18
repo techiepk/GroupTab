@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Transaction Amount Colors - Light Mode -->
+    <color name="transaction_income">@color/income_green_light</color>
+    <color name="transaction_expense">@color/expense_red_light</color>
+    <color name="transaction_credit">@color/transaction_income</color>
+    <color name="transaction_debit">@color/transaction_expense</color>
+    
+    <!-- Category Colors - Light Mode -->
+    <color name="category_food_dining">#FF6100</color>
+    <color name="category_food">@color/category_food_dining</color>
+    <color name="category_transportation">#1976D2</color>
+    <color name="category_transport">@color/category_transportation</color>
+    <color name="category_shopping">#7B1FA2</color>
+    <color name="category_entertainment">#D32F2F</color>
+    <color name="category_bills_utilities">#388E3C</color>
+    <color name="category_bills">@color/category_bills_utilities</color>
+    <color name="category_healthcare">#0288D1</color>
+    <color name="category_education">#303F9F</color>
+    <color name="category_travel">#F57C00</color>
+    <color name="category_groceries">#689F38</color>
+    <color name="category_subscription">#5D4037</color>
+    <color name="category_investment">#00796B</color>
+    <color name="category_transfer">#455A64</color>
+    <color name="category_other">#616161</color>
+    
+    <!-- Text Colors for Accessibility -->
+    <color name="text_primary_on_surface">?attr/colorOnSurface</color>
+    <color name="text_secondary_on_surface">?attr/colorOnSurfaceVariant</color>
+    
+    <!-- Chart Colors - Will be overridden in dark mode -->
+    <color name="chart_line_primary">@color/md_theme_light_primary</color>
+    <color name="chart_line_secondary">@color/md_theme_light_secondary</color>
+    <color name="chart_text">@color/md_theme_light_onSurface</color>
+    <color name="chart_grid">@color/md_theme_light_outline</color>
+</resources>

@@ -1,0 +1,54 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M100,20 A80,80 0 1,1 100,180 A80,80 0 1,1 100,20 Z" />
+    
+    <!-- Calendar base -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M60,60 L140,60 L140,140 L60,140 Z" />
+    
+    <!-- Calendar header -->
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M60,60 L140,60 L140,80 L60,80 Z" />
+    
+    <!-- Calendar rings -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M75,50 L75,70 M125,50 L125,70"
+        android:strokeWidth="4"
+        android:strokeColor="#757575" />
+    
+    <!-- Calendar dates (recurring pattern) -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M70,90 h10 v10 h-10 z M90,90 h10 v10 h-10 z M110,90 h10 v10 h-10 z M130,90 h10 v10 h-10 z" />
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M70,110 h10 v10 h-10 z M90,110 h10 v10 h-10 z M110,110 h10 v10 h-10 z M130,110 h10 v10 h-10 z" />
+    
+    <!-- Recurring symbol (circular arrows) -->
+    <path
+        android:strokeColor="#9C27B0"
+        android:strokeWidth="3"
+        android:fillColor="@null"
+        android:pathData="M115,125 A15,15 0 1,1 85,125"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#9C27B0"
+        android:pathData="M85,125 L90,120 L90,130 Z" />
+    
+    <!-- Dollar sign -->
+    <path
+        android:fillColor="#4CAF50"
+        android:strokeColor="#4CAF50"
+        android:strokeWidth="2"
+        android:pathData="M100,95 v30 M92,100 h16 M92,120 h16" />
+</vector>

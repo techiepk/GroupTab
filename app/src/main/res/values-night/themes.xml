@@ -1,0 +1,58 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Material 3 Dark Theme -->
+    <style name="Theme.PennyWise" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- NoActionBar allows us to use custom MaterialToolbar -->
+        <!-- Material 3 has proper radio button and button defaults for dark mode -->
+        
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/md_theme_dark_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_dark_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_dark_onPrimaryContainer</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md_theme_dark_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_dark_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_dark_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_dark_onSecondaryContainer</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">@color/md_theme_dark_error</item>
+        <item name="colorErrorContainer">@color/md_theme_dark_errorContainer</item>
+        <item name="colorOnError">@color/md_theme_dark_onError</item>
+        <item name="colorOnErrorContainer">@color/md_theme_dark_onErrorContainer</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md_theme_dark_surface</item>
+        <item name="colorOnSurface">@color/md_theme_dark_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_dark_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_dark_onSurfaceVariant</item>
+        
+        <!-- Background -->
+        <item name="android:colorBackground">@color/md_theme_dark_background</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/md_theme_dark_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Custom transaction colors -->
+        <item name="colorIncome">@color/income_green_dark</item>
+        <item name="colorExpense">@color/expense_red_dark</item>
+        <item name="colorIncomeContainer">#FF1B5E20</item>
+        <item name="colorExpenseContainer">#FF5D1F1F</item>
+        
+        <!-- Custom status colors -->
+        <item name="colorStatusActive">@color/income_green_dark</item>
+        <item name="colorStatusPending">#FFFFB74D</item>
+        <item name="colorStatusInactive">#FF616161</item>
+        <item name="colorStatusError">@color/expense_red_dark</item>
+    </style>
+    
+    <!-- Onboarding theme - Dark Mode -->
+    <style name="Theme.PennyWise.Onboarding" parent="Theme.PennyWise">
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

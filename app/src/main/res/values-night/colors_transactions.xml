@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Transaction Amount Colors - Dark Mode -->
+    <color name="transaction_income">@color/income_green_dark</color>
+    <color name="transaction_expense">@color/expense_red_dark</color>
+    <color name="transaction_credit">@color/transaction_income</color>
+    <color name="transaction_debit">@color/transaction_expense</color>
+    
+    <!-- Category Colors - Dark Mode (Lighter/more vibrant for dark backgrounds) -->
+    <color name="category_food_dining">#FF8A65</color>
+    <color name="category_food">@color/category_food_dining</color>
+    <color name="category_transportation">#64B5F6</color>
+    <color name="category_transport">@color/category_transportation</color>
+    <color name="category_shopping">#BA68C8</color>
+    <color name="category_entertainment">#E57373</color>
+    <color name="category_bills_utilities">#81C784</color>
+    <color name="category_bills">@color/category_bills_utilities</color>
+    <color name="category_healthcare">#4FC3F7</color>
+    <color name="category_education">#7986CB</color>
+    <color name="category_travel">#FFB74D</color>
+    <color name="category_groceries">#AED581</color>
+    <color name="category_subscription">#A1887F</color>
+    <color name="category_investment">#4DB6AC</color>
+    <color name="category_transfer">#90A4AE</color>
+    <color name="category_other">#BDBDBD</color>
+    
+    <!-- Chart Colors - Dark Mode -->
+    <color name="chart_line_primary">@color/md_theme_dark_primary</color>
+    <color name="chart_line_secondary">@color/md_theme_dark_secondary</color>
+    <color name="chart_text">@color/md_theme_dark_onSurface</color>
+    <color name="chart_grid">@color/md_theme_dark_outline</color>
+</resources>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PennyWise Button Styles - Dark Mode -->
+    <style name="Widget.PennyWise.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/md_theme_dark_primary</item>
+        <item name="android:textColor">@color/md_theme_dark_onPrimary</item>
+        <item name="cornerRadius">@dimen/corner_radius_xlarge</item>
+        <item name="android:textSize">@dimen/text_size_label_large</item>
+        <item name="android:minHeight">@dimen/button_height_medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.PennyWise.Button.Large" parent="Widget.PennyWise.Button">
+        <item name="android:minHeight">@dimen/button_height_large</item>
+        <item name="android:textSize">@dimen/text_size_title_large</item>
+    </style>
+
+    <style name="Widget.PennyWise.Button.Small" parent="Widget.PennyWise.Button">
+        <item name="android:minHeight">@dimen/button_height_small</item>
+        <item name="android:textSize">@dimen/text_size_label_medium</item>
+        <item name="cornerRadius">@dimen/corner_radius_medium</item>
+    </style>
+
+    <style name="Widget.PennyWise.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="backgroundTint">@color/md_theme_dark_primaryContainer</item>
+        <item name="android:textColor">@color/md_theme_dark_onPrimaryContainer</item>
+        <item name="cornerRadius">@dimen/corner_radius_xlarge</item>
+        <item name="android:textSize">@dimen/text_size_label_large</item>
+        <item name="android:minHeight">@dimen/button_height_medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.PennyWise.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/md_theme_dark_primary</item>
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="cornerRadius">@dimen/corner_radius_xlarge</item>
+        <item name="android:textSize">@dimen/text_size_label_large</item>
+        <item name="android:minHeight">@dimen/button_height_medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.PennyWise.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="cornerRadius">@dimen/corner_radius_xlarge</item>
+        <item name="android:textSize">@dimen/text_size_label_large</item>
+        <item name="android:minHeight">@dimen/button_height_medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- PennyWise Card Styles - Dark Mode -->
+    <style name="Widget.PennyWise.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">@dimen/corner_radius_medium</item>
+        <item name="cardElevation">@dimen/elevation_elevated</item>
+        <item name="cardBackgroundColor">@color/md_theme_dark_surface</item>
+    </style>
+
+    <style name="Widget.PennyWise.Card.Flat" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardCornerRadius">@dimen/corner_radius_medium</item>
+        <item name="cardElevation">@dimen/elevation_flat</item>
+        <item name="cardBackgroundColor">@color/md_theme_dark_surface</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">@color/md_theme_dark_outline</item>
+    </style>
+
+    <style name="Widget.PennyWise.Card.Filled" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">@dimen/corner_radius_medium</item>
+        <item name="cardElevation">@dimen/elevation_flat</item>
+        <item name="cardBackgroundColor">@color/md_theme_dark_primaryContainer</item>
+    </style>
+
+    <style name="Widget.PennyWise.Card.Hero" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">@dimen/corner_radius_large</item>
+        <item name="cardElevation">@dimen/elevation_elevated</item>
+        <item name="cardBackgroundColor">@color/md_theme_dark_surface</item>
+    </style>
+
+    <!-- PennyWise Typography - Dark Mode -->
+    <style name="TextAppearance.PennyWise.Headline" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.PennyWise.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/md_theme_dark_onSurface</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- PennyWise Chip Styles - Dark Mode -->
+    <style name="Widget.PennyWise.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_background_color</item>
+        <item name="chipStrokeColor">@color/md_theme_dark_primary</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="checkedIconTint">@color/md_theme_dark_onPrimary</item>
+        <item name="android:textColor">@color/chip_text_color</item>
+    </style>
+</resources>

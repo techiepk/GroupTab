@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material Design 3 8dp Grid System -->
+    <!-- Base unit: 8dp -->
+    <dimen name="spacing_tiny">4dp</dimen>      <!-- 0.5x base unit -->
+    <dimen name="spacing_small">8dp</dimen>     <!-- 1x base unit -->
+    <dimen name="spacing_medium">16dp</dimen>   <!-- 2x base unit -->
+    <dimen name="spacing_large">24dp</dimen>    <!-- 3x base unit -->
+    <dimen name="spacing_xlarge">32dp</dimen>   <!-- 4x base unit -->
+    <dimen name="spacing_xxlarge">40dp</dimen>  <!-- 5x base unit -->
+    <dimen name="spacing_xxxlarge">48dp</dimen> <!-- 6x base unit -->
+    
+    <!-- Component Corner Radius -->
+    <dimen name="corner_radius_small">8dp</dimen>   <!-- Chips, small buttons -->
+    <dimen name="corner_radius_medium">12dp</dimen> <!-- Cards, main buttons -->
+    <dimen name="corner_radius_large">16dp</dimen>  <!-- Major containers -->
+    <dimen name="corner_radius_xlarge">24dp</dimen> <!-- Hero cards -->
+    
+    <!-- Elevation Scale (Material Design 3) -->
+    <dimen name="elevation_flat">0dp</dimen>        <!-- No shadow -->
+    <dimen name="elevation_raised">1dp</dimen>      <!-- Subtle separation -->
+    <dimen name="elevation_elevated">2dp</dimen>    <!-- Standard cards -->
+    <dimen name="elevation_floating">4dp</dimen>    <!-- FABs, menus -->
+    <dimen name="elevation_modal">8dp</dimen>       <!-- Dialogs, sheets -->
+    
+    <!-- Typography Scale (Material Design 3) -->
+    <!-- Display -->
+    <dimen name="text_size_display_large">32sp</dimen>   <!-- Page titles -->
+    <dimen name="text_size_display_medium">28sp</dimen>  <!-- Section headers -->
+    <dimen name="text_size_display_small">24sp</dimen>   <!-- Sub-section headers -->
+    
+    <!-- Headlines -->
+    <dimen name="text_size_headline_large">22sp</dimen>  <!-- Card titles -->
+    <dimen name="text_size_headline_medium">20sp</dimen> <!-- List headers -->
+    <dimen name="text_size_headline_small">18sp</dimen>  <!-- Subheadings -->
+    
+    <!-- Titles -->
+    <dimen name="text_size_title_large">16sp</dimen>     <!-- Primary content -->
+    <dimen name="text_size_title_medium">14sp</dimen>    <!-- Secondary content -->
+    <dimen name="text_size_title_small">12sp</dimen>     <!-- Caption text -->
+    
+    <!-- Body -->
+    <dimen name="text_size_body_large">16sp</dimen>      <!-- Main content -->
+    <dimen name="text_size_body_medium">14sp</dimen>     <!-- Secondary content -->
+    <dimen name="text_size_body_small">12sp</dimen>      <!-- Supporting text -->
+    
+    <!-- Labels -->
+    <dimen name="text_size_label_large">14sp</dimen>     <!-- Button labels -->
+    <dimen name="text_size_label_medium">12sp</dimen>    <!-- Chip labels -->
+    <dimen name="text_size_label_small">10sp</dimen>     <!-- Badge text -->
+    
+    <!-- Legacy text sizes for backward compatibility -->
+    <dimen name="text_size_tiny">12sp</dimen>
+    <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_medium">16sp</dimen>
+    <dimen name="text_size_large">18sp</dimen>
+    <dimen name="text_size_xlarge">20sp</dimen>
+    <dimen name="text_size_xxlarge">24sp</dimen>
+    <dimen name="text_size_display">32sp</dimen>
+    
+    <!-- Component Heights (following 8dp grid) -->
+    <dimen name="button_height_large">56dp</dimen>       <!-- Primary action buttons -->
+    <dimen name="button_height_medium">48dp</dimen>      <!-- Secondary buttons -->
+    <dimen name="button_height_small">40dp</dimen>       <!-- Compact buttons -->
+    
+    <dimen name="input_height_large">56dp</dimen>        <!-- Text fields -->
+    <dimen name="input_height_medium">48dp</dimen>       <!-- Dropdowns -->
+    <dimen name="input_height_small">40dp</dimen>        <!-- Search bars -->
+    
+    <dimen name="card_height_small">56dp</dimen>         <!-- List items -->
+    <dimen name="card_height_medium">72dp</dimen>        <!-- Enhanced list items -->
+    <dimen name="card_height_large">88dp</dimen>         <!-- Feature cards -->
+    
+    <!-- Icon Sizes (Material Design 3) -->
+    <dimen name="icon_size_small">20dp</dimen>           <!-- Inline icons -->
+    <dimen name="icon_size_medium">24dp</dimen>          <!-- Standard icons -->
+    <dimen name="icon_size_large">32dp</dimen>           <!-- Feature icons -->
+    <dimen name="icon_size_xlarge">48dp</dimen>          <!-- Hero icons -->
+    
+    <!-- Touch Targets -->
+    <dimen name="min_touch_target">48dp</dimen>          <!-- Minimum touch target -->
+    <dimen name="comfortable_touch_target">56dp</dimen>   <!-- Comfortable touch target -->
+    
+    <!-- System UI Spacing -->
+    <dimen name="edge_margin">16dp</dimen>               <!-- Screen edge margins -->
+    <dimen name="safe_area_top">24dp</dimen>             <!-- Top safe area -->
+    <dimen name="safe_area_bottom">16dp</dimen>          <!-- Bottom safe area -->
+    <dimen name="status_bar_padding">8dp</dimen>         <!-- Status bar padding -->
+    <dimen name="navigation_bar_padding">48dp</dimen>    <!-- Navigation bar height -->
+</resources>

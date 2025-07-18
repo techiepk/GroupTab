@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_small"
+    android:layout_marginVertical="@dimen/spacing_tiny"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutline">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_medium">
+
+        <!-- Header Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Category Icon -->
+            <TextView
+                android:id="@+id/category_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="💰"
+                android:textSize="24sp"
+                android:background="?attr/colorSurfaceVariant"
+                android:layout_marginEnd="@dimen/spacing_medium" />
+
+            <!-- Group Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/group_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Group Name"
+                        android:textSize="@dimen/text_size_medium"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="@dimen/spacing_small" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/group_type_badge"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="20dp"
+                        android:text="AUTO"
+                        android:textSize="10sp"
+                        android:visibility="gone"
+                        app:chipMinHeight="20dp"
+                        app:chipBackgroundColor="?attr/colorPrimaryContainer"
+                        app:chipStrokeWidth="0dp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/transaction_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 transactions"
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+            </LinearLayout>
+
+            <!-- Total Amount -->
+            <TextView
+                android:id="@+id/total_amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₹0"
+                android:textSize="@dimen/text_size_large"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Pattern Info -->
+        <TextView
+            android:id="@+id/pattern_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pattern: keyword"
+            android:textSize="@dimen/text_size_small"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:fontFamily="monospace" />
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/spacing_medium"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/edit_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Edit"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="@dimen/spacing_medium" />
+
+            <Button
+                android:id="@+id/merge_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Merge"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="@dimen/spacing_medium" />
+
+            <Button
+                android:id="@+id/delete_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Delete"
+                android:textColor="?attr/colorError"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="@dimen/spacing_medium" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

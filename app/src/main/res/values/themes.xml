@@ -1,0 +1,88 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Material 3 Theme - Proper defaults with Dynamic Colors support -->
+    <style name="Theme.PennyWise" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- NoActionBar allows us to use custom MaterialToolbar -->
+        <!-- Material 3 has proper radio button and button defaults for dark mode -->
+        
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimaryContainer</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_light_onSecondaryContainer</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">@color/md_theme_light_error</item>
+        <item name="colorErrorContainer">@color/md_theme_light_errorContainer</item>
+        <item name="colorOnError">@color/md_theme_light_onError</item>
+        <item name="colorOnErrorContainer">@color/md_theme_light_onErrorContainer</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md_theme_light_surface</item>
+        <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_light_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
+        
+        <!-- Background -->
+        <item name="android:colorBackground">@color/md_theme_light_background</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        
+        <!-- Standard window behavior -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        
+        <!-- Custom transaction colors -->
+        <item name="colorIncome">@color/income_green_light</item>
+        <item name="colorExpense">@color/expense_red_light</item>
+        <item name="colorIncomeContainer">#FFE8F5E9</item>
+        <item name="colorExpenseContainer">#FFFFEBEE</item>
+        
+        <!-- Custom status colors -->
+        <item name="colorStatusActive">@color/income_green_light</item>
+        <item name="colorStatusPending">#FFFF9800</item>
+        <item name="colorStatusInactive">#FF9E9E9E</item>
+        <item name="colorStatusError">@color/expense_red_light</item>
+    </style>
+    
+    <!-- Theme for activities with ActionBar -->
+    <style name="Theme.PennyWise.NoActionBar" parent="Theme.PennyWise">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    
+    <!-- AppBar overlay theme -->
+    <style name="Theme.PennyWise.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+    
+    <!-- PopupOverlay theme -->
+    <style name="Theme.PennyWise.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
+
+    <!-- Onboarding theme -->
+    <style name="Theme.PennyWise.Onboarding" parent="Theme.PennyWise">
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+    
+    <!-- Full Screen Dialog Theme for Chat -->
+    <style name="FullScreenDialogTheme" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
+        <item name="android:windowAnimationStyle">@style/DialogAnimation</item>
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
+    </style>
+    
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_up</item>
+        <item name="android:windowExitAnimation">@anim/slide_down</item>
+    </style>
+</resources>

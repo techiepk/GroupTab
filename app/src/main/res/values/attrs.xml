@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom attributes for EmptyStateView -->
+    <declare-styleable name="EmptyStateView">
+        <attr name="emptyStateIcon" format="reference" />
+        <attr name="emptyStateTitle" format="string" />
+        <attr name="emptyStateDescription" format="string" />
+        <attr name="emptyStatePrimaryActionText" format="string" />
+        <attr name="emptyStateSecondaryActionText" format="string" />
+        <attr name="emptyStateAnimateIcon" format="boolean" />
+    </declare-styleable>
+    
+    <!-- Custom theme attributes for transaction colors -->
+    <attr name="colorIncome" format="color" />
+    <attr name="colorExpense" format="color" />
+    <attr name="colorIncomeContainer" format="color" />
+    <attr name="colorExpenseContainer" format="color" />
+    
+    <!-- Custom theme attributes for status colors -->
+    <attr name="colorStatusActive" format="color" />
+    <attr name="colorStatusPending" format="color" />
+    <attr name="colorStatusInactive" format="color" />
+    <attr name="colorStatusError" format="color" />
+</resources>

@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">PennyWise AI</string>
+    
+    <!-- Empty state strings -->
+    <string name="empty_dashboard_illustration">No data yet</string>
+    <string name="empty_transactions_illustration">No transactions found</string>
+    <string name="empty_chat_illustration">No messages yet</string>
+    <string name="empty_search_illustration">No results found</string>
+    
+    <!-- Empty state titles -->
+    <string name="empty_dashboard_title">Welcome to PennyWise AI!</string>
+    <string name="empty_dashboard_description">Your personal AI-powered financial assistant is ready to help you track and understand your spending.</string>
+    <string name="no_transactions_found">No transactions found</string>
+    <string name="no_transactions_yet">No transactions yet</string>
+    <string name="empty_transactions_filtered_description">We couldn\'t find any transactions matching your filters. Try adjusting your search criteria.</string>
+    <string name="empty_transactions_description">Start by scanning your SMS messages to discover all your transactions automatically.</string>
+    <string name="empty_chat_title">Hi! I\'m your AI Financial Assistant</string>
+    <string name="empty_chat_description">I can help you understand your spending patterns, find specific transactions, analyze your financial habits, and answer questions about your money.</string>
+    <string name="no_search_results">No results found</string>
+    <string name="empty_search_description">We couldn\'t find any transactions matching \"%s\". Try different keywords or check the spelling.</string>
+    <string name="empty_analytics_title">No data to analyze yet</string>
+    <string name="empty_analytics_description">Once you scan your messages, you\'ll see powerful insights about your spending patterns, trends, and financial habits.</string>
+    <string name="empty_subscriptions_title">No subscriptions found</string>
+    <string name="empty_subscriptions_description">We\'ll automatically detect recurring payments like Netflix, Spotify, or gym memberships from your transaction history.</string>
+    
+    <!-- Empty state actions -->
+    <string name="start_scanning">Start Scanning Messages</string>
+    <string name="how_it_works">How does it work?</string>
+    <string name="clear_filters">Clear Filters</string>
+    <string name="scan_messages">Scan Messages</string>
+    <string name="clear_search">Clear Search</string>
+    <string name="start_analyzing">Start analyzing my spending</string>
+</resources>

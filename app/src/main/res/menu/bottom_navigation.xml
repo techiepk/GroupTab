@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@drawable/ic_dashboard_filled"
+        android:title="Home"
+        android:contentDescription="Navigate to home dashboard" />
+    
+    <item
+        android:id="@+id/nav_transactions"
+        android:icon="@drawable/ic_receipt_long"
+        android:title="Transactions"
+        android:contentDescription="Navigate to transactions list" />
+    
+    <item
+        android:id="@+id/nav_analytics"
+        android:icon="@drawable/ic_analytics"
+        android:title="Analytics"
+        android:contentDescription="Navigate to spending analytics" />
+    
+    <item
+        android:id="@+id/nav_subscriptions"
+        android:icon="@drawable/ic_subscriptions"
+        android:title="Subscriptions"
+        android:contentDescription="Navigate to subscriptions management" />
+    
+    <item
+        android:id="@+id/nav_chat"
+        android:icon="@drawable/ic_ai_assistant"
+        android:title="AI Chat"
+        android:contentDescription="Navigate to AI assistant chat" />
+</menu>

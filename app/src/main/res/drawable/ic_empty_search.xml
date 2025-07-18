@@ -1,0 +1,47 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F3E5F5"
+        android:pathData="M100,20 A80,80 0 1,1 100,180 A80,80 0 1,1 100,20 Z" />
+    
+    <!-- Magnifying glass circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#9C4DCC"
+        android:strokeWidth="4"
+        android:pathData="M85,55 A30,30 0 1,1 85,115 A30,30 0 1,1 85,55 Z" />
+    
+    <!-- Magnifying glass handle -->
+    <path
+        android:strokeColor="#9C4DCC"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M107,107 L130,130" />
+    
+    <!-- Search results (faded) -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M70,75 L100,75 M70,85 L95,85 M70,95 L90,95" 
+        android:strokeWidth="2"
+        android:strokeColor="#E8E8E8" />
+    
+    <!-- Question mark in center -->
+    <path
+        android:pathData="M85,65 Q95,65 95,75 Q95,82 85,85 L85,90 M85,95 A2,2 0 1,1 85,99 A2,2 0 1,1 85,95"
+        android:strokeWidth="3"
+        android:strokeColor="#E040FB"
+        android:fillColor="@null" />
+    
+    <!-- Decorative elements -->
+    <path
+        android:fillColor="#6A1B9A"
+        android:pathData="M140,60 A3,3 0 1,1 140,54 A3,3 0 1,1 140,60 Z
+                         M50,130 A3,3 0 1,1 50,124 A3,3 0 1,1 50,130 Z
+                         M150,140 A3,3 0 1,1 150,134 A3,3 0 1,1 150,140 Z" />
+    
+</vector>

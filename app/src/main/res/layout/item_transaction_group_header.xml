@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_large"
+    android:layout_marginVertical="@dimen/spacing_small"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="@dimen/corner_radius_large"
+    app:cardElevation="@dimen/elevation_raised"
+    app:strokeWidth="0dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_xlarge">
+
+        <!-- Category Icon Circle -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/category_icon_card"
+            android:layout_width="@dimen/icon_size_xlarge"
+            android:layout_height="@dimen/icon_size_xlarge"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer"
+            app:cardCornerRadius="@dimen/corner_radius_medium"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+            
+            <View
+                android:id="@+id/category_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+                
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Group Name -->
+        <TextView
+            android:id="@+id/group_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_large"
+            android:layout_marginEnd="@dimen/spacing_medium"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintStart_toEndOf="@+id/category_icon_card"
+            app:layout_constraintEnd_toStartOf="@+id/total_amount"
+            app:layout_constraintTop_toTopOf="@+id/category_icon_card"
+            tools:text="Zomato Orders" />
+
+        <!-- Transaction Count -->
+        <TextView
+            android:id="@+id/transaction_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_tiny"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_small"
+            app:layout_constraintStart_toStartOf="@+id/group_name"
+            app:layout_constraintEnd_toEndOf="@+id/group_name"
+            app:layout_constraintTop_toBottomOf="@+id/group_name"
+            tools:text="24 transactions this month" />
+
+        <!-- Group Type Badge -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/group_type"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_tiny"
+            android:checkable="false"
+            android:clickable="false"
+            app:chipBackgroundColor="?attr/colorSurfaceVariant"
+            app:chipStrokeWidth="0dp"
+            app:chipMinHeight="24dp"
+            app:layout_constraintStart_toStartOf="@+id/group_name"
+            app:layout_constraintTop_toBottomOf="@+id/transaction_count"
+            app:layout_constraintBottom_toBottomOf="@+id/category_icon_card"
+            android:layout_marginTop="@dimen/spacing_tiny"
+            tools:text="AUTO" />
+
+        <!-- Total Amount -->
+        <TextView
+            android:id="@+id/total_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="@dimen/text_size_xlarge"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginEnd="@dimen/spacing_small"
+            app:layout_constraintEnd_toStartOf="@+id/expand_arrow"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="₹12,450" />
+
+        <!-- Expand/Collapse Arrow -->
+        <ImageView
+            android:id="@+id/expand_arrow"
+            android:layout_width="@dimen/icon_size_medium"
+            android:layout_height="@dimen/icon_size_medium"
+            android:src="@drawable/ic_keyboard_arrow_down"
+            app:tint="?attr/colorOnSurfaceVariant"
+            android:contentDescription="Expand/Collapse group"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

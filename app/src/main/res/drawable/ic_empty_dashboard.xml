@@ -1,0 +1,53 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F3E5F5"
+        android:pathData="M100,20 A80,80 0 1,1 100,180 A80,80 0 1,1 100,20 Z" />
+    
+    <!-- Wallet outline -->
+    <path
+        android:strokeColor="#9C4DCC"
+        android:strokeWidth="3"
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,70 L140,70 Q150,70 150,80 L150,120 Q150,130 140,130 L60,130 Q50,130 50,120 L50,80 Q50,70 60,70 Z" />
+    
+    <!-- Wallet fold line -->
+    <path
+        android:strokeColor="#9C4DCC"
+        android:strokeWidth="2"
+        android:pathData="M50,90 L150,90" />
+    
+    <!-- Card slot -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M65,105 L135,105 Q140,105 140,110 L140,115 Q140,120 135,120 L65,120 Q60,120 60,115 L60,110 Q60,105 65,105 Z" />
+    
+    <!-- Money symbol -->
+    <path
+        android:fillColor="#6A1B9A"
+        android:pathData="M100,80 Q105,80 105,85 Q105,90 100,90 Q95,90 95,85 Q95,80 100,80 Z
+                         M98,75 L98,95 M102,75 L102,95" />
+    
+    <!-- Stars around wallet -->
+    <path
+        android:fillColor="#E040FB"
+        android:pathData="M40,50 L42,56 L48,56 L43,60 L45,66 L40,62 L35,66 L37,60 L32,56 L38,56 Z" />
+    
+    <path
+        android:fillColor="#E040FB"
+        android:pathData="M160,50 L162,56 L168,56 L163,60 L165,66 L160,62 L155,66 L157,60 L152,56 L158,56 Z" />
+    
+    <path
+        android:fillColor="#E040FB"
+        android:pathData="M160,140 L162,146 L168,146 L163,150 L165,156 L160,152 L155,156 L157,150 L152,146 L158,146 Z" />
+    
+    <path
+        android:fillColor="#E040FB"
+        android:pathData="M40,140 L42,146 L48,146 L43,150 L45,156 L40,152 L35,156 L37,150 L32,146 L38,146 Z" />
+    
+</vector>

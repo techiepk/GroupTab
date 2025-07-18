@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="48dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="bottom"
+    android:paddingHorizontal="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackgroundBorderless">
+
+    <!-- Amount label (shown on top of bar) -->
+    <TextView
+        android:id="@+id/amount_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="8sp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="2dp" />
+
+    <!-- Bar representing spending amount -->
+    <View
+        android:id="@+id/bar_view"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:background="@drawable/rounded_bar"
+        android:minHeight="4dp" />
+
+    <!-- Day label -->
+    <TextView
+        android:id="@+id/day_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mon"
+        android:textSize="10sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+</LinearLayout>

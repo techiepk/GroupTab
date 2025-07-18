@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PennyWise Brand Colors - Dark Mode -->
+    <color name="pennywise_primary">#CE93D8</color>
+    <color name="pennywise_primary_dark">#BA68C8</color>
+    <color name="pennywise_primary_light">#E1BEE7</color>
+    <color name="pennywise_primary_variant">#AB47BC</color>
+    
+    <!-- Accent Colors -->
+    <color name="pennywise_accent">#EA80FC</color>
+    <color name="pennywise_accent_light">#F3E5F5</color>
+    <color name="pennywise_accent_dark">#CE93D8</color>
+    
+    <!-- Background Colors -->
+    <color name="pennywise_background">#121212</color>
+    <color name="pennywise_surface">#1E1E1E</color>
+    <color name="pennywise_surface_variant">#2C2C2C</color>
+    
+    <!-- Text Colors -->
+    <color name="pennywise_on_primary">#000000</color>
+    <color name="pennywise_on_secondary">#FFFFFF</color>
+    <color name="pennywise_text_primary">#FFFFFF</color>
+    <color name="pennywise_text_secondary">#B0B0B0</color>
+    
+    <!-- Financial Colors -->
+    <color name="pennywise_income">#66BB6A</color>
+    <color name="pennywise_expense">#EF5350</color>
+    <color name="pennywise_income_light">#81C784</color>
+    <color name="pennywise_expense_light">#E57373</color>
+    
+    <!-- Status Colors -->
+    <color name="pennywise_success">#66BB6A</color>
+    <color name="pennywise_warning">#FFA726</color>
+    <color name="pennywise_error">#EF5350</color>
+    <color name="pennywise_info">#42A5F5</color>
+    
+    <!-- Container Colors -->
+    <color name="pennywise_card_background">#2C2C2C</color>
+    <color name="pennywise_card_elevation">#383838</color>
+    <color name="pennywise_divider">#424242</color>
+    <color name="pennywise_ripple">#33CE93D8</color>
+</resources>

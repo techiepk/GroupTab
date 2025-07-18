@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <!-- Icon -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_analytics"
+        app:tint="?android:attr/textColorSecondary"
+        android:alpha="0.3" />
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="No data to analyze yet"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Once you scan your messages, you'll see powerful insights about your spending patterns, trends, and financial habits."
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="18sp"
+        android:textAlignment="center"
+        android:lineSpacingMultiplier="1.4" />
+
+    <!-- Preview of what they'll see -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        android:text="You'll discover:"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📊 Spending breakdown by category"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:paddingVertical="6dp"
+            android:drawablePadding="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📈 Monthly spending trends"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:paddingVertical="6dp"
+            android:drawablePadding="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💰 Daily average expenses"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:paddingVertical="6dp"
+            android:drawablePadding="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔄 Recurring payment patterns"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:paddingVertical="6dp"
+            android:drawablePadding="12dp" />
+
+    </LinearLayout>
+
+    <!-- CTA -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/start_scanning_button"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Start analyzing my spending"
+        app:icon="@drawable/ic_scan_messages"
+        app:cornerRadius="24dp" />
+
+</LinearLayout>
