@@ -11,11 +11,19 @@
     <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2.0-7F52FF">
     <img alt="Privacy" src="https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B">
   </p>
+  
+  <p>
+    <a href="https://play.google.com/store/apps/details?id=com.pennywiseai.tracker">
+      <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80">
+    </a>
+  </p>
 </div>
 
 ## Overview
 
 PennyWise automatically reads transaction SMS messages and transforms them into organized financial data using on-device AI. No manual entry, no cloud processing, complete privacy.
+
+> **🧪 Beta Testing**: PennyWise is currently in closed beta testing. [Join as a tester](https://play.google.com/store/apps/details?id=com.pennywiseai.tracker) to get early access!
 
 ## Key Features
 
