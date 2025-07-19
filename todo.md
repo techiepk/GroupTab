@@ -1,3 +1,11 @@
+## 📱 Feature Ideas & Improvements
+
+- [ ] better transaction page (date improvement)
+- [ ] backup feature
+- [ ] more detailed graphs.
+- [ ] Pin feature unlimited
+- [ ] try some multiple models
+
 ## 🚀 Open Source & Play Store Release Tasks
 
 ### Critical Security Issues
@@ -41,30 +49,8 @@
   - local.properties
   - *.keystore
   - release/
-- [ ] Add GitHub Actions for CI/CD
-- [ ] Set up issue templates
+- [X] Add GitHub Actions for CI/CD
+- [ ] Set up issue templates (set this up after sometime)
 
-## 📱 Feature Ideas & Improvements
 
-Update model with every update (as applicable)
-
-Make it very similar to MS messages.
-
-Sync feature with Gdrive, 1Drive etc.
-
-Make it available for ios and android both
-
-Graphs adding which days i spend the most.
-
-What am I spending most on?
-
-Upcoming reminders section.
-
-Pin feature unlimited
-
-Saved messages section.
-
-look at fingym, axios
-
-try some multiple models
 
