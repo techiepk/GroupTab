@@ -1,0 +1,78 @@
+name: Dependency Check
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  check-dependencies:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    
+    - name: Check for dependency updates
+      run: |
+        # Add Ben Manes Gradle Versions Plugin temporarily
+        echo "" >> build.gradle.kts
+        echo "buildscript {" >> build.gradle.kts
+        echo "    dependencies {" >> build.gradle.kts
+        echo "        classpath(\"com.github.ben-manes:gradle-versions-plugin:0.51.0\")" >> build.gradle.kts
+        echo "    }" >> build.gradle.kts
+        echo "}" >> build.gradle.kts
+        echo "apply(plugin = \"com.github.ben-manes.versions\")" >> build.gradle.kts
+        
+        # Run dependency updates report
+        ./gradlew dependencyUpdates -Drevision=release > dependency-report.txt
+        
+        # Extract outdated dependencies
+        echo "## Dependency Update Report" > dependency-updates.md
+        echo "" >> dependency-updates.md
+        echo "Generated on: $(date)" >> dependency-updates.md
+        echo "" >> dependency-updates.md
+        
+        # Check if there are updates
+        if grep -q "The following dependencies have later" dependency-report.txt; then
+          echo "### ⚠️ Updates Available" >> dependency-updates.md
+          echo "" >> dependency-updates.md
+          
+          # Extract the relevant section
+          sed -n '/The following dependencies have later/,/^$/p' dependency-report.txt >> dependency-updates.md
+          
+          echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+        else
+          echo "### ✅ All dependencies are up to date!" >> dependency-updates.md
+          echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
+        fi
+    
+    - name: Create issue if updates available
+      if: env.UPDATES_AVAILABLE == 'true'
+      uses: peter-evans/create-issue-from-file@v5
+      with:
+        title: "🔄 Dependency Updates Available - $(date +'%Y-%m-%d')"
+        content-filepath: ./dependency-updates.md
+        labels: |
+          dependencies
+          maintenance
+    
+    - name: Upload dependency report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-report
+        path: |
+          dependency-report.txt
+          dependency-updates.md
+        retention-days: 30
