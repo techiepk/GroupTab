@@ -53,12 +53,15 @@ android {
             val localPropertiesFile = rootProject.file("local.properties")
             if (localPropertiesFile.exists()) {
                 localProperties.load(localPropertiesFile.inputStream())
+                
+                val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
+                if (keystorePath.isNotEmpty()) {
+                    storeFile = file(keystorePath)
+                    storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
+                    keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS", "")
+                    keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
+                }
             }
-            
-            storeFile = file(localProperties.getProperty("RELEASE_STORE_FILE", ""))
-            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
-            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS", "")
-            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
         }
     }
     
@@ -70,7 +73,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            
+            val releaseSigningConfig = signingConfigs.getByName("release")
+            // Only use release signing if keystore is configured
+            if (releaseSigningConfig.storeFile != null) {
+                signingConfig = releaseSigningConfig
+            }
         }
     }
 }
