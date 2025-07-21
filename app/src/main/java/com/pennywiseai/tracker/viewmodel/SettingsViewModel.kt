@@ -12,7 +12,7 @@ import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.sms.HistoricalSmsScanner
 import com.pennywiseai.tracker.llm.LLMTransactionExtractor
-import com.pennywiseai.tracker.llm.ModelDownloader
+import com.pennywiseai.tracker.llm.PersistentModelDownloader
 import com.pennywiseai.tracker.llm.DownloadProgress
 import com.pennywiseai.tracker.llm.TransactionClassifier
 import com.pennywiseai.tracker.background.ModelDownloadWorker
@@ -28,7 +28,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val repository = TransactionRepository(AppDatabase.getDatabase(application))
     private val llmExtractor = LLMTransactionExtractor(application)
     private val smsScanner = HistoricalSmsScanner(application, repository, llmExtractor)
-    private val modelDownloader = ModelDownloader(application)
+    private val modelDownloader = PersistentModelDownloader(application)
     private val transactionClassifier = TransactionClassifier(application)
     
     val settings: LiveData<AppSettings?> = repository.getSettings().asLiveData()
@@ -155,6 +155,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         when (info.state) {
                             WorkInfo.State.RUNNING -> {
                                 _modelStatus.value = ModelStatus.DOWNLOADING
+                                
+                                // Extract progress data from WorkManager
+                                val progress = info.progress
+                                val bytesDownloaded = progress.getLong("bytesDownloaded", 0)
+                                val totalBytes = progress.getLong("totalBytes", 0)
+                                val speedBytesPerSecond = progress.getLong("speedBytesPerSecond", 0)
+                                val error = progress.getString("error")?.takeIf { it.isNotEmpty() }
+                                
+                                if (totalBytes > 0) {
+                                    _modelDownloadProgress.value = DownloadProgress(
+                                        bytesDownloaded = bytesDownloaded,
+                                        totalBytes = totalBytes,
+                                        speedBytesPerSecond = speedBytesPerSecond,
+                                        error = error
+                                    )
+                                }
                             }
                             WorkInfo.State.SUCCEEDED -> {
                                 _modelStatus.value = ModelStatus.DOWNLOADED
@@ -194,10 +210,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                             _modelStatus.value = ModelStatus.DOWNLOADED
                             android.util.Log.i("SettingsViewModel", "✅ Model download completed successfully")
                         }
-                        
-                        // Clear progress after delay
-                        kotlinx.coroutines.delay(2000)
-                        _modelDownloadProgress.value = null
                     }
                 }
             } catch (e: Exception) {
@@ -213,6 +225,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _modelStatus.value = ModelStatus.DOWNLOADING
         android.util.Log.i("SettingsViewModel", "📥 Background model download enqueued")
     }
+    
     
     private fun checkBackgroundDownloadStatus() {
         viewModelScope.launch {

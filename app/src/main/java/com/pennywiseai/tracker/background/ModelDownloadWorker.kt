@@ -6,8 +6,9 @@ import android.app.NotificationManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.*
+import androidx.work.workDataOf
 import com.pennywiseai.tracker.R
-import com.pennywiseai.tracker.llm.ModelDownloader
+import com.pennywiseai.tracker.llm.PersistentModelDownloader
 import com.pennywiseai.tracker.firebase.FirebaseHelper
 import kotlinx.coroutines.flow.collect
 import android.util.Log
@@ -28,8 +29,9 @@ class ModelDownloadWorker(
                 .addTag(WORK_NAME)
                 .setConstraints(
                     Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .setRequiredNetworkType(NetworkType.UNMETERED) // WiFi only for 2.7GB download
                         .setRequiresBatteryNotLow(true)
+                        .setRequiresStorageNotLow(true) // Ensure enough storage
                         .build()
                 )
                 .build()
@@ -59,8 +61,14 @@ class ModelDownloadWorker(
             // Show initial notification
             showNotification("Starting model download...", 0, 0, 0)
             
-            val modelDownloader = ModelDownloader(applicationContext)
+            val modelDownloader = PersistentModelDownloader(applicationContext)
             val startTime = System.currentTimeMillis()
+            
+            // Check if there's already a download in progress
+            val downloadState = modelDownloader.getDownloadState()
+            if (downloadState.canResume) {
+                Log.i(TAG, "🔄 Resuming download from ${downloadState.downloadedBytes / (1024 * 1024)}MB")
+            }
             
             // Start download
             var downloadResult = Result.success()
@@ -69,6 +77,17 @@ class ModelDownloadWorker(
                 val downloadedMB = progress.bytesDownloaded / (1024 * 1024)
                 val totalMB = progress.totalBytes / (1024 * 1024)
                 val speedKBps = calculateSpeed(progress.bytesDownloaded, startTime)
+                
+                // Report progress to WorkManager
+                val progressData = workDataOf(
+                    "bytesDownloaded" to progress.bytesDownloaded,
+                    "totalBytes" to progress.totalBytes,
+                    "progressPercentage" to progress.progressPercentage,
+                    "speedBytesPerSecond" to progress.speedBytesPerSecond,
+                    "isComplete" to progress.isComplete,
+                    "error" to (progress.error ?: "")
+                )
+                setProgressAsync(progressData)
                 
                 if (progress.isComplete) {
                     if (progress.error != null) {

@@ -652,7 +652,7 @@ class SimplifiedDashboardFragment : Fragment() {
     
     private fun showModelManagement() {
         // Check model status and show appropriate dialog
-        val modelDownloader = com.pennywiseai.tracker.llm.ModelDownloader(requireContext())
+        val modelDownloader = com.pennywiseai.tracker.llm.PersistentModelDownloader(requireContext())
         val isDownloaded = modelDownloader.isModelDownloaded()
         val modelSize = modelDownloader.getModelSize()
         val expectedSize = modelDownloader.getExpectedModelSize()
@@ -706,7 +706,7 @@ class SimplifiedDashboardFragment : Fragment() {
                     "• You'll need to download it again to use AI features\n" +
                     "• All AI analysis will be disabled")
             .setPositiveButton("Delete") { _, _ ->
-                com.pennywiseai.tracker.llm.ModelDownloader(requireContext()).deleteModel()
+                com.pennywiseai.tracker.llm.PersistentModelDownloader(requireContext()).deleteModel()
                 Snackbar.make(binding.root, "Model deleted", Snackbar.LENGTH_SHORT).show()
                 // Refresh AI status
                 viewModel.refreshAllData()

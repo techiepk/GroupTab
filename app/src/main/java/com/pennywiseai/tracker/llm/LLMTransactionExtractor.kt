@@ -29,7 +29,7 @@ class LLMTransactionExtractor(private val context: Context) {
             try {
                 Log.i(TAG, "🚀 Initializing LLM Transaction Extractor...")
                 
-                val modelDownloader = ModelDownloader(context)
+                val modelDownloader = PersistentModelDownloader(context)
                 val modelPath = modelDownloader.getModelPath()
                 
                 if (modelPath == null) {

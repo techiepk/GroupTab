@@ -15,7 +15,7 @@
 - [X] Create fresh git repository to remove token from git history
 
 ### Package Name Change
-- [x] Change package name from `com.example.transactiontracker` to `com.pennywiseai.tracker`
+- [x] Change package name from `com.pennywiseai.tracker` to `com.pennywiseai.tracker`
 - [x] Update in AndroidManifest.xml, build.gradle, and all Kotlin files
 - [X] Update Firebase project settings with new package name
 

@@ -8,12 +8,13 @@ import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 class TransactionClassifier(private val context: Context) {
     
     private var llmInference: LlmInference? = null
     private var isInitialized = false
-    private val modelDownloader = ModelDownloader(context)
+    private val persistentDownloader = PersistentModelDownloader(context)
     private var currentTokens = 0
     private var sessionsProcessed = 0
     
@@ -24,7 +25,7 @@ class TransactionClassifier(private val context: Context) {
     }
     
     fun downloadModel(): Flow<DownloadProgress> {
-        return modelDownloader.downloadModel()
+        return persistentDownloader.downloadModel()
     }
     
     suspend fun initialize(): Boolean {
@@ -32,13 +33,13 @@ class TransactionClassifier(private val context: Context) {
             try {
                 
                 // Check if model is downloaded
-                val modelPath = modelDownloader.getModelPath()
+                val modelPath = persistentDownloader.getModelPath()
                 if (modelPath == null) {
                     Log.e(TAG, "❌ Model not found. Please download model first.")
                     return@withContext false
                 }
                 
-                Log.i(TAG, "📊 Model size: ${modelDownloader.getModelSize() / (1024 * 1024)}MB")
+                Log.i(TAG, "📊 Model size: ${getModelSize() / (1024 * 1024)}MB")
                 
                 // Initialize MediaPipe LLM with LiteRT task file
                 
@@ -196,7 +197,7 @@ Category:"""
     
     fun isModelDownloaded(): Boolean {
         return try {
-            modelDownloader.isModelDownloaded()
+            persistentDownloader.isModelDownloaded()
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error checking if model is downloaded: ${e.message}")
             false
@@ -205,7 +206,8 @@ Category:"""
     
     fun getModelSize(): Long {
         return try {
-            modelDownloader.getModelSize()
+            val modelFile = File(context.filesDir, "Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task")
+            if (modelFile.exists()) modelFile.length() else 0L
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error getting model size: ${e.message}")
             0L
@@ -214,7 +216,7 @@ Category:"""
     
     fun deleteModel() {
         try {
-            modelDownloader.deleteModel()
+            persistentDownloader.deleteModel()
             isInitialized = false
             llmInference = null
         } catch (e: Exception) {

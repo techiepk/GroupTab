@@ -10,7 +10,7 @@ import com.pennywiseai.tracker.data.ScanTimeframe
 import com.pennywiseai.tracker.databinding.FragmentSettingsOrganizedBinding
 import com.pennywiseai.tracker.viewmodel.SettingsViewModel
 import com.pennywiseai.tracker.llm.TransactionClassifier
-import com.pennywiseai.tracker.llm.ModelDownloader
+import com.pennywiseai.tracker.llm.PersistentModelDownloader
 import com.pennywiseai.tracker.firebase.FirebaseHelper
 import com.pennywiseai.tracker.background.ModelDownloadWorker
 import com.google.android.material.snackbar.Snackbar
@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import android.content.Context
 import com.pennywiseai.tracker.ui.GroupManagementActivity
 import com.pennywiseai.tracker.R
 import com.pennywiseai.tracker.utils.DataExporter
@@ -37,7 +38,7 @@ class OrganizedSettingsFragment : Fragment() {
     
     private val viewModel: SettingsViewModel by viewModels()
     private lateinit var classifier: TransactionClassifier
-    private lateinit var modelDownloader: ModelDownloader
+    private lateinit var modelDownloader: PersistentModelDownloader
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,7 +56,7 @@ class OrganizedSettingsFragment : Fragment() {
         FirebaseHelper.logScreenView("OrganizedSettings", "OrganizedSettingsFragment")
         
         classifier = TransactionClassifier(requireContext())
-        modelDownloader = ModelDownloader(requireContext())
+        modelDownloader = PersistentModelDownloader(requireContext())
         
         setupUI()
         observeViewModel()
@@ -136,11 +137,13 @@ class OrganizedSettingsFragment : Fragment() {
         
         // Observe model status
         viewModel.modelStatus.observe(viewLifecycleOwner) { status ->
+            android.util.Log.d("OrganizedSettingsFragment", "Model status changed: $status")
             updateModelStatus(status)
         }
         
         // Observe model download progress
         viewModel.modelDownloadProgress.observe(viewLifecycleOwner) { progress ->
+            android.util.Log.d("OrganizedSettingsFragment", "Model download progress observer triggered: $progress")
             updateModelProgress(progress)
         }
         
@@ -201,14 +204,18 @@ class OrganizedSettingsFragment : Fragment() {
         
         val deviceInfo = "Device: ${android.os.Build.MODEL}\n" +
                 "Android: ${android.os.Build.VERSION.RELEASE}\n" +
-                "Compatible: ${if (isDeviceCompatible()) "✅ Yes" else "❌ No"}"
+                "RAM: ${getDeviceRAM()}"
         
         val message = "🤖 AI Model Information\n\n" +
                 "Status: $statusText\n" +
                 "Size: $sizeText\n" +
                 "Type: Gemma 2B-IT\n" +
                 "Processing: On-device only\n\n" +
-                "📱 Device Compatibility\n$deviceInfo\n\n" +
+                "📱 Your Device\n$deviceInfo\n\n" +
+                "⚠️ Minimum Requirements\n" +
+                "• 4GB+ RAM recommended\n" +
+                "• 3GB free storage\n" +
+                "• Android 8.0 or higher\n\n" +
                 "🔒 Privacy: All analysis happens locally on your device. No data is sent to external servers."
         
         val builder = MaterialAlertDialogBuilder(requireContext())
@@ -223,7 +230,7 @@ class OrganizedSettingsFragment : Fragment() {
                 }
             }
             SettingsViewModel.ModelStatus.DOWNLOADING -> {
-                builder.setPositiveButton("Cancel") { _, _ ->
+                builder.setNeutralButton("Cancel") { _, _ ->
                     cancelModelDownload()
                 }
             }
@@ -261,7 +268,7 @@ class OrganizedSettingsFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Download Options")
             .setMessage(
-                "Choose how to download the AI model (1.5GB):\n\n" +
+                "Choose how to download the AI model (2.7GB):\n\n" +
                 "• Download Now: Faster, but stops if you leave the app\n" +
                 "• Background Download: Continues even if app is closed, shows progress in notifications"
             )
@@ -297,16 +304,15 @@ class OrganizedSettingsFragment : Fragment() {
             .show()
     }
     
-    private fun isDeviceCompatible(): Boolean {
-        // Check basic compatibility requirements
+    private fun getDeviceRAM(): String {
         return try {
-            val runtime = Runtime.getRuntime()
-            val maxMemory = runtime.maxMemory() / (1024 * 1024) // MB
-            
-            // Require at least 3GB available memory and Android API 24+
-            maxMemory >= 3000 && android.os.Build.VERSION.SDK_INT >= 24
+            val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val memInfo = android.app.ActivityManager.MemoryInfo()
+            activityManager.getMemoryInfo(memInfo)
+            val totalMemory = memInfo.totalMem / (1024 * 1024 * 1024) // Convert to GB
+            "${totalMemory}GB"
         } catch (e: Exception) {
-            false
+            "Unknown"
         }
     }
     
@@ -566,11 +572,17 @@ class OrganizedSettingsFragment : Fragment() {
                     modelProgressContainer.visibility = android.view.View.GONE
                 }
                 SettingsViewModel.ModelStatus.DOWNLOADING -> {
+                    val progress = viewModel.modelDownloadProgress.value
                     modelStatusValue.text = "Downloading model..."
                     modelStatusValue.setTextColor(ContextCompat.getColor(requireContext(), com.google.android.material.R.color.material_dynamic_primary40))
                     modelStatusIcon.visibility = android.view.View.GONE
                     modelProgressIndicator.visibility = android.view.View.VISIBLE
+                    // Always show progress container when downloading
                     modelProgressContainer.visibility = android.view.View.VISIBLE
+                    // If we have progress data, update it immediately
+                    if (progress != null && progress.totalBytes > 0) {
+                        updateModelProgress(progress)
+                    }
                 }
                 SettingsViewModel.ModelStatus.DOWNLOADED -> {
                     val sizeText = formatFileSize(viewModel.getModelSize())
@@ -605,6 +617,8 @@ class OrganizedSettingsFragment : Fragment() {
     }
     
     private fun updateModelProgress(progress: com.pennywiseai.tracker.llm.DownloadProgress?) {
+        android.util.Log.d("OrganizedSettingsFragment", "updateModelProgress called with: $progress")
+        
         if (progress == null) {
             binding.modelProgressContainer.visibility = android.view.View.GONE
             return
@@ -612,6 +626,7 @@ class OrganizedSettingsFragment : Fragment() {
         
         binding.apply {
             modelProgressContainer.visibility = android.view.View.VISIBLE
+            android.util.Log.d("OrganizedSettingsFragment", "Progress container made visible")
             
             if (progress.totalBytes > 0) {
                 modelProgressBar.isIndeterminate = false
@@ -619,7 +634,31 @@ class OrganizedSettingsFragment : Fragment() {
                 
                 val downloadedMB = progress.bytesDownloaded / (1024 * 1024)
                 val totalMB = progress.totalBytes / (1024 * 1024)
-                modelProgressText.text = "Downloading: ${downloadedMB}MB / ${totalMB}MB (${progress.progressPercentage}%)"
+                
+                // Add speed and time remaining
+                val speedText = when {
+                    progress.speedMBps >= 1.0 -> String.format("%.1f MB/s", progress.speedMBps)
+                    progress.speedKBps > 0 -> "${progress.speedKBps} KB/s"
+                    else -> ""
+                }
+                
+                val timeText = if (progress.remainingTimeSeconds > 0) {
+                    val minutes = progress.remainingTimeSeconds / 60
+                    val seconds = progress.remainingTimeSeconds % 60
+                    when {
+                        minutes > 60 -> "${minutes / 60}h ${minutes % 60}m remaining"
+                        minutes > 0 -> "${minutes}m ${seconds}s remaining"
+                        else -> "${seconds}s remaining"
+                    }
+                } else ""
+                
+                val statusText = buildString {
+                    append("${downloadedMB}MB / ${totalMB}MB (${progress.progressPercentage}%)")
+                    if (speedText.isNotEmpty()) append(" • $speedText")
+                    if (timeText.isNotEmpty()) append(" • $timeText")
+                }
+                
+                modelProgressText.text = statusText
             } else {
                 modelProgressBar.isIndeterminate = true
                 modelProgressText.text = "Preparing download..."
