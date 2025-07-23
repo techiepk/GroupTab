@@ -108,7 +108,6 @@ class TransactionsSimpleFragment : Fragment() {
             if (category != null || merchant != null || dateRange != null) {
                 isFiltered = true
                 viewModel.setFilters(category, merchant, dateRange)
-                updateFilterInfo(category, merchant, dateRange)
             }
         }
     }
@@ -211,15 +210,7 @@ class TransactionsSimpleFragment : Fragment() {
             updateEmptyState(transactions.isEmpty())
         }
         
-        // Observe filter info
-        viewModel.filterInfo.observe(viewLifecycleOwner) { filterInfo ->
-            if (!filterInfo.isNullOrEmpty()) {
-                binding.filterInfoText.text = "Filtered by: $filterInfo"
-                binding.filterInfoText.visibility = View.VISIBLE
-            } else {
-                binding.filterInfoText.visibility = View.GONE
-            }
-        }
+        // Remove filter info text observation since we're using chips
     }
     
     private fun updateEmptyState(isEmpty: Boolean) {
@@ -255,24 +246,6 @@ class TransactionsSimpleFragment : Fragment() {
         }
     }
     
-    private fun updateFilterInfo(
-        category: com.pennywiseai.tracker.data.TransactionCategory?,
-        merchant: String?,
-        dateRange: Pair<Long, Long>?
-    ) {
-        val filters = mutableListOf<String>()
-        
-        category?.let { filters.add(it.name.replace("_", " ").lowercase().replaceFirstChar { char -> char.uppercase() }) }
-        merchant?.let { filters.add(it) }
-        dateRange?.let {
-            filters.add("Custom date range")
-        }
-        
-        if (filters.isNotEmpty()) {
-            binding.filterInfoText.text = "Filtered by: ${filters.joinToString(", ")}"
-            binding.filterInfoText.visibility = View.VISIBLE
-        }
-    }
     
     fun showQuickActionsDialog(transaction: Transaction) {
         lifecycleScope.launch {

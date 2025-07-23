@@ -30,16 +30,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="@dimen/spacing_medium" />
             
-        <!-- Filter Info -->
-        <TextView
-            android:id="@+id/filter_info_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="@dimen/text_size_body_large"
-            android:visibility="gone"
-            android:layout_marginBottom="@dimen/spacing_medium" />
             
         <!-- Filters Row with Time Range and Sort -->
         <LinearLayout
