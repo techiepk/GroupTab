@@ -17,6 +17,7 @@ import com.pennywiseai.tracker.data.TransactionSortOrder
 import com.pennywiseai.tracker.databinding.FragmentTransactionsSimpleBinding
 import com.pennywiseai.tracker.ui.adapter.TransactionAdapter
 import com.pennywiseai.tracker.ui.dialog.CreateSubscriptionDialog
+import com.pennywiseai.tracker.ui.dialog.CreateGroupDialog
 import com.pennywiseai.tracker.viewmodel.TransactionsViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -252,6 +253,7 @@ class TransactionsSimpleFragment : Fragment() {
             val options = arrayOf(
                 "View Details", 
                 "Edit", 
+                "Create Pattern",
                 "Convert to Subscription", 
                 "Delete"
             )
@@ -262,12 +264,17 @@ class TransactionsSimpleFragment : Fragment() {
                     when (which) {
                         0 -> TransactionDetailActivity.start(requireContext(), transaction.id)
                         1 -> EditTransactionActivity.start(requireContext(), transaction.id)
-                        2 -> showConvertToSubscriptionDialog(transaction)
-                        3 -> confirmDeleteTransaction(transaction)
+                        2 -> showCreatePatternDialog(transaction)
+                        3 -> showConvertToSubscriptionDialog(transaction)
+                        4 -> confirmDeleteTransaction(transaction)
                     }
                 }
                 .show()
         }
+    }
+    
+    private fun showCreatePatternDialog(transaction: Transaction) {
+        CreateGroupDialog.newInstance(transaction).show(childFragmentManager, "CreateGroupDialog")
     }
     
     private fun showConvertToSubscriptionDialog(transaction: Transaction) {

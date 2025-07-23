@@ -71,6 +71,53 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- SMS Content Card (shown when merchant is unknown) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/sms_content_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorErrorContainer"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Original SMS (Merchant not detected)"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnErrorContainer"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/sms_content_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SMS Content"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnErrorContainer"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tip: Extract the merchant name from above and enter as pattern"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnErrorContainer"
+                    android:layout_marginTop="8dp"
+                    android:textStyle="italic" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Group Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/group_name_layout"

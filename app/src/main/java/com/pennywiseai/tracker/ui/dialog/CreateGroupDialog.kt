@@ -18,6 +18,7 @@ import com.pennywiseai.tracker.data.GroupingType
 import com.pennywiseai.tracker.databinding.DialogCreateGroupBinding
 import com.pennywiseai.tracker.viewmodel.CreateGroupViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pennywiseai.tracker.ui.adapter.TransactionPreviewAdapter
 import kotlinx.coroutines.launch
 
 class CreateGroupDialog : DialogFragment() {
@@ -124,8 +125,20 @@ class CreateGroupDialog : DialogFragment() {
             this.transaction = transaction
             transaction?.let {
                 // Pre-fill from transaction
-                binding.groupNameInput.setText(extractGroupName(it.merchant))
-                binding.patternInput.setText(extractPattern(it.merchant))
+                if (it.merchant == "Unknown" || it.merchant.isEmpty()) {
+                    // For unknown merchants, try to extract from SMS
+                    val suggestedPattern = extractPatternFromSms(it.rawSms)
+                    binding.groupNameInput.setText(suggestedPattern.first)
+                    binding.patternInput.setText(suggestedPattern.second)
+                    
+                    // Show SMS content for reference
+                    binding.smsContentCard.visibility = View.VISIBLE
+                    binding.smsContentText.text = it.rawSms
+                } else {
+                    // Known merchant - use existing logic
+                    binding.groupNameInput.setText(extractGroupName(it.merchant))
+                    binding.patternInput.setText(extractPattern(it.merchant))
+                }
                 
                 // Set category
                 val categoryIndex = TransactionCategory.values().indexOf(it.category)
@@ -168,6 +181,42 @@ class CreateGroupDialog : DialogFragment() {
         return words.firstOrNull() ?: merchant.lowercase()
     }
     
+    private fun extractPatternFromSms(sms: String): Pair<String, String> {
+        // Try to find potential merchant names in SMS
+        val patterns = listOf(
+            // Look for "to <merchant>" pattern
+            Regex("(?:to|at|from)\\s+([A-Za-z0-9]+(?:\\s+[A-Za-z0-9]+)*)", RegexOption.IGNORE_CASE),
+            // Look for merchant@upi pattern
+            Regex("([A-Za-z0-9]+)@[a-z]+", RegexOption.IGNORE_CASE),
+            // Look for capitalized words that might be merchant names
+            Regex("\\b([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*)", RegexOption.MULTILINE)
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(sms)
+            if (match != null) {
+                val extracted = match.groupValues[1].trim()
+                if (extracted.length > 2 && !isCommonWord(extracted)) {
+                    return Pair(
+                        extracted.replaceFirstChar { it.uppercase() },
+                        extracted.lowercase()
+                    )
+                }
+            }
+        }
+        
+        // Fallback - suggest user to enter manually
+        return Pair("Enter Group Name", "enter pattern here")
+    }
+    
+    private fun isCommonWord(word: String): Boolean {
+        val commonWords = setOf(
+            "credited", "debited", "payment", "transaction", "balance",
+            "account", "available", "successful", "reference", "upi"
+        )
+        return commonWords.contains(word.lowercase())
+    }
+    
     private fun updatePreviewCount() {
         val pattern = binding.patternInput.text.toString()
         val patternType = binding.patternTypeSpinner.selectedItemPosition
@@ -185,10 +234,47 @@ class CreateGroupDialog : DialogFragment() {
     }
     
     private fun showPreviewTransactions() {
-        // TODO: Show preview dialog with matching transactions
-        if (isAdded && context != null) {
-            Toast.makeText(requireContext(), "Preview coming soon!", Toast.LENGTH_SHORT).show()
+        val pattern = binding.patternInput.text.toString()
+        val patternType = binding.patternTypeSpinner.selectedItemPosition
+        
+        if (pattern.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a pattern first", Toast.LENGTH_SHORT).show()
+            return
         }
+        
+        // Create preview dialog
+        val dialogBinding = com.pennywiseai.tracker.databinding.DialogPreviewTransactionsBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+            .setPositiveButton("OK", null)
+            .create()
+        
+        // Setup RecyclerView with preview adapter that shows SMS
+        val previewAdapter = TransactionPreviewAdapter()
+        
+        dialogBinding.previewRecyclerView.apply {
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+            adapter = previewAdapter
+        }
+        
+        // Observe preview transactions
+        viewModel.previewTransactions.observe(this) { transactions ->
+            if (transactions.isEmpty()) {
+                dialogBinding.emptyState.visibility = View.VISIBLE
+                dialogBinding.previewRecyclerView.visibility = View.GONE
+                dialogBinding.matchCountText.text = "No matching transactions found"
+            } else {
+                dialogBinding.emptyState.visibility = View.GONE
+                dialogBinding.previewRecyclerView.visibility = View.VISIBLE
+                dialogBinding.matchCountText.text = "Found ${transactions.size} matching transactions"
+                previewAdapter.submitList(transactions)
+            }
+        }
+        
+        // Trigger update
+        viewModel.updatePreviewCount(pattern, patternType)
+        
+        dialog.show()
     }
     
     private fun createGroup() {

@@ -30,6 +30,9 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
     private val _previewCount = MutableLiveData<Int>(0)
     val previewCount: LiveData<Int> = _previewCount
     
+    private val _previewTransactions = MutableLiveData<List<Transaction>>(emptyList())
+    val previewTransactions: LiveData<List<Transaction>> = _previewTransactions
+    
     fun loadTransaction(transactionId: String) {
         viewModelScope.launch {
             try {
@@ -55,6 +58,17 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
                     else -> 0
                 }
                 _previewCount.value = matchingCount
+                
+                // Also get the actual transactions for preview
+                val matchingTransactions = when (patternType) {
+                    0 -> getContainsMatches(allTransactions, pattern)
+                    1 -> getExactMatches(allTransactions, pattern)
+                    2 -> getStartsWithMatches(allTransactions, pattern)
+                    3 -> getEndsWithMatches(allTransactions, pattern)
+                    4 -> getMultipleKeywordMatches(allTransactions, pattern)
+                    else -> emptyList()
+                }
+                _previewTransactions.value = matchingTransactions.take(20) // Limit preview to 20
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update preview count", e)
                 _previewCount.value = 0
@@ -64,11 +78,26 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
     
     private fun countContainsPattern(transactions: List<Transaction>, pattern: String): Int {
         val lowerPattern = pattern.lowercase()
-        return transactions.count { it.merchant.lowercase().contains(lowerPattern) }
+        return transactions.count { 
+            it.merchant.lowercase().contains(lowerPattern) ||
+            it.rawSms.lowercase().contains(lowerPattern)
+        }
+    }
+    
+    private fun getContainsMatches(transactions: List<Transaction>, pattern: String): List<Transaction> {
+        val lowerPattern = pattern.lowercase()
+        return transactions.filter { 
+            it.merchant.lowercase().contains(lowerPattern) ||
+            it.rawSms.lowercase().contains(lowerPattern)
+        }
     }
     
     private fun countExactPattern(transactions: List<Transaction>, pattern: String): Int {
         return transactions.count { it.merchant.equals(pattern, ignoreCase = true) }
+    }
+    
+    private fun getExactMatches(transactions: List<Transaction>, pattern: String): List<Transaction> {
+        return transactions.filter { it.merchant.equals(pattern, ignoreCase = true) }
     }
     
     private fun countStartsWithPattern(transactions: List<Transaction>, pattern: String): Int {
@@ -76,9 +105,19 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
         return transactions.count { it.merchant.lowercase().startsWith(lowerPattern) }
     }
     
+    private fun getStartsWithMatches(transactions: List<Transaction>, pattern: String): List<Transaction> {
+        val lowerPattern = pattern.lowercase()
+        return transactions.filter { it.merchant.lowercase().startsWith(lowerPattern) }
+    }
+    
     private fun countEndsWithPattern(transactions: List<Transaction>, pattern: String): Int {
         val lowerPattern = pattern.lowercase()
         return transactions.count { it.merchant.lowercase().endsWith(lowerPattern) }
+    }
+    
+    private fun getEndsWithMatches(transactions: List<Transaction>, pattern: String): List<Transaction> {
+        val lowerPattern = pattern.lowercase()
+        return transactions.filter { it.merchant.lowercase().endsWith(lowerPattern) }
     }
     
     private fun countMultipleKeywords(transactions: List<Transaction>, pattern: String): Int {
@@ -87,7 +126,23 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
         
         return transactions.count { transaction ->
             val lowerMerchant = transaction.merchant.lowercase()
-            keywords.any { keyword -> lowerMerchant.contains(keyword) }
+            val lowerSms = transaction.rawSms.lowercase()
+            keywords.any { keyword -> 
+                lowerMerchant.contains(keyword) || lowerSms.contains(keyword)
+            }
+        }
+    }
+    
+    private fun getMultipleKeywordMatches(transactions: List<Transaction>, pattern: String): List<Transaction> {
+        val keywords = pattern.lowercase().split(" ", ",").filter { it.isNotEmpty() }
+        if (keywords.isEmpty()) return emptyList()
+        
+        return transactions.filter { transaction ->
+            val lowerMerchant = transaction.merchant.lowercase()
+            val lowerSms = transaction.rawSms.lowercase()
+            keywords.any { keyword -> 
+                lowerMerchant.contains(keyword) || lowerSms.contains(keyword)
+            }
         }
     }
     
@@ -175,7 +230,8 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
                 it.merchant.equals(pattern, ignoreCase = true) 
             }
             GroupingType.MERCHANT_FUZZY -> transactions.filter { 
-                it.merchant.lowercase().contains(pattern.lowercase()) 
+                it.merchant.lowercase().contains(pattern.lowercase()) ||
+                it.rawSms.lowercase().contains(pattern.lowercase())
             }
             else -> transactions.filter { 
                 it.merchant.lowercase().contains(pattern.lowercase()) 
