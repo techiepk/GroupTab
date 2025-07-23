@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/spacing_medium">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sort Transactions"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="@dimen/text_size_title_medium"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="@dimen/spacing_medium" />
+
+    <!-- Sort Options -->
+    <RadioGroup
+        android:id="@+id/sort_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Date Options -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By Date"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_body_small"
+            android:textAllCaps="true"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginBottom="@dimen/spacing_tiny" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_date_newest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Newest First"
+            android:padding="@dimen/spacing_small" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_date_oldest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Oldest First"
+            android:padding="@dimen/spacing_small" />
+
+        <!-- Amount Options -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By Amount"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_body_small"
+            android:textAllCaps="true"
+            android:layout_marginTop="@dimen/spacing_medium"
+            android:layout_marginBottom="@dimen/spacing_tiny" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_amount_highest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Highest First"
+            android:padding="@dimen/spacing_small" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_amount_lowest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lowest First"
+            android:padding="@dimen/spacing_small" />
+
+        <!-- Merchant Options -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By Merchant"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="@dimen/text_size_body_small"
+            android:textAllCaps="true"
+            android:layout_marginTop="@dimen/spacing_medium"
+            android:layout_marginBottom="@dimen/spacing_tiny" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_merchant_az"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="A to Z"
+            android:padding="@dimen/spacing_small" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/radio_merchant_za"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Z to A"
+            android:padding="@dimen/spacing_small" />
+
+    </RadioGroup>
+
+</LinearLayout>

@@ -45,6 +45,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     private val _categoryFilter = MutableStateFlow<com.pennywiseai.tracker.data.TransactionCategory?>(null)
     private val _merchantFilter = MutableStateFlow<String?>(null)
     private val _dateRangeFilter = MutableStateFlow<Pair<Long, Long>?>(null)
+    val dateRange: LiveData<Pair<Long, Long>?> = _dateRangeFilter.asLiveData()
     private val _timeRangeFilter = MutableStateFlow<TimeRange?>(TimeRange.THIRTY_DAYS)
     
     // Sorting property - load saved preference

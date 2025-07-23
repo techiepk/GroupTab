@@ -103,7 +103,7 @@ class FilteredTransactionsActivity : AppCompatActivity() {
         }
         
         // Create fragment with filters
-        val fragment = TransactionsFragment.newInstance(
+        val fragment = TransactionsSimpleFragment.newInstance(
             category = category,
             merchant = merchant,
             startDate = startDate,

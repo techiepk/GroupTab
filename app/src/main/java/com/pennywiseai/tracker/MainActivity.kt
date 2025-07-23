@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.ui.SimplifiedDashboardFragment
 import com.pennywiseai.tracker.ui.OrganizedSettingsFragment
 import com.pennywiseai.tracker.ui.AnalyticsFragment
-import com.pennywiseai.tracker.ui.TransactionsFragment
+import com.pennywiseai.tracker.ui.TransactionsSimpleFragment
 import com.pennywiseai.tracker.ui.ChatFragment
 import com.pennywiseai.tracker.ui.SubscriptionsFragment
 import com.pennywiseai.tracker.notification.NotificationListener
@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val dashboardFragment = SimplifiedDashboardFragment()
-    private val transactionsFragment = TransactionsFragment()
+    private val transactionsFragment = TransactionsSimpleFragment()
     private val analyticsFragment = AnalyticsFragment()
     private val subscriptionsFragment = SubscriptionsFragment()
     private val chatFragment = ChatFragment()
