@@ -19,6 +19,15 @@
   </p>
 </div>
 
+## 📱 In Priority
+
+- [ ] better transaction page (date improvement)
+- [ ] backup feature
+- [ ] more detailed graphs.
+- [ ] Pin feature unlimited
+- [ ] try some multiple models
+- [ ] in transactions, dont show groups
+
 ## Overview
 
 PennyWise automatically reads transaction SMS messages and transforms them into organized financial data using on-device AI. No manual entry, no cloud processing, complete privacy.
