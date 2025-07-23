@@ -47,7 +47,7 @@ class PersistentModelDownloader(private val context: Context) {
         @Volatile
         private var isDownloading = false
         private const val TAG = "PersistentModelDownloader"
-        private const val GEMMA_2B_URL = "https://hugginface-ai-model.s3.us-east-1.amazonaws.com/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task"
+        private const val GEMMA_2B_URL = "https://d3q489kjw0f759.cloudfront.net/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task"
         private const val MODEL_FILENAME = "Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task"
         private const val TEMP_SUFFIX = ".download"
         private const val EXPECTED_SIZE = 2_700_000_000L // ~2.7GB
