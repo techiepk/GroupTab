@@ -18,8 +18,8 @@ android {
         applicationId = "com.pennywiseai.tracker"
         minSdk = 31
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.1"
+        versionCode = 4
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -88,6 +88,9 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.fragment.ktx)
+    
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
     
     // Room database
     implementation(libs.androidx.room.runtime)

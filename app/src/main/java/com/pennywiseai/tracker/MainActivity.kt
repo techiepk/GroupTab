@@ -25,6 +25,7 @@ import com.pennywiseai.tracker.ui.SubscriptionsFragment
 import com.pennywiseai.tracker.notification.NotificationListener
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.firstOrNull
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,6 +61,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install splash screen
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
 
         // Check onboarding completion (database first, then SharedPreferences fallback)

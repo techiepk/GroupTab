@@ -72,6 +72,14 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
     
+    <!-- Splash Screen Theme -->
+    <style name="Theme.PennyWise.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/md_theme_light_primary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.PennyWise</item>
+    </style>
+    
     <!-- Full Screen Dialog Theme for Chat -->
     <style name="FullScreenDialogTheme" parent="Theme.Material3.DayNight.Dialog">
         <item name="android:windowIsFloating">false</item>
