@@ -88,6 +88,45 @@ class SimplifiedDashboardFragment : Fragment() {
             topCategoryName.text = "None"
             topCategoryAmount.text = "₹0"
             
+            // Setup parser type selection
+            val prefs = requireContext().getSharedPreferences("settings", 0)
+            val usePatternParser = prefs.getBoolean("use_pattern_parser", false)
+            if (usePatternParser) {
+                parserPattern.isChecked = true
+            } else {
+                parserAi.isChecked = true
+            }
+            
+            // Check AI model status
+            val modelDownloader = com.pennywiseai.tracker.llm.PersistentModelDownloader(requireContext())
+            val isModelDownloaded = modelDownloader.isModelDownloaded()
+            
+            if (!isModelDownloaded) {
+                parserAi.isEnabled = false
+                aiModelStatus.visibility = View.VISIBLE
+                // If AI model not available and AI parser selected, switch to pattern
+                if (parserAi.isChecked) {
+                    parserPattern.isChecked = true
+                    prefs.edit().putBoolean("use_pattern_parser", true).apply()
+                }
+            } else {
+                parserAi.isEnabled = true
+                aiModelStatus.visibility = View.GONE
+            }
+            
+            // Parser type change listener
+            parserTypeGroup.setOnCheckedChangeListener { _, checkedId ->
+                val usePattern = checkedId == R.id.parser_pattern
+                prefs.edit().putBoolean("use_pattern_parser", usePattern).apply()
+                
+                val message = if (usePattern) {
+                    "Using pattern-based parser"
+                } else {
+                    "Using AI-powered parser"
+                }
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+            }
+            
             // Primary actions
             scanActionButton.setOnClickListener {
                 if (LogStreamManager.isScanRunning.value) {
@@ -157,8 +196,19 @@ class SimplifiedDashboardFragment : Fragment() {
         viewModel.aiStatus.observe(viewLifecycleOwner) { isReady ->
             if (!isReady) {
                 binding.aiModelBanner.visibility = View.VISIBLE
+                // Update parser selection UI
+                binding.parserAi.isEnabled = false
+                binding.aiModelStatus.visibility = View.VISIBLE
+                // If AI parser is selected but model not available, switch to pattern
+                if (binding.parserAi.isChecked) {
+                    binding.parserPattern.isChecked = true
+                    requireContext().getSharedPreferences("settings", 0)
+                        .edit().putBoolean("use_pattern_parser", true).apply()
+                }
             } else {
                 binding.aiModelBanner.visibility = View.GONE
+                binding.parserAi.isEnabled = true
+                binding.aiModelStatus.visibility = View.GONE
             }
         }
         
@@ -528,9 +578,13 @@ class SimplifiedDashboardFragment : Fragment() {
     }
     
     private fun showScanConfirmationDialog() {
+        val prefs = requireContext().getSharedPreferences("settings", 0)
+        val usePatternParser = prefs.getBoolean("use_pattern_parser", false)
+        val parserType = if (usePatternParser) "pattern-based" else "AI-powered"
+        
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Scan Messages")
-            .setMessage("Find transactions in your SMS inbox")
+            .setMessage("Find transactions in your SMS inbox using $parserType parser")
             .setPositiveButton("Start") { _, _ ->
                 LogStreamDialog.show(childFragmentManager)
                 val scanDays = viewModel.scanTimeframeDays.value ?: 30
@@ -547,7 +601,7 @@ class SimplifiedDashboardFragment : Fragment() {
         
         val options = arrayOf(
             "Scan period: ${viewModel.scanTimeframeDays.value ?: 30} days",
-            "Parser type: $parserType",
+            "Parser info",
             "AI Model Management",
             "Export Data",
             "About"
@@ -562,7 +616,7 @@ class SimplifiedDashboardFragment : Fragment() {
                 .setItems(options) { _, which ->
                     when (which) {
                         0 -> showScanPeriodDialog()
-                        1 -> showParserTypeDialog()
+                        1 -> showParserInfoDialog()
                         2 -> showModelManagement()
                         3 -> exportData()
                         4 -> showAbout()
@@ -588,40 +642,6 @@ class SimplifiedDashboardFragment : Fragment() {
                     .apply()
                 dialog.dismiss()
                 Snackbar.make(binding.root, "Scan period updated to ${periods[which]}", Snackbar.LENGTH_SHORT).show()
-            }
-            .show()
-    }
-    
-    private fun showParserTypeDialog() {
-        val prefs = requireContext().getSharedPreferences("settings", 0)
-        val usePatternParser = prefs.getBoolean("use_pattern_parser", false)
-        val currentIndex = if (usePatternParser) 1 else 0
-        
-        val options = arrayOf("AI-powered (Recommended)", "Pattern-based (Faster)")
-        val descriptions = arrayOf(
-            "Uses on-device AI for accurate transaction extraction",
-            "Uses regex patterns for faster but less accurate extraction"
-        )
-        
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Select Parser Type")
-            .setSingleChoiceItems(options, currentIndex) { dialog, which ->
-                val usePattern = which == 1
-                prefs.edit()
-                    .putBoolean("use_pattern_parser", usePattern)
-                    .apply()
-                
-                val message = if (usePattern) {
-                    "Switched to pattern-based parser (faster but less accurate)"
-                } else {
-                    "Switched to AI-powered parser (more accurate)"
-                }
-                
-                dialog.dismiss()
-                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
-            }
-            .setNeutralButton("Learn More") { _, _ ->
-                showParserInfoDialog()
             }
             .show()
     }
