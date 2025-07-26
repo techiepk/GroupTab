@@ -18,6 +18,8 @@ import java.util.Locale
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pennywiseai.tracker.utils.ThemeColorUtils
 import com.pennywiseai.tracker.data.TransactionSortOrder
+import com.pennywiseai.tracker.data.Transaction
+import com.pennywiseai.tracker.data.TransactionWithGroup
 import com.pennywiseai.tracker.ui.dialog.EditGroupDialog
 
 class GroupDetailActivity : AppCompatActivity() {
@@ -95,7 +97,15 @@ class GroupDetailActivity : AppCompatActivity() {
             if (transactions.isEmpty()) {
                 Log.w(TAG, "⚠️ No transactions found for group $groupId despite cached count")
             }
-            transactionAdapter.submitList(transactions)
+            // Convert to TransactionWithGroup for the adapter
+            val transactionsWithGroup = transactions.map { transaction ->
+                TransactionWithGroup(
+                    transaction = transaction,
+                    groupId = groupId,
+                    groupName = groupName
+                )
+            }
+            transactionAdapter.submitList(transactionsWithGroup)
             
             binding.emptyStateText.visibility = if (transactions.isEmpty()) {
                 android.view.View.VISIBLE

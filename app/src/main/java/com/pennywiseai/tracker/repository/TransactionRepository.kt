@@ -5,9 +5,12 @@ import com.pennywiseai.tracker.data.Transaction
 import com.pennywiseai.tracker.data.Subscription
 import com.pennywiseai.tracker.data.AppSettings
 import com.pennywiseai.tracker.data.TransactionCategory
+import com.pennywiseai.tracker.data.TransactionWithGroup
 import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.database.CategorySpending
+import com.pennywiseai.tracker.database.TransactionWithGroupInfo
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class TransactionRepository(private val database: AppDatabase) {
     
@@ -114,4 +117,27 @@ class TransactionRepository(private val database: AppDatabase) {
     
     // Transaction grouping support
     fun getGroupRepository(): TransactionGroupRepository = _groupRepository
+    
+    // Get transactions with their group information
+    fun getAllTransactionsWithGroups(): Flow<List<TransactionWithGroup>> =
+        transactionDao.getAllTransactionsWithGroups().map { list ->
+            list.map { info ->
+                TransactionWithGroup(
+                    transaction = Transaction(
+                        id = info.id,
+                        amount = info.amount,
+                        merchant = info.merchant,
+                        category = info.category,
+                        date = info.date,
+                        rawSms = info.rawSms,
+                        upiId = info.upiId,
+                        transactionType = info.transactionType,
+                        confidence = info.confidence,
+                        subscription = info.subscription
+                    ),
+                    groupId = info.groupId,
+                    groupName = info.groupName
+                )
+            }
+        }
 }

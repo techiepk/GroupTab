@@ -12,6 +12,7 @@ import com.pennywiseai.tracker.data.TransactionCategory
 import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import com.pennywiseai.tracker.subscription.SubscriptionDetector
+import com.pennywiseai.tracker.service.PatternMatchingService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -31,6 +32,7 @@ class HistoricalSmsScanner(
 ) {
     
     private val subscriptionDetector = SubscriptionDetector()
+    private val patternMatchingService = PatternMatchingService(repository, repository.getGroupRepository())
     private var transactionExtractor: TransactionExtractor? = null
     
     companion object {
@@ -239,6 +241,10 @@ class HistoricalSmsScanner(
                 if (transaction != null) {
                     // Save transaction immediately to database
                     repository.insertTransaction(transaction)
+                    
+                    // Apply patterns to the transaction
+                    patternMatchingService.applyPatternsToTransaction(transaction)
+                    
                     transactions.add(transaction)
                     LogStreamManager.messageProcessed(smsMessage.address, true, transaction.merchant, transaction.amount)
                     LogStreamManager.databaseOperation("Saved transaction", 1)

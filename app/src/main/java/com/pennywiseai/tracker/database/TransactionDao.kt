@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.database
 import androidx.room.*
 import com.pennywiseai.tracker.data.Transaction
 import com.pennywiseai.tracker.data.TransactionCategory
+import com.pennywiseai.tracker.data.TransactionWithGroup
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -126,9 +127,35 @@ interface TransactionDao {
     
     @Query("SELECT DISTINCT category FROM transactions ORDER BY category ASC")
     suspend fun getAllCategories(): List<TransactionCategory>
+    
+    // Query to get transactions with their group information
+    @Query("""
+        SELECT t.*, tg.groupId, g.name as groupName
+        FROM transactions t
+        LEFT JOIN transaction_group_mappings tg ON t.id = tg.transactionId
+        LEFT JOIN transaction_groups g ON tg.groupId = g.id
+        ORDER BY t.date DESC
+    """)
+    fun getAllTransactionsWithGroups(): Flow<List<TransactionWithGroupInfo>>
 }
 
 data class CategorySpending(
     val category: TransactionCategory,
     val total: Double
+)
+
+// Data class for Room query result
+data class TransactionWithGroupInfo(
+    val id: String,
+    val amount: Double,
+    val merchant: String,
+    val category: TransactionCategory,
+    val date: Long,
+    val rawSms: String,
+    val upiId: String?,
+    val transactionType: com.pennywiseai.tracker.data.TransactionType,
+    val confidence: Float,
+    val subscription: Boolean,
+    val groupId: String?,
+    val groupName: String?
 )

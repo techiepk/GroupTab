@@ -12,6 +12,7 @@ import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.subscription.SubscriptionDetector
 import com.pennywiseai.tracker.parser.PatternTransactionParser
 import com.pennywiseai.tracker.data.SubscriptionStatus
+import com.pennywiseai.tracker.service.PatternMatchingService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,8 +30,10 @@ class SmsReceiver : BroadcastReceiver() {
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty()) return
         
-        val repository = TransactionRepository(AppDatabase.getDatabase(context))
+        val database = AppDatabase.getDatabase(context)
+        val repository = TransactionRepository(database)
         val subscriptionDetector = SubscriptionDetector()
+        val patternMatchingService = PatternMatchingService(repository, repository.getGroupRepository())
         
         // Get parser preference
         val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -73,6 +76,9 @@ class SmsReceiver : BroadcastReceiver() {
                         
                         // Save to database
                         repository.insertTransaction(finalTransaction)
+                        
+                        // Apply patterns to the transaction
+                        patternMatchingService.applyPatternsToTransaction(finalTransaction)
                         
                         // If it's a subscription, detect and create subscription records
                         if (isSubscription) {

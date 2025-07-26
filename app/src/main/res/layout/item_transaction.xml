@@ -63,7 +63,7 @@
                     android:ellipsize="end"
                     tools:text="Zomato" />
 
-                <!-- Subscription Badge -->
+                <!-- Group/Pattern Badge -->
                 <TextView
                     android:id="@+id/subscription_badge"
                     android:layout_width="wrap_content"
@@ -72,9 +72,9 @@
                     android:paddingHorizontal="@dimen/spacing_small"
                     android:paddingVertical="@dimen/spacing_tiny"
                     android:background="@drawable/chip_background"
-                    android:backgroundTint="?attr/colorPrimary"
-                    android:text="Subscription"
-                    android:textColor="?attr/colorOnPrimary"
+                    android:backgroundTint="?attr/colorTertiary"
+                    android:text="Pattern Name"
+                    android:textColor="?attr/colorOnTertiary"
                     android:textSize="@dimen/text_size_label_small"
                     android:textStyle="bold"
                     android:visibility="gone"

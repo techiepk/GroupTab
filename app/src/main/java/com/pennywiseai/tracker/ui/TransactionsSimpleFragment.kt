@@ -205,10 +205,10 @@ class TransactionsSimpleFragment : Fragment() {
     }
     
     private fun observeData() {
-        // Observe transactions
-        viewModel.transactions.observe(viewLifecycleOwner) { transactions ->
-            transactionAdapter.submitList(transactions)
-            updateEmptyState(transactions.isEmpty())
+        // Observe transactions with groups
+        viewModel.transactionsWithGroups.observe(viewLifecycleOwner) { transactionsWithGroups ->
+            transactionAdapter.submitList(transactionsWithGroups)
+            updateEmptyState(transactionsWithGroups.isEmpty())
         }
         
         // Remove filter info text observation since we're using chips

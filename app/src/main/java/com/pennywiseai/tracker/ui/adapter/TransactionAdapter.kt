@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.pennywiseai.tracker.data.Transaction
+import com.pennywiseai.tracker.data.TransactionWithGroup
 import com.pennywiseai.tracker.databinding.ItemTransactionBinding
 import com.pennywiseai.tracker.utils.ColorUtils
 import java.text.NumberFormat
@@ -15,7 +16,7 @@ import java.util.*
 class TransactionAdapter(
     private val onTransactionClick: (Transaction) -> Unit = {},
     private val onTransactionLongClick: (Transaction) -> Unit = {}
-) : ListAdapter<Transaction, TransactionAdapter.TransactionViewHolder>(TransactionDiffCallback()) {
+) : ListAdapter<TransactionWithGroup, TransactionAdapter.TransactionViewHolder>(TransactionDiffCallback()) {
     
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransactionViewHolder {
         val binding = ItemTransactionBinding.inflate(
@@ -36,12 +37,14 @@ class TransactionAdapter(
         private val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
         
         fun bind(
-            transaction: Transaction,
+            transactionWithGroup: TransactionWithGroup,
             onTransactionClick: (Transaction) -> Unit,
             onTransactionLongClick: (Transaction) -> Unit
         ) {
+            val transaction = transactionWithGroup.transaction
             binding.apply {
-                merchantName.text = transaction.merchant
+                // Show group name as merchant if grouped, otherwise show original merchant
+                merchantName.text = transactionWithGroup.groupName ?: transaction.merchant
                 
                 // Format amount with sign and color
                 val absAmount = kotlin.math.abs(transaction.amount)
@@ -64,6 +67,14 @@ class TransactionAdapter(
                 // Set category color or icon based on type
                 val categoryColor = getCategoryColor(transaction.category.name)
                 // categoryIndicator.setBackgroundColor(categoryColor) // TODO: Update for new layout
+                
+                // Show group badge if transaction is grouped and merchant is unknown
+                if (transactionWithGroup.groupName != null && transaction.merchant == "Unknown Merchant") {
+                    subscriptionBadge.text = "Pattern"
+                    subscriptionBadge.visibility = android.view.View.VISIBLE
+                } else {
+                    subscriptionBadge.visibility = android.view.View.GONE
+                }
                 
                 // Add click listeners
                 root.setOnClickListener { onTransactionClick(transaction) }
@@ -89,12 +100,12 @@ class TransactionAdapter(
         }
     }
     
-    class TransactionDiffCallback : DiffUtil.ItemCallback<Transaction>() {
-        override fun areItemsTheSame(oldItem: Transaction, newItem: Transaction): Boolean {
-            return oldItem.id == newItem.id
+    class TransactionDiffCallback : DiffUtil.ItemCallback<TransactionWithGroup>() {
+        override fun areItemsTheSame(oldItem: TransactionWithGroup, newItem: TransactionWithGroup): Boolean {
+            return oldItem.transaction.id == newItem.transaction.id
         }
         
-        override fun areContentsTheSame(oldItem: Transaction, newItem: Transaction): Boolean {
+        override fun areContentsTheSame(oldItem: TransactionWithGroup, newItem: TransactionWithGroup): Boolean {
             return oldItem == newItem
         }
     }

@@ -8,6 +8,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.map
 import com.pennywiseai.tracker.data.Transaction
+import com.pennywiseai.tracker.data.TransactionWithGroup
 import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.repository.TransactionRepository
 import kotlinx.coroutines.launch
@@ -57,8 +58,8 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     private val _sortOrder = MutableStateFlow(initialSortOrder)
     val sortOrder: LiveData<TransactionSortOrder> = _sortOrder.asLiveData()
     
-    // Reactive transactions using Flow transformations
-    val transactions: LiveData<List<Transaction>> = combine(
+    // Reactive transactions with groups using Flow transformations
+    val transactionsWithGroups: LiveData<List<TransactionWithGroup>> = combine(
         _categoryFilter,
         _merchantFilter,
         _dateRangeFilter,
@@ -66,7 +67,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     ) { category, merchant, dateRange, sortOrder ->
         FilterAndSort(category, merchant, dateRange, sortOrder)
     }.flatMapLatest { filterAndSort ->
-        repository.getAllTransactions().combine(
+        repository.getAllTransactionsWithGroups().combine(
             kotlinx.coroutines.flow.flowOf(filterAndSort)
         ) { allTransactions, filterSort ->
             
@@ -74,32 +75,37 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
             
             // Apply category filter
             filterSort.category?.let { cat ->
-                filtered = filtered.filter { it.category == cat }
+                filtered = filtered.filter { it.transaction.category == cat }
             }
             
             // Apply merchant filter
             filterSort.merchant?.let { merch ->
-                filtered = filtered.filter { it.merchant.equals(merch, ignoreCase = true) }
+                filtered = filtered.filter { it.transaction.merchant.equals(merch, ignoreCase = true) }
             }
             
             // Apply date range filter
             filterSort.dateRange?.let { (startDate, endDate) ->
-                filtered = filtered.filter { it.date >= startDate && it.date <= endDate }
+                filtered = filtered.filter { it.transaction.date >= startDate && it.transaction.date <= endDate }
             }
             
             
             // Apply sorting
             when (filterSort.sortOrder) {
-                TransactionSortOrder.DATE_DESC -> filtered.sortedByDescending { it.date }
-                TransactionSortOrder.DATE_ASC -> filtered.sortedBy { it.date }
-                TransactionSortOrder.AMOUNT_DESC -> filtered.sortedByDescending { kotlin.math.abs(it.amount) }
-                TransactionSortOrder.AMOUNT_ASC -> filtered.sortedBy { kotlin.math.abs(it.amount) }
-                TransactionSortOrder.MERCHANT_ASC -> filtered.sortedBy { it.merchant.lowercase() }
-                TransactionSortOrder.MERCHANT_DESC -> filtered.sortedByDescending { it.merchant.lowercase() }
-                TransactionSortOrder.CATEGORY -> filtered.sortedBy { it.category.name }
+                TransactionSortOrder.DATE_DESC -> filtered.sortedByDescending { it.transaction.date }
+                TransactionSortOrder.DATE_ASC -> filtered.sortedBy { it.transaction.date }
+                TransactionSortOrder.AMOUNT_DESC -> filtered.sortedByDescending { kotlin.math.abs(it.transaction.amount) }
+                TransactionSortOrder.AMOUNT_ASC -> filtered.sortedBy { kotlin.math.abs(it.transaction.amount) }
+                TransactionSortOrder.MERCHANT_ASC -> filtered.sortedBy { it.transaction.merchant.lowercase() }
+                TransactionSortOrder.MERCHANT_DESC -> filtered.sortedByDescending { it.transaction.merchant.lowercase() }
+                TransactionSortOrder.CATEGORY -> filtered.sortedBy { it.transaction.category.name }
             }
         }
     }.asLiveData(viewModelScope.coroutineContext)
+    
+    // Backward compatibility - expose transactions without groups
+    val transactions: LiveData<List<Transaction>> = transactionsWithGroups.map { list ->
+        list.map { it.transaction }
+    }
     
     // Filter info for UI
     private val _filterInfo = MutableLiveData<String?>()

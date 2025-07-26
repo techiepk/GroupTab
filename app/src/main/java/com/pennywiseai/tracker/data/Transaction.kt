@@ -44,3 +44,10 @@ enum class TransactionType {
     INVESTMENT,        // SIP, mutual funds
     UNKNOWN            // Fallback when type cannot be determined
 }
+
+// Data class to hold transaction with its group information
+data class TransactionWithGroup(
+    val transaction: Transaction,
+    val groupId: String? = null,
+    val groupName: String? = null
+)
