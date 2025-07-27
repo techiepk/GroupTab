@@ -15,7 +15,7 @@ import com.pennywiseai.tracker.data.TransactionGroupMapping
 
 @Database(
     entities = [Transaction::class, Subscription::class, AppSettings::class, TransactionGroup::class, TransactionGroupMapping::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -130,6 +130,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
         
+        // Migration from version 5 to 6: Add sender column to transactions
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add sender column to transactions table
+                db.execSQL("ALTER TABLE transactions ADD COLUMN sender TEXT")
+            }
+        }
+        
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -137,7 +145,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "transaction_tracker_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

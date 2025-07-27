@@ -57,6 +57,16 @@ class TransactionAdapter(
                 
                 transactionDate.text = dateFormat.format(Date(transaction.date))
                 
+                // Show sender if available
+                if (!transaction.sender.isNullOrEmpty()) {
+                    transactionSender.text = transaction.sender
+                    transactionSender.visibility = android.view.View.VISIBLE
+                    senderSeparator.visibility = android.view.View.VISIBLE
+                } else {
+                    transactionSender.visibility = android.view.View.GONE
+                    senderSeparator.visibility = android.view.View.GONE
+                }
+                
                 // Show transaction type instead of just category
                 val typeText = transaction.transactionType.name.replace("_", " ")
                     .lowercase().replaceFirstChar { it.uppercase() }

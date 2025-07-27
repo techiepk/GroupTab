@@ -133,7 +133,8 @@ class TransactionRepository(private val database: AppDatabase) {
                         upiId = info.upiId,
                         transactionType = info.transactionType,
                         confidence = info.confidence,
-                        subscription = info.subscription
+                        subscription = info.subscription,
+                        sender = info.sender
                     ),
                     groupId = info.groupId,
                     groupName = info.groupName

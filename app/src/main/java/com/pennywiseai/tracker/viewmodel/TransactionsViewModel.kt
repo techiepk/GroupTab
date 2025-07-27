@@ -47,7 +47,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     private val _merchantFilter = MutableStateFlow<String?>(null)
     private val _dateRangeFilter = MutableStateFlow<Pair<Long, Long>?>(null)
     val dateRange: LiveData<Pair<Long, Long>?> = _dateRangeFilter.asLiveData()
-    private val _timeRangeFilter = MutableStateFlow<TimeRange?>(TimeRange.THIRTY_DAYS)
+    private val _timeRangeFilter = MutableStateFlow<TimeRange?>(TimeRange.THIS_MONTH)
     
     // Sorting property - load saved preference
     private val savedSortOrderName = sharedPrefs.getString(KEY_SORT_ORDER, null)
@@ -146,7 +146,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
     
     init {
         // Set default time range
-        setSelectedTimeRange(TimeRange.THIRTY_DAYS)
+        setSelectedTimeRange(TimeRange.THIS_MONTH)
         
         // Observe shared events
         viewModelScope.launch {
@@ -189,7 +189,7 @@ class TransactionsViewModel(application: Application) : AndroidViewModel(applica
         _categoryFilter.value = null
         _merchantFilter.value = null
         _dateRangeFilter.value = null
-        _timeRangeFilter.value = TimeRange.THIRTY_DAYS // Reset to default
+        _timeRangeFilter.value = TimeRange.THIS_MONTH // Reset to default
         _filterInfo.value = null
         
         // No need to call loadTransactions() - filters are reactive

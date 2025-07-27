@@ -118,16 +118,47 @@
 
             </LinearLayout>
 
-            <!-- Date -->
-            <TextView
-                android:id="@+id/transaction_date"
+            <!-- Date and Sender -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_tiny"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="@dimen/text_size_label_medium"
-                android:maxLines="1"
-                tools:text="Dec 25, 2024" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/transaction_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="@dimen/text_size_label_medium"
+                    android:maxLines="1"
+                    tools:text="Dec 25, 2024" />
+
+                <TextView
+                    android:id="@+id/sender_separator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_tiny"
+                    android:text="•"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="@dimen/text_size_label_medium"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/transaction_sender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="@dimen/text_size_label_medium"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:visibility="gone"
+                    tools:text="HDFCBK"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

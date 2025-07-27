@@ -53,9 +53,11 @@ class CreateGroupDialog : DialogFragment() {
     }
     
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        _binding = DialogCreateGroupBinding.inflate(layoutInflater)
+        
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle("Create Transaction Group")
-            .setView(createView())
+            .setView(binding.root)
             .setPositiveButton("Create") { _, _ ->
                 createGroup()
             }
@@ -66,13 +68,11 @@ class CreateGroupDialog : DialogFragment() {
             .create()
     }
     
-    private fun createView(): View {
-        _binding = DialogCreateGroupBinding.inflate(layoutInflater)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         
         setupUI()
         observeData()
-        
-        return binding.root
     }
     
     private fun setupUI() {
@@ -121,11 +121,11 @@ class CreateGroupDialog : DialogFragment() {
     
     private fun observeData() {
         // Observe loaded transaction
-        viewModel.transaction.observe(this) { transaction ->
+        viewModel.transaction.observe(viewLifecycleOwner) { transaction ->
             this.transaction = transaction
             transaction?.let {
                 // Pre-fill from transaction
-                if (it.merchant == "Unknown" || it.merchant.isEmpty()) {
+                if (it.merchant == "Unknown Merchant" || it.merchant == "Unknown" || it.merchant.isEmpty()) {
                     // For unknown merchants, try to extract from SMS
                     val suggestedPattern = extractPatternFromSms(it.rawSms)
                     binding.groupNameInput.setText(suggestedPattern.first)
@@ -156,7 +156,7 @@ class CreateGroupDialog : DialogFragment() {
         }
         
         // Observe preview count
-        viewModel.previewCount.observe(this) { count ->
+        viewModel.previewCount.observe(viewLifecycleOwner) { count ->
             binding.previewText.text = "$count matching transactions"
             binding.showPreviewButton.isEnabled = count > 0
         }
@@ -258,7 +258,7 @@ class CreateGroupDialog : DialogFragment() {
         }
         
         // Observe preview transactions
-        viewModel.previewTransactions.observe(this) { transactions ->
+        viewModel.previewTransactions.observe(viewLifecycleOwner) { transactions ->
             if (transactions.isEmpty()) {
                 dialogBinding.emptyState.visibility = View.VISIBLE
                 dialogBinding.previewRecyclerView.visibility = View.GONE
@@ -312,29 +312,37 @@ class CreateGroupDialog : DialogFragment() {
             binding.amountMaxInput.text.toString().toDoubleOrNull()
         } else null
         
-        lifecycleScope.launch {
-            val success = viewModel.createGroup(
-                name = name,
-                pattern = pattern,
-                patternType = patternType,
-                category = category,
-                applyToExisting = applyToExisting,
-                learnFromPattern = learnFromPattern,
-                amountMin = amountMin,
-                amountMax = amountMax,
-                exampleTransactionId = transaction?.id
-            )
-            
-            // Check if fragment is still attached before showing Toast
-            if (isAdded && context != null) {
-                if (success) {
-                    Toast.makeText(requireContext(), "Group '$name' created successfully!", Toast.LENGTH_SHORT).show()
-                    dismiss()
-                } else {
-                    Toast.makeText(requireContext(), "Failed to create group", Toast.LENGTH_SHORT).show()
+        // Show progress
+        binding.groupNameLayout.isEnabled = false
+        binding.patternLayout.isEnabled = false
+        
+        // Trigger the creation
+        viewModel.createGroup(
+            name = name,
+            pattern = pattern,
+            patternType = patternType,
+            category = category,
+            applyToExisting = applyToExisting,
+            learnFromPattern = learnFromPattern,
+            amountMin = amountMin,
+            amountMax = amountMax,
+            exampleTransactionId = transaction?.id,
+            onComplete = { success ->
+                // This will be called from the ViewModel when done
+                activity?.runOnUiThread {
+                    if (isAdded && context != null) {
+                        if (success) {
+                            Toast.makeText(requireContext(), "Group '$name' created successfully!", Toast.LENGTH_SHORT).show()
+                            dismiss()
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to create group", Toast.LENGTH_SHORT).show()
+                            binding.groupNameLayout.isEnabled = true
+                            binding.patternLayout.isEnabled = true
+                        }
+                    }
                 }
             }
-        }
+        )
     }
     
     override fun onDestroyView() {

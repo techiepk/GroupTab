@@ -14,6 +14,7 @@ data class Transaction(
     val upiId: String?,
     val transactionType: TransactionType = TransactionType.UNKNOWN,
     val confidence: Float = 0.0f,
+    val sender: String? = null, // SMS sender ID (e.g., HDFCBK, ICICIT)
     // Keep subscription for backward compatibility during migration
     @Deprecated("Use transactionType instead") 
     val subscription: Boolean = false

@@ -122,12 +122,12 @@ class TransactionsSimpleFragment : Fragment() {
         
         binding.chipThisMonth.isChecked = true
         
-        viewModel.setSelectedTimeRange(TimeRange.THIRTY_DAYS)
+        // Don't override - let ViewModel's default (THIS_MONTH) apply
         
         binding.transactionsTimeRangeChips.setOnCheckedStateChangeListener { _, checkedIds ->
             when {
                 binding.chipThisMonth.id in checkedIds -> {
-                    viewModel.setSelectedTimeRange(TimeRange.THIRTY_DAYS)
+                    viewModel.setSelectedTimeRange(TimeRange.THIS_MONTH)
                 }
                 binding.chipAllTime.id in checkedIds -> {
                     viewModel.setSelectedTimeRange(TimeRange.ALL_TIME)

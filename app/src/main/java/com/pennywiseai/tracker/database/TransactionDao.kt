@@ -156,6 +156,7 @@ data class TransactionWithGroupInfo(
     val transactionType: com.pennywiseai.tracker.data.TransactionType,
     val confidence: Float,
     val subscription: Boolean,
+    val sender: String?,
     val groupId: String?,
     val groupName: String?
 )

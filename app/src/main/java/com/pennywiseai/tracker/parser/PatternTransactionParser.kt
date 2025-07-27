@@ -38,11 +38,11 @@ class PatternTransactionParser {
         )
         
         // Apply SMS filters first
-        if (!smsFilter.shouldProcessSms(smsBody)) {
+        if (!smsFilter.shouldProcessSms(smsBody, sender)) {
             val reason = smsFilter.getFilterReason(smsBody)
             LogStreamManager.log(
                 LogStreamManager.LogCategory.SMS_PROCESSING,
-                "🚫 SMS filtered: $reason",
+                "🚫 SMS filtered: $reason (sender: $sender)",
                 LogStreamManager.LogLevel.DEBUG
             )
             return null
@@ -91,7 +91,8 @@ class PatternTransactionParser {
                 upiId = upiId,
                 transactionType = transactionType,
                 confidence = 0.7f, // Lower confidence for pattern-based parsing
-                subscription = isSubscription
+                subscription = isSubscription,
+                sender = sender
             )
             
             Log.i(TAG, "✅ Successfully parsed transaction:")

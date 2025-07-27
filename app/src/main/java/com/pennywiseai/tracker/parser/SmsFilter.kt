@@ -37,26 +37,67 @@ class SmsFilter {
             
             // Promotional/Marketing
             "special offer", "exclusive deal", "discount", "sale", "limited time",
-            "click here", "apply now", "get instant", "win", "congratulations"
+            "click here", "apply now", "get instant", "win", "congratulations",
+            "worth rs", "worth inr", "worth ₹", "free gift", "prize", "lottery",
+            
+            // Wallet notifications (not bank transactions)
+            "wallet balance", "wallet credited", "wallet debited", "paytm wallet",
+            "phonepe wallet", "amazon pay", "mobikwik wallet", "freecharge wallet"
         )
         
     }
     
     /**
      * Check if SMS should be processed as a transaction
+     * @param smsBody The SMS text content
+     * @param sender The SMS sender ID
      * @return true if SMS should be processed, false if it should be ignored
      */
-    fun shouldProcessSms(smsBody: String): Boolean {
+    fun shouldProcessSms(smsBody: String, sender: String? = null): Boolean {
         val lowerSms = smsBody.lowercase()
+        
+        // First check sender if provided
+        if (sender != null) {
+            Log.d(TAG, "Checking sender: $sender")
+            
+            // Exclude known non-bank senders
+            if (BankSenderIds.isExcludedSender(sender)) {
+                Log.d(TAG, "Sender $sender is in excluded list")
+                return false
+            }
+            
+            // If it's a known bank sender, do lighter validation
+            if (BankSenderIds.isBankSender(sender)) {
+                Log.d(TAG, "Sender $sender is recognized as bank")
+                // Just check for amount and basic keywords
+                return containsAmount(smsBody) && !containsIgnoreKeywords(lowerSms)
+            }
+            
+            Log.d(TAG, "Sender $sender is NOT recognized as bank")
+        }
+        
+        // For unknown senders, REJECT by default
+        // We only want messages from known banks and UPI providers
         
         // Check for ignore keywords
         if (containsIgnoreKeywords(lowerSms)) {
             return false
         }
         
-        // Check if it contains amount (basic check)
-        val hasAmount = containsAmount(smsBody)
-        if (!hasAmount) {
+        // Must have amount
+        if (!containsAmount(smsBody)) {
+            return false
+        }
+        
+        // STRICT MODE: Only accept messages from known banks/UPI providers
+        // NO EXCEPTIONS - even if they have banking keywords
+        if (sender == null) {
+            // For legacy data without sender info, reject by default
+            Log.d(TAG, "No sender info - rejecting")
+            return false
+        } else if (!BankSenderIds.isBankSender(sender)) {
+            // Unknown sender = automatic reject
+            Log.w(TAG, "REJECTED: Unknown sender '$sender' - add to whitelist if this is your bank")
             return false
         }
         

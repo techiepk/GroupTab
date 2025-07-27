@@ -13,6 +13,7 @@ import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.repository.TransactionGroupRepository
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.pennywiseai.tracker.utils.SharedEventBus
 
 class CreateGroupViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -32,6 +33,9 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
     
     private val _previewTransactions = MutableLiveData<List<Transaction>>(emptyList())
     val previewTransactions: LiveData<List<Transaction>> = _previewTransactions
+    
+    private val _createResult = MutableLiveData<Boolean>()
+    val createResult: LiveData<Boolean> = _createResult
     
     fun loadTransaction(transactionId: String) {
         viewModelScope.launch {
@@ -146,7 +150,11 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
     
-    suspend fun createGroup(
+    fun clearCreateResult() {
+        _createResult.value = null
+    }
+    
+    fun createGroup(
         name: String,
         pattern: String,
         patternType: GroupingType,
@@ -155,9 +163,11 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
         learnFromPattern: Boolean,
         amountMin: Double? = null,
         amountMax: Double? = null,
-        exampleTransactionId: String? = null
-    ): Boolean {
-        return try {
+        exampleTransactionId: String? = null,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            try {
             
             // Create the group
             val group = groupRepository.createGroup(
@@ -182,15 +192,28 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
             // If apply to existing is enabled, find and add matching transactions
             if (applyToExisting) {
                 val allTransactions = transactionRepository.getAllTransactionsSync()
+                
+                // Focus on unknown merchant transactions for better pattern matching
+                val targetTransactions = if (patternType == GroupingType.MERCHANT_FUZZY) {
+                    // For fuzzy matching, prioritize unknown merchants but include all
+                    allTransactions.sortedBy { 
+                        if (it.merchant == "Unknown Merchant") 0 else 1 
+                    }
+                } else {
+                    allTransactions
+                }
+                
                 val matchingTransactions = findMatchingTransactions(
-                    allTransactions, 
+                    targetTransactions, 
                     pattern, 
                     patternType,
                     amountMin,
                     amountMax
                 )
                 
+                Log.i(TAG, "Found ${matchingTransactions.size} matching transactions to add to group '${group.name}'")
                 
+                var addedCount = 0
                 matchingTransactions.forEach { transaction ->
                     try {
                         // Check if transaction is already grouped
@@ -202,18 +225,29 @@ class CreateGroupViewModel(application: Application) : AndroidViewModel(applicat
                                 confidence = 0.9f,
                                 isManual = false // Auto-applied based on pattern
                             )
+                            addedCount++
+                            Log.d(TAG, "Added transaction ${transaction.merchant} (${transaction.amount}) to group")
                         }
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed to add transaction ${transaction.id} to group", e)
                     }
                 }
                 
+                Log.i(TAG, "Successfully added $addedCount transactions to group '${group.name}'")
+                
+                // Emit event to refresh UI
+                if (addedCount > 0) {
+                    SharedEventBus.emit(SharedEventBus.Event.GroupsUpdated)
+                }
             }
             
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create group", e)
-            false
+                _createResult.value = true
+                onComplete?.invoke(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create group", e)
+                _createResult.value = false
+                onComplete?.invoke(false)
+            }
         }
     }
     
