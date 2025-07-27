@@ -178,7 +178,11 @@ object BankSenderIds {
         "SWIGGY", "ZOMATO", "DOMINOS", "PIZZAH", "KFCIND", "MCDIND",
         
         // Others
-        "JUSTDL", "POLICYX", "TIMESJ", "NDTVPR"
+        "JUSTDL", "POLICYX", "TIMESJ", "NDTVPR",
+        
+        // Credit card spam senders
+        "CRCARD", "CRCDIN", "CREDIT", "CARDIN", "CARDOF", "CCARDS",
+        "Credit Cardin", "CreditCard", "CardOffer", "CardApply"
     )
     
     /**

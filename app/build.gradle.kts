@@ -105,7 +105,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     
     // MediaPipe for on-device LLM
-    implementation(libs.tensorflow.lite.task.text)
+    implementation(libs.mediapipe.tasks.genai)
     
     // AI Edge LocalAgents for Function Calling (temporarily removed due to availability)
     // implementation(libs.localagents.fc)

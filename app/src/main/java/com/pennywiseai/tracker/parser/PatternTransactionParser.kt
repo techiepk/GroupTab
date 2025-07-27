@@ -39,10 +39,20 @@ class PatternTransactionParser {
         
         // Apply SMS filters first
         if (!smsFilter.shouldProcessSms(smsBody, sender)) {
-            val reason = smsFilter.getFilterReason(smsBody)
+            val reason = smsFilter.getFilterReason(smsBody, sender)
             LogStreamManager.log(
                 LogStreamManager.LogCategory.SMS_PROCESSING,
-                "🚫 SMS filtered: $reason (sender: $sender)",
+                "🚫 SMS filtered: $reason",
+                LogStreamManager.LogLevel.DEBUG
+            )
+            return null
+        }
+        
+        // Additional spam check
+        if (smsFilter.isLikelySpam(smsBody)) {
+            LogStreamManager.log(
+                LogStreamManager.LogCategory.SMS_PROCESSING,
+                "🚫 SMS detected as spam based on pattern analysis",
                 LogStreamManager.LogLevel.DEBUG
             )
             return null
