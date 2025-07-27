@@ -21,12 +21,13 @@
 
 ## 📱 In Priority
 
-- [ ] better transaction page (date improvement)
-- [ ] backup feature
+- [ ] subscription tracking from pattern matching 
+- [ ] improve llm for parsing otherwise remove it, keep it for chatting and inference
 - [ ] more detailed graphs.
 - [ ] Pin feature unlimited
-- [ ] try some multiple models
-- [ ] in transactions, dont show groups
+- [X] in transactions, dont show groups
+- [ ] better transaction page (date improvement)
+- [ ] backup feature
 
 ## Overview
 
