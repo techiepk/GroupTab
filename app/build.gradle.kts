@@ -18,8 +18,8 @@ android {
         applicationId = "com.pennywiseai.tracker"
         minSdk = 31
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.0.3"
+        versionCode = 7
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -105,7 +105,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     
     // MediaPipe for on-device LLM
-    implementation(libs.mediapipe.tasks.genai)
+    implementation(libs.tensorflow.lite.task.text)
     
     // AI Edge LocalAgents for Function Calling (temporarily removed due to availability)
     // implementation(libs.localagents.fc)
