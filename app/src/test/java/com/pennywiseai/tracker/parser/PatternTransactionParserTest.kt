@@ -14,7 +14,7 @@ class PatternTransactionParserTest {
     
     @Test
     fun testDebitTransaction() {
-        val sms = "Debit Alert! Rs.500.00 debited from HDFC Bank A/c XX0093 on 09-07-25 to VPA zomato@paytm (UPI 107829781461)"
+        val sms = "Debit Alert! Rs.500.00 debited from HDFC Bank A/c XX1234 on 09-07-25 to VPA zomato@paytm (UPI 107829781461)"
         val transaction = parser.parseTransaction(sms, "HDFCBK", System.currentTimeMillis())
         
         assertNotNull(transaction)
@@ -27,7 +27,7 @@ class PatternTransactionParserTest {
     
     @Test
     fun testCreditTransaction() {
-        val sms = "Credit Alert! Rs.1200.00 credited to HDFC Bank A/c XX0093 on 09-07-25 from VPA hazimahmed088@okhdfcbank (UPI 107829781460)"
+        val sms = "Credit Alert! Rs.1200.00 credited to HDFC Bank A/c XX1234 on 09-07-25 from VPA hazimahmed088@okhdfcbank (UPI 107829781460)"
         val transaction = parser.parseTransaction(sms, "HDFCBK", System.currentTimeMillis())
         
         assertNotNull(transaction)

@@ -5,6 +5,7 @@ import com.pennywiseai.tracker.data.Transaction
 import com.pennywiseai.tracker.data.TransactionCategory
 import com.pennywiseai.tracker.data.TransactionType
 import com.pennywiseai.tracker.logging.LogStreamManager
+import com.pennywiseai.tracker.parser.bank.BankParserFactory
 import java.security.MessageDigest
 
 /**
@@ -59,6 +60,9 @@ class PatternTransactionParser {
         }
         
         try {
+            // Get bank-specific parser
+            val bankParser = BankParserFactory.getParser(sender)
+            
             // Extract amount (required)
             val amountInfo = amountExtractor.extract(smsBody, sender)
             if (amountInfo == null) {
@@ -70,8 +74,8 @@ class PatternTransactionParser {
                 return null
             }
             
-            // Extract merchant (required)
-            val merchant = merchantExtractor.extract(smsBody, sender) ?: "Unknown Merchant"
+            // Extract merchant using bank-specific parser
+            val merchant = bankParser.extractMerchant(smsBody, sender) ?: "Unknown Merchant"
             
             // Extract category
             val category = categoryExtractor.extract(smsBody, sender) ?: TransactionCategory.OTHER
@@ -80,7 +84,12 @@ class PatternTransactionParser {
             val transactionType = typeExtractor.extract(smsBody, sender)
             
             // Extract UPI ID (optional)
-            val upiId = upiExtractor.extract(smsBody, sender)
+            val upiId = bankParser.extractUpiVpa(smsBody) ?: upiExtractor.extract(smsBody, sender)
+            
+            // Extract additional bank-specific information
+            val accountLast4 = bankParser.extractAccountLast4(smsBody)
+            val reference = bankParser.extractReference(smsBody)
+            val availableBalance = bankParser.extractAvailableBalance(smsBody)
             
             // Check if it's a subscription
             val isSubscription = transactionType == TransactionType.SUBSCRIPTION ||
@@ -106,6 +115,15 @@ class PatternTransactionParser {
             )
             
             Log.i(TAG, "✅ Successfully parsed transaction:")
+            Log.i(TAG, "   Bank: ${bankParser.getBankName()}")
+            if (accountLast4 != null) Log.i(TAG, "   Account: ****$accountLast4")
+            if (reference != null) Log.i(TAG, "   Reference: $reference")
+            if (availableBalance != null) Log.i(TAG, "   Available Balance: ₹$availableBalance")
+            
+            // Store account balance information for later processing
+            transaction.accountLast4 = accountLast4
+            transaction.availableBalance = availableBalance
+            transaction.reference = reference
             
             LogStreamManager.log(
                 LogStreamManager.LogCategory.SMS_PROCESSING,
@@ -115,7 +133,11 @@ class PatternTransactionParser {
                     "amount" to amountInfo.amount,
                     "merchant" to merchant,
                     "category" to category.toString(),
-                    "type" to transactionType.toString()
+                    "type" to transactionType.toString(),
+                    "bank" to bankParser.getBankName(),
+                    "accountLast4" to (accountLast4 ?: ""),
+                    "reference" to (reference ?: ""),
+                    "availableBalance" to (availableBalance?.toString() ?: "")
                 )
             )
             

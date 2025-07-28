@@ -18,7 +18,17 @@ data class Transaction(
     // Keep subscription for backward compatibility during migration
     @Deprecated("Use transactionType instead") 
     val subscription: Boolean = false
-)
+) {
+    // Transient fields - not stored in database, used for balance tracking
+    @androidx.room.Ignore
+    var accountLast4: String? = null
+    
+    @androidx.room.Ignore
+    var availableBalance: Double? = null
+    
+    @androidx.room.Ignore
+    var reference: String? = null
+}
 
 enum class TransactionCategory {
     FOOD_DINING,

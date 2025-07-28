@@ -18,6 +18,7 @@ class TransactionRepository(private val database: AppDatabase) {
     private val subscriptionDao = database.subscriptionDao()
     private val settingsDao = database.settingsDao()
     private val _groupRepository by lazy { TransactionGroupRepository(database) }
+    private val accountBalanceRepository by lazy { AccountBalanceRepository(database.accountBalanceDao()) }
     
     // Transaction operations
     fun getAllTransactions(): Flow<List<Transaction>> = transactionDao.getAllTransactions()
@@ -43,10 +44,15 @@ class TransactionRepository(private val database: AppDatabase) {
     
     suspend fun insertTransaction(transaction: Transaction) {
         transactionDao.insertTransaction(transaction)
+        // Update account balance if available
+        accountBalanceRepository.updateBalanceFromTransaction(transaction)
     }
     
-    suspend fun insertTransactions(transactions: List<Transaction>) =
+    suspend fun insertTransactions(transactions: List<Transaction>) {
         transactionDao.insertTransactions(transactions)
+        // Update account balances for all transactions
+        accountBalanceRepository.updateBalancesFromTransactions(transactions)
+    }
     
     suspend fun updateTransaction(transaction: Transaction) =
         transactionDao.updateTransaction(transaction)
@@ -141,4 +147,11 @@ class TransactionRepository(private val database: AppDatabase) {
                 )
             }
         }
+        
+    // Account balance operations
+    fun getAllAccountBalances() = accountBalanceRepository.getAllBalances()
+    
+    fun getTotalAccountBalance() = accountBalanceRepository.getTotalBalance()
+    
+    suspend fun getAccountBalance(accountId: String) = accountBalanceRepository.getBalance(accountId)
 }

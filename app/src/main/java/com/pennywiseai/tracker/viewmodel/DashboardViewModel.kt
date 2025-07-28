@@ -39,6 +39,8 @@ import com.pennywiseai.tracker.utils.CurrencyFormatter
 import com.pennywiseai.tracker.utils.SharedEventBus
 import com.pennywiseai.tracker.background.ScanWorker
 import com.pennywiseai.tracker.logging.LogStreamManager
+import com.pennywiseai.tracker.data.AccountBalance
+import kotlinx.coroutines.flow.collectLatest
 
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -118,6 +120,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     
     val aiInsight: LiveData<AIInsightsGenerator.AIInsight?> = _currentInsight
     
+    private val _accountBalances = MutableLiveData<List<AccountBalance>>()
+    val accountBalances: LiveData<List<AccountBalance>> = _accountBalances
+    
+    private val _totalBalance = MutableLiveData<Double>()
+    val totalBalance: LiveData<Double> = _totalBalance
+    
     // Performance tracking
     private var lastProcessingTime = 0L
     private var totalProcessingTime = 0L
@@ -150,6 +158,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         loadCategorySpending()
         loadAIInsights()
         observeTransactions()
+        loadAccountBalances()
     }
     
     private fun initializeClassifier() {
@@ -849,6 +858,32 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     
     fun getAllInsightsForDisplay(): List<AIInsightsGenerator.AIInsight> {
         return _aiInsights.value ?: emptyList()
+    }
+    
+    private fun loadAccountBalances() {
+        viewModelScope.launch {
+            try {
+                // Collect account balances
+                repository.getAllAccountBalances().collectLatest { balances ->
+                    _accountBalances.postValue(balances)
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardViewModel", "Error loading account balances", e)
+                _accountBalances.postValue(emptyList())
+            }
+        }
+        
+        // Also load total balance
+        viewModelScope.launch {
+            try {
+                repository.getTotalAccountBalance().collectLatest { total ->
+                    _totalBalance.postValue(total ?: 0.0)
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardViewModel", "Error loading total balance", e)
+                _totalBalance.postValue(0.0)
+            }
+        }
     }
 }
 

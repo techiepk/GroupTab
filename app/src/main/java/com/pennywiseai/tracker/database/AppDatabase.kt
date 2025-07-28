@@ -12,10 +12,12 @@ import com.pennywiseai.tracker.data.Subscription
 import com.pennywiseai.tracker.data.AppSettings
 import com.pennywiseai.tracker.data.TransactionGroup
 import com.pennywiseai.tracker.data.TransactionGroupMapping
+import com.pennywiseai.tracker.data.AccountBalance
+import com.pennywiseai.tracker.dao.AccountBalanceDao
 
 @Database(
-    entities = [Transaction::class, Subscription::class, AppSettings::class, TransactionGroup::class, TransactionGroupMapping::class],
-    version = 6,
+    entities = [Transaction::class, Subscription::class, AppSettings::class, TransactionGroup::class, TransactionGroupMapping::class, AccountBalance::class],
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -25,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao
     abstract fun settingsDao(): SettingsDao
     abstract fun transactionGroupDao(): TransactionGroupDao
+    abstract fun accountBalanceDao(): AccountBalanceDao
     
     companion object {
         @Volatile
@@ -138,6 +141,26 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
         
+        // Migration from version 6 to 7: Add account_balances table
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create account_balances table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `account_balances` (
+                        `accountId` TEXT NOT NULL,
+                        `balance` REAL NOT NULL,
+                        `lastUpdated` INTEGER NOT NULL,
+                        `bankName` TEXT NOT NULL,
+                        `last4Digits` TEXT NOT NULL,
+                        PRIMARY KEY(`accountId`)
+                    )
+                """)
+                
+                // Create index for faster queries
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_account_balances_bankName` ON `account_balances` (`bankName`)")
+            }
+        }
+        
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -145,7 +168,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "transaction_tracker_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

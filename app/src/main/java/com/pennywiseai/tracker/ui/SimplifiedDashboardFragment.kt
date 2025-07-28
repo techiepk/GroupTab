@@ -28,6 +28,8 @@ import com.pennywiseai.tracker.utils.CurrencyFormatter
 import com.pennywiseai.tracker.utils.AIInsightsGenerator
 import com.pennywiseai.tracker.ui.UserMenuBottomSheetFragment
 import android.content.Intent
+import com.pennywiseai.tracker.adapter.AccountBalanceAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.pennywiseai.tracker.utils.DataExporter
 import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.repository.TransactionRepository
@@ -42,6 +44,7 @@ class SimplifiedDashboardFragment : Fragment() {
     private val binding get() = _binding!!
     
     private val viewModel: DashboardViewModel by viewModels()
+    private lateinit var accountBalanceAdapter: AccountBalanceAdapter
     
     private var isCategoriesExpanded = false
     
@@ -87,6 +90,13 @@ class SimplifiedDashboardFragment : Fragment() {
             subscriptionsTotal.text = "₹0/month"
             topCategoryName.text = "None"
             topCategoryAmount.text = "₹0"
+            
+            // Initialize account balance adapter
+            accountBalanceAdapter = AccountBalanceAdapter()
+            accountBalancesRecycler.apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                adapter = accountBalanceAdapter
+            }
             
             // Setup parser type selection
             val prefs = requireContext().getSharedPreferences("settings", 0)
@@ -247,6 +257,16 @@ class SimplifiedDashboardFragment : Fragment() {
         // Recent transactions
         viewModel.recentTransactions.observe(viewLifecycleOwner) { transactions ->
             updateRecentTransactions(transactions)
+        }
+        
+        // Account balances
+        viewModel.accountBalances.observe(viewLifecycleOwner) { balances ->
+            updateAccountBalances(balances)
+        }
+        
+        // Total balance
+        viewModel.totalBalance.observe(viewLifecycleOwner) { total ->
+            updateTotalBalance(total)
         }
         
         // Top category
@@ -852,6 +872,26 @@ class SimplifiedDashboardFragment : Fragment() {
             .replace(android.R.id.content, settingsFragment)
             .addToBackStack("settings")
             .commit()
+    }
+    
+    private fun updateAccountBalances(balances: List<com.pennywiseai.tracker.data.AccountBalance>) {
+        if (balances.isEmpty()) {
+            binding.noAccountBalances.visibility = View.VISIBLE
+            binding.accountBalancesRecycler.visibility = View.GONE
+        } else {
+            binding.noAccountBalances.visibility = View.GONE
+            binding.accountBalancesRecycler.visibility = View.VISIBLE
+            accountBalanceAdapter.submitList(balances)
+        }
+    }
+    
+    private fun updateTotalBalance(total: Double) {
+        if (total > 0) {
+            binding.totalBalanceValue.visibility = View.VISIBLE
+            binding.totalBalanceValue.text = "Total: ${CurrencyFormatter.formatCompact(total)}"
+        } else {
+            binding.totalBalanceValue.visibility = View.GONE
+        }
     }
     
     override fun onDestroyView() {
