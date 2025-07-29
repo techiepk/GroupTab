@@ -13,21 +13,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/categoryIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:gravity="center"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:textColor="?attr/colorOnSurface"
             tools:text="📱" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -37,7 +37,19 @@
                 android:layout_height="wrap_content"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="14sp"
+                android:lineSpacingExtra="2dp"
                 tools:text="Transaction found: Zomato - ₹299" />
+
+            <TextView
+                android:id="@+id/detailsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Category: Food | From: VD-HDFC"
+                tools:visibility="visible" />
 
         </LinearLayout>
 
@@ -47,8 +59,9 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="12sp"
-            tools:text="14:32:15.123" />
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            tools:text="14:32:15" />
 
     </LinearLayout>
 

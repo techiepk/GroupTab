@@ -8,7 +8,6 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import com.pennywiseai.tracker.R
 import com.pennywiseai.tracker.database.AppDatabase
-import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.sms.HistoricalSmsScanner
 import com.pennywiseai.tracker.firebase.FirebaseHelper
@@ -17,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import android.util.Log
 import com.pennywiseai.tracker.repository.TransactionGroupRepository
 import com.pennywiseai.tracker.grouping.TransactionGroupingService
+import com.pennywiseai.tracker.service.EMandateProcessingService
 
 class ScanWorker(
     context: Context,
@@ -73,22 +73,10 @@ class ScanWorker(
             
             // Initialize components
             val repository = TransactionRepository(AppDatabase.getDatabase(applicationContext))
-            val llmExtractor = LLMTransactionExtractor(applicationContext)
-            val smsScanner = HistoricalSmsScanner(applicationContext, repository, llmExtractor)
+            val smsScanner = HistoricalSmsScanner(applicationContext, repository)
             
-            // Get extraction mode preference
-            val prefs = applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            val usePatternMode = prefs.getBoolean("use_pattern_parser", false)
-            
-            // Set extraction mode
-            smsScanner.setExtractionMode(usePatternMode)
-            
-            // Initialize LLM only if not in pattern mode
-            if (!usePatternMode && !llmExtractor.initialize()) {
-                Log.e(TAG, "❌ Failed to initialize LLM for background scan")
-                showNotification("SMS scan failed - LLM initialization error", 100, 0, 0)
-                return Result.failure()
-            }
+            // Initialize pattern-based extractor
+            smsScanner.initializeExtractor()
             
             var totalTransactions = 0
             var currentProgress = 0
@@ -111,6 +99,13 @@ class ScanWorker(
                         scanResult = Result.failure()
                     } else {
                         Log.i(TAG, "✅ Background scan completed: $totalTransactions transactions found")
+                        
+                        // Process E-Mandate messages after scan
+                        Log.i(TAG, "📅 Processing E-Mandate messages...")
+                        showNotification("Processing subscriptions...", 100, progress.totalMessages, totalTransactions)
+                        
+                        val eMandateService = EMandateProcessingService(applicationContext)
+                        eMandateService.processEMandateMessages(daysBack)
                         
                         // Trigger automatic grouping after scan
                         if (totalTransactions > 0) {

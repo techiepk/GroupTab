@@ -10,170 +10,207 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_margin="16dp"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="0dp"
-        app:strokeWidth="0dp">
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="?android:attr/colorBackground">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <!-- Header -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/colorPrimary"
-                android:padding="20dp">
-
-                <TextView
-                    android:id="@+id/titleText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="SMS Scan Progress"
-                    android:textColor="@android:color/white"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/cancelScanButton"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:text="Cancel Scan"
-                        android:textColor="@android:color/white"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/closeButton"
-                        style="@style/Widget.Material3.Button.IconButton"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        app:icon="@drawable/ic_close_white"
-                        app:iconTint="@android:color/white" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/statusText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/titleText"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    android:visibility="gone"
-                    tools:text="✅ Scan Complete!" />
-
-            </RelativeLayout>
-
-            <!-- Progress Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progressBar"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/progressText"
-                        android:max="100"
-                        app:indicatorColor="?attr/colorPrimary"
-                        app:trackCornerRadius="4dp"
-                        app:trackThickness="8dp" />
-
-                    <TextView
-                        android:id="@+id/progressText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_marginStart="12dp"
-                        android:text="0%"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-
-                </RelativeLayout>
-
-                <TextView
-                    android:id="@+id/chunkProgressText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
-                    android:visibility="gone"
-                    tools:text="Chunk 3/10" />
-
-            </LinearLayout>
-
-            <!-- Stats Cards -->
+            <!-- Simplified Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp">
+                android:gravity="center_vertical"
+                android:padding="20dp">
 
-                <!-- Messages Processed Card -->
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
+                    android:orientation="vertical">
 
+                    <TextView
+                        android:id="@+id/titleText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Scanning Messages"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/statusText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Finding transactions..."
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/closeButton"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:icon="@drawable/ic_close"
+                    app:iconTint="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
+            <!-- Main Progress Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Simple Progress Display -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="12dp">
+                        android:gravity="center"
+                        android:layout_marginBottom="24dp">
 
                         <TextView
+                            android:id="@+id/progressText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="📱 Messages"
-                            android:textColor="?attr/colorOnPrimaryContainer"
-                            android:textSize="12sp" />
+                            android:text="0%"
+                            android:textSize="48sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorPrimary" />
 
                         <TextView
                             android:id="@+id/messagesProcessedText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0/0"
-                            android:textColor="?attr/colorOnPrimaryContainer"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            android:text="0 of 0 messages"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                     </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
+                    <!-- Simple Stats Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
 
-                <!-- Transactions Found Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/transactionsFoundText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="32sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorPrimary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Transactions"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="48dp"
+                            android:layout_gravity="center"
+                            android:background="?attr/colorOutlineVariant" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/elapsedTimeText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="00:00"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Time Elapsed"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Linear Progress Bar -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
+                android:max="100"
+                app:indicatorColor="?attr/colorPrimary"
+                app:trackCornerRadius="2dp"
+                app:trackThickness="4dp" />
+
+            <!-- Recent Activity Log (Simplified) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                    app:cardCornerRadius="12dp"
+                    android:text="Recent Activity"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Minimal Log List -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
+                    app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                    app:strokeWidth="0dp"
+                    app:cardCornerRadius="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -182,56 +219,22 @@
                         android:padding="12dp">
 
                         <TextView
+                            android:id="@+id/chunkProgressText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="💳 Transactions"
-                            android:textColor="?attr/colorOnSecondaryContainer"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:id="@+id/transactionsFoundText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="?attr/colorOnSecondaryContainer"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Speed Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorTertiaryContainer"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⚡ Speed"
-                            android:textColor="?attr/colorOnTertiaryContainer"
-                            android:textSize="12sp" />
+                            android:text="Processing messages..."
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="13sp"
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/speedText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0 msg/s"
-                            android:textColor="?attr/colorOnTertiaryContainer"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:text="Speed: Calculating..."
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="12sp"
+                            android:layout_marginTop="4dp" />
 
                     </LinearLayout>
 
@@ -239,24 +242,13 @@
 
             </LinearLayout>
 
-            <!-- Time Elapsed -->
-            <TextView
-                android:id="@+id/elapsedTimeText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:text="00:00"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="14sp" />
-
-            <!-- Filter Chips -->
+            <!-- Simplified Activity Filters -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:paddingHorizontal="16dp"
-                android:scrollbars="none">
+                android:paddingHorizontal="20dp"
+                android:scrollbars="none"
+                android:visibility="gone">
 
                 <com.google.android.material.chip.ChipGroup
                     android:layout_width="wrap_content"
@@ -275,38 +267,56 @@
                         android:id="@+id/chipSms"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📱 SMS"
+                        android:text="Messages"
                         app:chipBackgroundColor="?attr/colorSurfaceVariant" />
 
                     <com.google.android.material.chip.Chip
-                        android:id="@+id/chipLlm"
+                        android:id="@+id/chipTransaction"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🤖 LLM"
+                        android:text="Transactions"
                         app:chipBackgroundColor="?attr/colorSurfaceVariant" />
 
                     <com.google.android.material.chip.Chip
-                        android:id="@+id/chipDatabase"
+                        android:id="@+id/chipSubscription"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💾 Database"
+                        android:text="Subscriptions"
                         app:chipBackgroundColor="?attr/colorSurfaceVariant" />
 
                 </com.google.android.material.chip.ChipGroup>
 
             </HorizontalScrollView>
 
-            <!-- Log Entries -->
+            <!-- Detailed Log Entries -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/logRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="8dp"
                 android:layout_weight="1"
                 android:clipToPadding="false"
-                android:paddingHorizontal="16dp"
-                android:paddingBottom="16dp"
+                android:paddingHorizontal="20dp"
+                android:paddingBottom="20dp"
+                android:visibility="gone"
                 tools:listitem="@layout/item_log_entry" />
+
+            <!-- Action Button -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="20dp"
+                android:gravity="center">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelScanButton"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel Scan"
+                    app:icon="@drawable/ic_close" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

@@ -11,7 +11,6 @@ import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.llm.TransactionClassifier
 import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.sms.HistoricalSmsScanner
-import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -46,8 +45,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     
     private val repository = TransactionRepository(AppDatabase.getDatabase(application))
     private val groupRepository = TransactionGroupRepository(AppDatabase.getDatabase(application))
-    private val llmExtractor = LLMTransactionExtractor(application)
-    private val smsScanner = HistoricalSmsScanner(application, repository, llmExtractor)
+    private val smsScanner = HistoricalSmsScanner(application, repository)
     private val classifier = TransactionClassifier(application)
     private val aiInsightsGenerator = AIInsightsGenerator(repository, groupRepository)
     
@@ -170,19 +168,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
     
     private fun initializeLLMExtractor() {
-        viewModelScope.launch {
-            try {
-                Log.i("DashboardViewModel", "🔧 Initializing LLM Transaction Extractor...")
-                val isReady = llmExtractor.initialize()
-                if (isReady) {
-                    Log.i("DashboardViewModel", "✅ LLM Extractor initialized successfully")
-                } else {
-                    Log.w("DashboardViewModel", "⚠️ LLM Extractor initialization failed")
-                }
-            } catch (e: Exception) {
-                Log.e("DashboardViewModel", "❌ Error initializing LLM Extractor: ${e.message}")
-            }
-        }
+        // Pattern-based extractor is used by default, no initialization needed
     }
     
     fun reinitializeClassifier() {
@@ -198,14 +184,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     Log.w("DashboardViewModel", "⚠️ Classifier reinitialization failed")
                 }
                 
-                // Also reinitialize the LLM extractor
-                Log.i("DashboardViewModel", "🔄 Reinitializing LLM Extractor after model download...")
-                val extractorReady = llmExtractor.initialize()
-                if (extractorReady) {
-                    Log.i("DashboardViewModel", "✅ LLM Extractor reinitialized successfully")
-                } else {
-                    Log.w("DashboardViewModel", "⚠️ LLM Extractor reinitialization failed")
-                }
+                // Pattern-based extractor is used, no need to reinitialize
             } catch (e: Exception) {
                 Log.e("DashboardViewModel", "❌ Error reinitializing: ${e.message}")
                 _aiStatus.postValue(false)
@@ -796,8 +775,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             try {
                 
-                // Check if AI model is available
-                val isModelDownloaded = llmExtractor.isAvailable()
+                // Always use pattern-based extractor
+                val isModelDownloaded = false
                 
                 if (!isModelDownloaded) {
                     // Show basic insights when model not downloaded

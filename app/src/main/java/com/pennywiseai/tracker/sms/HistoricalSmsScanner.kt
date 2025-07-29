@@ -10,7 +10,6 @@ import com.pennywiseai.tracker.data.Transaction
 import com.pennywiseai.tracker.data.TransactionType
 import com.pennywiseai.tracker.data.TransactionCategory
 import com.pennywiseai.tracker.repository.TransactionRepository
-import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import com.pennywiseai.tracker.subscription.SubscriptionDetector
 import com.pennywiseai.tracker.service.PatternMatchingService
 import kotlinx.coroutines.Dispatchers
@@ -23,12 +22,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import com.pennywiseai.tracker.parser.TransactionExtractor
 import com.pennywiseai.tracker.parser.PatternExtractorAdapter
-import com.pennywiseai.tracker.parser.LLMExtractorAdapter
 
 class HistoricalSmsScanner(
     private val context: Context,
-    private val repository: TransactionRepository,
-    private val llmExtractor: LLMTransactionExtractor
+    private val repository: TransactionRepository
 ) {
     
     private val subscriptionDetector = SubscriptionDetector()
@@ -41,24 +38,19 @@ class HistoricalSmsScanner(
     }
     
     /**
-     * Set the extraction mode (pattern-based or LLM-based)
-     * @param usePatternExtractor true for pattern-based, false for LLM-based
+     * Initialize pattern-based extractor
      */
-    suspend fun setExtractionMode(usePatternExtractor: Boolean) {
-        transactionExtractor = if (usePatternExtractor) {
-            PatternExtractorAdapter().apply { initialize() }
-        } else {
-            LLMExtractorAdapter(context).apply { initialize() }
-        }
+    suspend fun initializeExtractor() {
+        transactionExtractor = PatternExtractorAdapter().apply { initialize() }
     }
     
     /**
-     * Get current extractor, initializing with LLM if not set
+     * Get current extractor, always using pattern-based
      */
     private suspend fun getExtractor(): TransactionExtractor {
         if (transactionExtractor == null) {
-            // Default to LLM extractor
-            transactionExtractor = LLMExtractorAdapter(context).apply { initialize() }
+            // Always use pattern-based extractor
+            transactionExtractor = PatternExtractorAdapter().apply { initialize() }
         }
         return transactionExtractor!!
     }
@@ -177,7 +169,7 @@ class HistoricalSmsScanner(
                         }
                         emit(ScanProgress(currentMessage, totalMessages, transactionsFound, false))
                         
-                        // Small delay between chunks to prevent overwhelming the LLM
+                        // Small delay between chunks to prevent overwhelming processing
                         kotlinx.coroutines.delay(100)
                         
                     } catch (e: Exception) {
@@ -234,7 +226,13 @@ class HistoricalSmsScanner(
             }
             
             try {
-                LogStreamManager.llmStarted(smsMessage.address, smsMessage.body)
+                // Log start of processing
+                LogStreamManager.log(
+                    LogStreamManager.LogCategory.SMS_PROCESSING,
+                    "Processing SMS from ${smsMessage.address}",
+                    LogStreamManager.LogLevel.DEBUG,
+                    "Preview: ${smsMessage.body.take(50)}..."
+                )
                 
                 val extractor = getExtractor()
                 val transaction = extractor.extractTransaction(smsMessage.body, smsMessage.address, smsMessage.date)
@@ -255,15 +253,19 @@ class HistoricalSmsScanner(
                         createSubscriptionFromTransaction(transaction)
                     }
                     
-                    LogStreamManager.llmCompleted(true)
+                    // Transaction extracted successfully
                 } else {
                     LogStreamManager.messageProcessed(smsMessage.address, false)
-                    LogStreamManager.llmCompleted(true)
+                    // Transaction extracted successfully
                 }
                 
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing SMS: ${e.message}")
-                LogStreamManager.llmCompleted(false, e.message)
+                LogStreamManager.log(
+                    LogStreamManager.LogCategory.SMS_PROCESSING,
+                    "Error processing SMS: ${e.message}",
+                    LogStreamManager.LogLevel.ERROR
+                )
                 // Continue processing other messages in the chunk
                 continue
             }

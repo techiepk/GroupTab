@@ -11,7 +11,6 @@ import com.pennywiseai.tracker.data.ScanProgress
 import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.sms.HistoricalSmsScanner
-import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import com.pennywiseai.tracker.llm.PersistentModelDownloader
 import com.pennywiseai.tracker.llm.DownloadProgress
 import com.pennywiseai.tracker.llm.TransactionClassifier
@@ -26,8 +25,7 @@ import androidx.work.await
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     
     private val repository = TransactionRepository(AppDatabase.getDatabase(application))
-    private val llmExtractor = LLMTransactionExtractor(application)
-    private val smsScanner = HistoricalSmsScanner(application, repository, llmExtractor)
+    private val smsScanner = HistoricalSmsScanner(application, repository)
     private val modelDownloader = PersistentModelDownloader(application)
     private val transactionClassifier = TransactionClassifier(application)
     
@@ -114,14 +112,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     
     fun setExtractionMode(usePatternMode: Boolean) {
         viewModelScope.launch {
-            _isPatternMode.value = usePatternMode
+            _isPatternMode.value = true  // Always use pattern mode
             
-            // Save preference
+            // Save preference - always pattern mode
             val prefs = getApplication<Application>().getSharedPreferences("settings", Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(PREF_EXTRACTION_MODE, usePatternMode).apply()
+            prefs.edit().putBoolean(PREF_EXTRACTION_MODE, true).apply()
             
-            // Update scanner
-            smsScanner.setExtractionMode(usePatternMode)
+            // Initialize pattern-based extractor
+            smsScanner.initializeExtractor()
         }
     }
     

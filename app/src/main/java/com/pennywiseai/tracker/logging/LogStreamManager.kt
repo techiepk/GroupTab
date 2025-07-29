@@ -22,6 +22,7 @@ object LogStreamManager {
         val category: LogCategory,
         val message: String,
         val level: LogLevel = LogLevel.INFO,
+        val details: String? = null,
         val metadata: Map<String, Any>? = null
     ) {
         val formattedTime: String
@@ -30,8 +31,8 @@ object LogStreamManager {
     
     enum class LogCategory {
         SMS_PROCESSING,
-        LLM_ANALYSIS,
         DATABASE,
+        SUBSCRIPTION,
         CHUNK_PROCESSING,
         GENERAL
     }
@@ -92,11 +93,12 @@ object LogStreamManager {
         _scanStats.value = ScanStats()
     }
     
-    fun log(category: LogCategory, message: String, level: LogLevel = LogLevel.INFO, metadata: Map<String, Any>? = null) {
+    fun log(category: LogCategory, message: String, level: LogLevel = LogLevel.INFO, details: String? = null, metadata: Map<String, Any>? = null) {
         val entry = LogEntry(
             category = category,
             message = message,
             level = level,
+            details = details,
             metadata = metadata
         )
         
@@ -131,6 +133,7 @@ object LogStreamManager {
             LogCategory.CHUNK_PROCESSING, 
             "✅ Chunk $chunkNumber/$totalChunks processed - Found $transactionsInChunk transactions",
             LogLevel.INFO,
+            null,
             mapOf("chunk" to chunkNumber, "transactions" to transactionsInChunk)
         )
     }
@@ -148,6 +151,7 @@ object LogStreamManager {
                 LogCategory.SMS_PROCESSING,
                 "💳 Transaction found: $merchant - ₹$amount",
                 LogLevel.INFO,
+                "From: $sender",
                 mapOf("sender" to sender, "merchant" to merchant, "amount" to amount)
             )
         } else {
@@ -159,20 +163,13 @@ object LogStreamManager {
         }
     }
     
-    fun llmStarted(sender: String, messagePreview: String) {
+    fun subscriptionDetected(merchant: String, amount: Double, frequency: String? = null) {
         log(
-            LogCategory.LLM_ANALYSIS,
-            "🤖 Analyzing SMS from $sender: ${messagePreview.take(50)}...",
-            LogLevel.INFO
+            LogCategory.SUBSCRIPTION,
+            "🔄 Subscription detected: $merchant - ₹$amount",
+            LogLevel.INFO,
+            frequency?.let { "Frequency: $it" }
         )
-    }
-    
-    fun llmCompleted(success: Boolean, error: String? = null) {
-        if (success) {
-            log(LogCategory.LLM_ANALYSIS, "✅ LLM analysis complete", LogLevel.DEBUG)
-        } else {
-            log(LogCategory.LLM_ANALYSIS, "❌ LLM analysis failed: ${error ?: "Unknown error"}", LogLevel.ERROR)
-        }
     }
     
     fun databaseOperation(operation: String, count: Int = 1) {
@@ -180,6 +177,7 @@ object LogStreamManager {
             LogCategory.DATABASE,
             "💾 Database: $operation ($count items)",
             LogLevel.DEBUG,
+            null,
             mapOf("operation" to operation, "count" to count)
         )
     }

@@ -8,7 +8,11 @@ object BankParserFactory {
     // List of available bank parsers
     private val bankParsers = listOf(
         HDFCBankParser(),
-        ICICIBankParser()
+        ICICIBankParser(),
+        SBIBankParser(),
+        IndusIndBankParser(),
+        UnionBankParser(),
+        IndianBankParser()
         // Add more bank parsers as needed
     )
     

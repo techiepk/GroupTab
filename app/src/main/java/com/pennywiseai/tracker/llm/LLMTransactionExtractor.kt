@@ -143,7 +143,7 @@ Response:""".trimIndent()
     private fun parseTransactionResponse(response: String, smsBody: String, sender: String, timestamp: Long): Transaction? {
         try {
             LogStreamManager.log(
-                LogStreamManager.LogCategory.LLM_ANALYSIS,
+                LogStreamManager.LogCategory.SMS_PROCESSING,
                 "🔧 Parsing LLM response...",
                 LogStreamManager.LogLevel.DEBUG
             )
@@ -164,7 +164,7 @@ Response:""".trimIndent()
             
             if (!isTransaction) {
                 LogStreamManager.log(
-                    LogStreamManager.LogCategory.LLM_ANALYSIS,
+                    LogStreamManager.LogCategory.SMS_PROCESSING,
                     "📭 LLM determined this is not a transaction",
                     LogStreamManager.LogLevel.DEBUG
                 )
@@ -184,9 +184,10 @@ Response:""".trimIndent()
             
             // Enhanced logging for debugging
             LogStreamManager.log(
-                LogStreamManager.LogCategory.LLM_ANALYSIS,
+                LogStreamManager.LogCategory.SMS_PROCESSING,
                 "🎯 Extracted transaction details - Amount: ${if (direction == "CREDIT") "+" else "-"}₹${kotlin.math.abs(amount)}, Merchant: $merchant, Category: $categoryStr",
                 LogStreamManager.LogLevel.DEBUG,
+                null,
                 mapOf(
                     "amount" to amount,
                     "direction" to direction,

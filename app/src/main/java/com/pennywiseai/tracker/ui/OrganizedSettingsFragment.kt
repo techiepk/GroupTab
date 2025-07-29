@@ -75,9 +75,10 @@ class OrganizedSettingsFragment : Fragment() {
                 showScanPeriodDialog()
             }
             
-            extractionModeItem.setOnClickListener {
-                showExtractionModeDialog()
-            }
+            // Analysis mode removed
+            // extractionModeItem.setOnClickListener {
+            //     showExtractionModeDialog()
+            // }
             
             // AI & Intelligence
             modelManagementItem.setOnClickListener {
@@ -126,14 +127,14 @@ class OrganizedSettingsFragment : Fragment() {
             }
         }
         
-        // Observe extraction mode
-        viewModel.isPatternMode.observe(viewLifecycleOwner) { isPattern ->
-            binding.extractionModeValue.text = if (!isPattern) {
-                "AI Assistant"
-            } else {
-                "Quick Scan"
-            }
-        }
+        // Analysis mode removed
+        // viewModel.isPatternMode.observe(viewLifecycleOwner) { isPattern ->
+        //     binding.extractionModeValue.text = if (!isPattern) {
+        //         "AI Assistant"
+        //     } else {
+        //         "Quick Scan"
+        //     }
+        // }
         
         // Observe model status
         viewModel.modelStatus.observe(viewLifecycleOwner) { status ->
@@ -168,19 +169,20 @@ class OrganizedSettingsFragment : Fragment() {
             .show()
     }
     
-    private fun showExtractionModeDialog() {
-        val options = arrayOf("Quick Scan", "AI Assistant")
-        val currentSelection = if (viewModel.isPatternMode.value == true) 0 else 1
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Analysis Mode")
-            .setSingleChoiceItems(options, currentSelection) { dialog, which ->
-                viewModel.setExtractionMode(which == 0)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+    // Analysis mode removed
+    // private fun showExtractionModeDialog() {
+    //     val options = arrayOf("Quick Scan", "AI Assistant")
+    //     val currentSelection = if (viewModel.isPatternMode.value == true) 0 else 1
+    //     
+    //     MaterialAlertDialogBuilder(requireContext())
+    //         .setTitle("Analysis Mode")
+    //         .setSingleChoiceItems(options, currentSelection) { dialog, which ->
+    //             viewModel.setExtractionMode(which == 0)
+    //             dialog.dismiss()
+    //         }
+    //         .setNegativeButton("Cancel", null)
+    //         .show()
+    // }
     
     
     private fun showModelManagementDialog() {

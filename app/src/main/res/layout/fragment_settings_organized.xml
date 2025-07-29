@@ -70,7 +70,8 @@
 
         </LinearLayout>
 
-        <!-- Extraction Mode -->
+        <!-- Extraction Mode (Removed) -->
+        <!--
         <LinearLayout
             android:id="@+id/extraction_mode_item"
             android:layout_width="match_parent"
@@ -97,6 +98,7 @@
                 android:textSize="14sp" />
 
         </LinearLayout>
+        -->
 
 
         <!-- Divider -->

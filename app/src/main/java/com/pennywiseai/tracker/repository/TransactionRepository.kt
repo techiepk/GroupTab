@@ -154,4 +154,22 @@ class TransactionRepository(private val database: AppDatabase) {
     fun getTotalAccountBalance() = accountBalanceRepository.getTotalBalance()
     
     suspend fun getAccountBalance(accountId: String) = accountBalanceRepository.getBalance(accountId)
+    
+    // Helper methods for E-Mandate processing
+    suspend fun findTransactionsByAmountAndMerchant(amount: Double, merchantPattern: String): List<Transaction> {
+        // Find transactions with matching amount and merchant name
+        val allTransactions = transactionDao.getAllTransactionsList()
+        return allTransactions.filter { transaction ->
+            kotlin.math.abs(transaction.amount - amount) < 0.01 && // Allow small difference for rounding
+            transaction.merchant.contains(merchantPattern, ignoreCase = true)
+        }
+    }
+    
+    suspend fun findSubscriptionByMerchantAndAmount(merchant: String, amount: Double): Subscription? {
+        val allSubscriptions = subscriptionDao.getAllSubscriptionsList()
+        return allSubscriptions.firstOrNull { subscription ->
+            subscription.merchantName.contains(merchant, ignoreCase = true) &&
+            kotlin.math.abs(subscription.amount - amount) < 0.01
+        }
+    }
 }

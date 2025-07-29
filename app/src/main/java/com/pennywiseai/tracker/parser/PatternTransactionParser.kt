@@ -63,6 +63,16 @@ class PatternTransactionParser {
             // Get bank-specific parser
             val bankParser = BankParserFactory.getParser(sender)
             
+            // Skip E-Mandate notifications - they will be processed after scanning
+            if (smsBody.contains("E-Mandate!", ignoreCase = true)) {
+                LogStreamManager.log(
+                    LogStreamManager.LogCategory.SMS_PROCESSING,
+                    "📅 E-Mandate notification detected, will process after scan completes",
+                    LogStreamManager.LogLevel.INFO
+                )
+                return null
+            }
+            
             // Extract amount (required)
             val amountInfo = amountExtractor.extract(smsBody, sender)
             if (amountInfo == null) {
@@ -129,6 +139,7 @@ class PatternTransactionParser {
                 LogStreamManager.LogCategory.SMS_PROCESSING,
                 "✅ Pattern parser extracted: ${if (amountInfo.isCredit) "+" else "-"}₹${kotlin.math.abs(amountInfo.amount)} at $merchant",
                 LogStreamManager.LogLevel.INFO,
+                null,
                 mapOf(
                     "amount" to amountInfo.amount,
                     "merchant" to merchant,

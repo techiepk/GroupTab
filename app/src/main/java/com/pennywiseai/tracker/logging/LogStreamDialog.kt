@@ -105,11 +105,11 @@ class LogStreamDialog : DialogFragment() {
             chipSms.setOnCheckedChangeListener { _, isChecked ->
                 if (isChecked) logAdapter.setFilter(LogStreamManager.LogCategory.SMS_PROCESSING)
             }
-            chipLlm.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) logAdapter.setFilter(LogStreamManager.LogCategory.LLM_ANALYSIS)
-            }
-            chipDatabase.setOnCheckedChangeListener { _, isChecked ->
+            chipTransaction.setOnCheckedChangeListener { _, isChecked ->
                 if (isChecked) logAdapter.setFilter(LogStreamManager.LogCategory.DATABASE)
+            }
+            chipSubscription.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) logAdapter.setFilter(LogStreamManager.LogCategory.GENERAL)
             }
         }
     }
@@ -144,15 +144,17 @@ class LogStreamDialog : DialogFragment() {
             progressBar.progress = stats.progressPercentage
             progressText.text = "${stats.progressPercentage}%"
             
-            // Stats cards
-            messagesProcessedText.text = "${stats.messagesProcessed}/${stats.totalMessages}"
+            // Messages count
+            messagesProcessedText.text = "${stats.messagesProcessed} of ${stats.totalMessages} messages"
+            
+            // Transaction count
             transactionsFoundText.text = stats.transactionsFound.toString()
             
-            // Speed
+            // Speed text
             val speed = if (stats.messagesPerSecond > 0) {
-                String.format("%.1f msg/s", stats.messagesPerSecond)
+                String.format("Speed: %.1f msg/s", stats.messagesPerSecond)
             } else {
-                "Calculating..."
+                "Speed: Calculating..."
             }
             speedText.text = speed
             
@@ -163,7 +165,7 @@ class LogStreamDialog : DialogFragment() {
             
             // Current chunk
             if (stats.totalChunks > 0) {
-                chunkProgressText.text = "Chunk ${stats.currentChunk}/${stats.totalChunks}"
+                chunkProgressText.text = "Processing chunk ${stats.currentChunk} of ${stats.totalChunks}"
                 chunkProgressText.visibility = View.VISIBLE
             } else {
                 chunkProgressText.visibility = View.GONE
@@ -171,23 +173,23 @@ class LogStreamDialog : DialogFragment() {
             
             // Complete/Error state
             if (stats.isComplete) {
-                cancelScanButton.visibility = View.GONE
                 if (stats.error != null) {
+                    statusText.text = "Scan failed: ${stats.error}"
+                    titleText.text = "Scan Failed"
                     progressBar.progressTintList = android.content.res.ColorStateList.valueOf(
                         MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorError)
                     )
-                    statusText.text = "❌ Error: ${stats.error}"
-                    statusText.visibility = View.VISIBLE
                 } else {
-                    progressBar.progressTintList = android.content.res.ColorStateList.valueOf(
-                        MaterialColors.getColor(requireView(), com.google.android.material.R.attr.colorPrimary)
-                    )
-                    statusText.text = "✅ Scan Complete!"
-                    statusText.visibility = View.VISIBLE
+                    statusText.text = "Found ${stats.transactionsFound} transactions"
+                    titleText.text = "Scan Complete"
+                    cancelScanButton.text = "Done"
+                    cancelScanButton.setOnClickListener {
+                        dismiss()
+                    }
                 }
             } else {
                 cancelScanButton.visibility = View.VISIBLE
-                statusText.visibility = View.GONE
+                statusText.text = "Finding transactions..."
             }
         }
     }
@@ -249,11 +251,19 @@ class LogAdapter : RecyclerView.Adapter<LogAdapter.LogViewHolder>() {
                 timeText.text = entry.formattedTime
                 messageText.text = entry.message
                 
+                // Show details text if available
+                if (entry.details != null) {
+                    detailsText.text = entry.details
+                    detailsText.visibility = View.VISIBLE
+                } else {
+                    detailsText.visibility = View.GONE
+                }
+                
                 // Category icon and color
                 val (icon, color) = when (entry.category) {
                     LogStreamManager.LogCategory.SMS_PROCESSING -> "📱" to com.google.android.material.R.attr.colorPrimary
-                    LogStreamManager.LogCategory.LLM_ANALYSIS -> "🤖" to com.google.android.material.R.attr.colorSecondary
-                    LogStreamManager.LogCategory.DATABASE -> "💾" to com.google.android.material.R.attr.colorTertiary
+                    LogStreamManager.LogCategory.DATABASE -> "💳" to com.google.android.material.R.attr.colorTertiary
+                    LogStreamManager.LogCategory.SUBSCRIPTION -> "🔄" to com.google.android.material.R.attr.colorSecondary
                     LogStreamManager.LogCategory.CHUNK_PROCESSING -> "📦" to com.google.android.material.R.attr.colorPrimaryContainer
                     LogStreamManager.LogCategory.GENERAL -> "📋" to com.google.android.material.R.attr.colorSurfaceVariant
                 }

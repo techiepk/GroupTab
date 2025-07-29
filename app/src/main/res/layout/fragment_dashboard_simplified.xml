@@ -95,70 +95,27 @@
                             app:iconGravity="textStart"
                             android:layout_marginBottom="12dp" />
 
-                        <!-- Parsing Method Selection -->
+                        <!-- Parser Status -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical">
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="4dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_info"
+                                app:tint="?attr/colorOnSurfaceVariant"
+                                android:layout_marginEnd="8dp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Parsing method:"
+                                android:text="Using pattern-based parser for fast processing"
                                 android:textColor="?attr/colorOnSurfaceVariant"
-                                android:textSize="14sp"
-                                android:layout_marginBottom="8dp" />
-
-                            <RadioGroup
-                                android:id="@+id/parser_type_group"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content">
-
-                                <RadioButton
-                                    android:id="@+id/parser_ai"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="AI-powered (Recommended)"
-                                    android:textSize="14sp"
-                                    android:paddingVertical="8dp" />
-
-                                <RadioButton
-                                    android:id="@+id/parser_pattern"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Pattern-based (Faster)"
-                                    android:textSize="14sp"
-                                    android:paddingVertical="8dp" />
-
-                            </RadioGroup>
-
-                            <!-- AI Model Status -->
-                            <LinearLayout
-                                android:id="@+id/ai_model_status"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:visibility="gone"
-                                android:layout_marginTop="8dp"
-                                android:padding="8dp"
-                                android:background="?attr/colorErrorContainer">
-
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:src="@drawable/ic_info"
-                                    app:tint="?attr/colorOnErrorContainer"
-                                    android:layout_marginEnd="8dp"
-                                    android:layout_gravity="center_vertical" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="AI model not installed"
-                                    android:textColor="?attr/colorOnErrorContainer"
-                                    android:textSize="12sp" />
-
-                            </LinearLayout>
+                                android:textSize="12sp" />
 
                         </LinearLayout>
 
@@ -166,67 +123,6 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- AI Model Download Banner -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/ai_model_banner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="24dp"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone"
-                    app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/ic_ai_assistant"
-                            app:tint="?attr/colorOnSecondaryContainer"
-                            android:layout_marginEnd="16dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="AI Model Required"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSecondaryContainer"
-                                android:textSize="16sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Download AI model to enable smart transaction analysis"
-                                android:textColor="?attr/colorOnSecondaryContainer"
-                                android:textSize="14sp"
-                                android:layout_marginTop="2dp" />
-
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/download_model_button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Download"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            android:textColor="?attr/colorSecondary" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Enhanced Financial Overview Card -->
                 <com.google.android.material.card.MaterialCardView

@@ -10,8 +10,16 @@ class HDFCBankParser : BankParser() {
     
     override fun canHandle(sender: String): Boolean {
         val upperSender = sender.uppercase()
-        return upperSender.contains("HDFC") || upperSender == "HDFCBK" || 
-               upperSender.matches(Regex("^[A-Z]{2}-HDFC.*"))
+        return upperSender.contains("HDFC") || 
+               // Direct sender IDs
+               upperSender == "HDFCBK" ||
+               // DLT patterns for transactions (-S suffix)
+               upperSender.matches(Regex("^[A-Z]{2}-HDFCBK-S$")) ||
+               // Other DLT patterns (OTP, Promotional, Govt)
+               upperSender.matches(Regex("^[A-Z]{2}-HDFCBK-[TPG]$")) ||
+               // Legacy patterns without suffix
+               upperSender.matches(Regex("^[A-Z]{2}-HDFCBK$")) ||
+               upperSender.matches(Regex("^[A-Z]{2}-HDFC$"))
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
@@ -138,4 +146,54 @@ class HDFCBankParser : BankParser() {
             .trim()
             .takeIf { it.isNotEmpty() } ?: merchant
     }
+    
+    /**
+     * Parse E-Mandate subscription notification
+     * Example:
+     * E-Mandate!
+     * Rs.529.82 will be deducted on 19/07/25, 00:00:00
+     * For Microsoft Regional Sales Corporation mandate
+     * UMN 337adbca0a8e470c906ff907316f0dda@apl
+     * Maintain Balance
+     * -HDFC Bank
+     */
+    fun parseEMandateSubscription(message: String): EMandateInfo? {
+        if (!message.contains("E-Mandate!", ignoreCase = true)) {
+            return null
+        }
+        
+        // Extract amount
+        val amountPattern = Regex("""Rs\.?(\d+(?:\.\d{2})?)\s+will\s+be\s+deducted""", RegexOption.IGNORE_CASE)
+        val amount = amountPattern.find(message)?.let { match ->
+            match.groupValues[1].toDoubleOrNull()
+        } ?: return null
+        
+        // Extract date
+        val datePattern = Regex("""deducted\s+on\s+(\d{2}/\d{2}/\d{2})""", RegexOption.IGNORE_CASE)
+        val dateStr = datePattern.find(message)?.groupValues?.get(1)
+        
+        // Extract merchant name
+        val merchantPattern = Regex("""For\s+([^\n]+?)\s+mandate""", RegexOption.IGNORE_CASE)
+        val merchant = merchantPattern.find(message)?.let { match ->
+            cleanMerchantName(match.groupValues[1].trim())
+        } ?: "Unknown Subscription"
+        
+        // Extract UMN (Unique Mandate Number)
+        val umnPattern = Regex("""UMN\s+([a-zA-Z0-9@]+)""", RegexOption.IGNORE_CASE)
+        val umn = umnPattern.find(message)?.groupValues?.get(1)
+        
+        return EMandateInfo(
+            amount = amount,
+            nextDeductionDate = dateStr,
+            merchant = merchant,
+            umn = umn
+        )
+    }
+    
+    data class EMandateInfo(
+        val amount: Double,
+        val nextDeductionDate: String?,
+        val merchant: String,
+        val umn: String?
+    )
 }
