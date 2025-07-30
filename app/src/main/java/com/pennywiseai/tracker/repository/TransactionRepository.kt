@@ -80,11 +80,17 @@ class TransactionRepository(private val database: AppDatabase) {
     suspend fun updateSubscription(subscription: Subscription) =
         subscriptionDao.updateSubscription(subscription)
     
+    suspend fun upsertSubscription(subscription: Subscription) =
+        subscriptionDao.upsertSubscription(subscription)
+    
     suspend fun deleteSubscription(subscription: Subscription) =
         subscriptionDao.deleteSubscription(subscription)
     
     suspend fun getSubscriptionByMerchantSync(merchantName: String): Subscription? =
         subscriptionDao.getSubscriptionByMerchant(merchantName)
+    
+    suspend fun getSubscriptionByMerchantAndAmountSync(merchantName: String, amount: Double): Subscription? =
+        subscriptionDao.getSubscriptionByMerchantAndAmount(merchantName, amount)
     
     fun getSubscriptionById(id: String): androidx.lifecycle.LiveData<Subscription?> =
         subscriptionDao.getSubscriptionById(id).asLiveData()
@@ -170,6 +176,14 @@ class TransactionRepository(private val database: AppDatabase) {
         return allSubscriptions.firstOrNull { subscription ->
             subscription.merchantName.contains(merchant, ignoreCase = true) &&
             kotlin.math.abs(subscription.amount - amount) < 0.01
+        }
+    }
+    
+    suspend fun findTransactionsByMerchant(merchantPattern: String): List<Transaction> {
+        // Find ALL transactions from a merchant
+        val allTransactions = transactionDao.getAllTransactionsList()
+        return allTransactions.filter { transaction ->
+            transaction.merchant.contains(merchantPattern, ignoreCase = true)
         }
     }
 }
