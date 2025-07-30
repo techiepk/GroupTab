@@ -17,6 +17,7 @@ import android.util.Log
 import com.pennywiseai.tracker.repository.TransactionGroupRepository
 import com.pennywiseai.tracker.grouping.TransactionGroupingService
 import com.pennywiseai.tracker.service.EMandateProcessingService
+import com.pennywiseai.tracker.subscription.SubscriptionDetector
 
 class ScanWorker(
     context: Context,
@@ -106,6 +107,33 @@ class ScanWorker(
                         
                         val eMandateService = EMandateProcessingService(applicationContext)
                         eMandateService.processEMandateMessages(daysBack)
+                        
+                        // Run subscription detection on all transactions
+                        Log.i(TAG, "🔄 Detecting subscriptions from transaction patterns...")
+                        val allTransactions = repository.getAllTransactionsSync()
+                        val subscriptionDetector = SubscriptionDetector()
+                        val detectedSubscriptions = subscriptionDetector.detectSubscriptions(allTransactions)
+                        
+                        Log.i(TAG, "Found ${detectedSubscriptions.size} subscriptions from patterns")
+                        
+                        // Save detected subscriptions
+                        detectedSubscriptions.forEach { subscription ->
+                            try {
+                                // Check if subscription already exists with same merchant AND amount
+                                val existing = repository.getSubscriptionByMerchantAndAmountSync(
+                                    subscription.merchantName,
+                                    subscription.amount
+                                )
+                                if (existing == null) {
+                                    repository.insertSubscription(subscription)
+                                    Log.i(TAG, "Added subscription: ${subscription.merchantName} - ₹${subscription.amount}")
+                                } else {
+                                    Log.i(TAG, "Subscription already exists: ${subscription.merchantName} - ₹${subscription.amount}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error saving subscription: ${e.message}")
+                            }
+                        }
                         
                         // Trigger automatic grouping after scan
                         if (totalTransactions > 0) {

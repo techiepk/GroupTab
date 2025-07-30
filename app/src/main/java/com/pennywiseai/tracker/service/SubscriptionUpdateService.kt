@@ -5,6 +5,7 @@ import android.util.Log
 import com.pennywiseai.tracker.database.AppDatabase
 import com.pennywiseai.tracker.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.repository.TransactionRepository
+import com.pennywiseai.tracker.subscription.SubscriptionDetector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -30,14 +31,14 @@ class SubscriptionUpdateService(private val context: Context) {
         try {
             Log.i(TAG, "Processing E-Mandate for ${eMandateInfo.merchant}")
             
-            // Find transactions with matching criteria
-            val matchingTransactions = repository.findTransactionsByAmountAndMerchant(
-                amount = eMandateInfo.amount,
+            // Find ALL transactions from this merchant (not just exact amount matches)
+            // E-Mandate confirms this merchant is a subscription service
+            val allMerchantTransactions = repository.findTransactionsByMerchant(
                 merchantPattern = eMandateInfo.merchant
             )
             
-            // Update matching transactions to mark as subscriptions
-            matchingTransactions.forEach { transaction ->
+            // Update ALL transactions from this merchant to mark as subscriptions
+            allMerchantTransactions.forEach { transaction ->
                 val updatedTransaction = transaction.copy(
                     subscription = true,
                     transactionType = com.pennywiseai.tracker.data.TransactionType.SUBSCRIPTION
@@ -45,6 +46,11 @@ class SubscriptionUpdateService(private val context: Context) {
                 repository.updateTransaction(updatedTransaction)
                 
                 Log.i(TAG, "Updated transaction ${transaction.id} as subscription")
+            }
+            
+            // For subscription creation, only use transactions with matching amount
+            val matchingTransactions = allMerchantTransactions.filter { 
+                kotlin.math.abs(kotlin.math.abs(it.amount) - eMandateInfo.amount) / eMandateInfo.amount <= 0.1
             }
             
             // Also create/update subscription record if needed
@@ -57,22 +63,25 @@ class SubscriptionUpdateService(private val context: Context) {
             )
             
             if (existingSubscription == null) {
-                // Create new subscription
-                val nextDate = parseNextBillingDate(eMandateInfo.nextDeductionDate) ?: System.currentTimeMillis()
-                val subscription = com.pennywiseai.tracker.data.Subscription(
-                    id = java.util.UUID.randomUUID().toString(),
-                    merchantName = eMandateInfo.merchant,
-                    amount = subscriptionAmount,
-                    frequency = com.pennywiseai.tracker.data.SubscriptionFrequency.MONTHLY,
-                    nextPaymentDate = nextDate,
-                    lastPaymentDate = System.currentTimeMillis(),
-                    startDate = System.currentTimeMillis(),
-                    category = com.pennywiseai.tracker.data.TransactionCategory.SUBSCRIPTION,
-                    status = com.pennywiseai.tracker.data.SubscriptionStatus.ACTIVE
+                // Create new subscription using SubscriptionDetector
+                val subscriptionDetector = SubscriptionDetector()
+                val subscription = subscriptionDetector.createSubscriptionFromEMandate(
+                    eMandateInfo,
+                    matchingTransactions
                 )
                 
-                repository.insertSubscription(subscription)
-                Log.i(TAG, "Created new subscription for ${eMandateInfo.merchant}")
+                // Double-check before inserting
+                val doubleCheck = repository.getSubscriptionByMerchantAndAmountSync(
+                    subscription.merchantName,
+                    subscription.amount
+                )
+                
+                if (doubleCheck == null) {
+                    repository.insertSubscription(subscription)
+                    Log.i(TAG, "Created new E-Mandate subscription for ${eMandateInfo.merchant}")
+                } else {
+                    Log.i(TAG, "E-Mandate subscription already exists for ${eMandateInfo.merchant} - ₹${subscriptionAmount}")
+                }
             } else {
                 // Update existing subscription
                 val updatedSubscription = existingSubscription.copy(

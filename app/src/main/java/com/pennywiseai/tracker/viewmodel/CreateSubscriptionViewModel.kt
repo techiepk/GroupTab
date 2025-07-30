@@ -74,6 +74,17 @@ class CreateSubscriptionViewModel(application: Application) : AndroidViewModel(a
                     averageAmount = kotlin.math.abs(transaction.amount)
                 )
                 
+                // Check for duplicate before inserting
+                val existing = repository.getSubscriptionByMerchantAndAmountSync(
+                    subscription.merchantName,
+                    subscription.amount
+                )
+                
+                if (existing != null) {
+                    _creationResult.value = CreationResult.Error("Subscription already exists for ${subscription.merchantName} with amount ₹${subscription.amount}")
+                    return@launch
+                }
+                
                 // Insert subscription
                 repository.insertSubscription(subscription)
                 

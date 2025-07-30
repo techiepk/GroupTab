@@ -349,8 +349,8 @@ class HistoricalSmsScanner(
     
     private suspend fun createSubscriptionFromTransaction(transaction: Transaction) {
         try {
-            // Check if subscription already exists for this merchant
-            val existing = repository.getSubscriptionByMerchantSync(transaction.merchant)
+            // Check if subscription already exists for this merchant AND amount
+            val existing = repository.getSubscriptionByMerchantAndAmountSync(transaction.merchant, transaction.amount)
             if (existing != null) {
                 
                 // Add this transaction to existing subscription
@@ -399,7 +399,16 @@ class HistoricalSmsScanner(
                 averageAmount = transaction.amount
             )
             
-            repository.insertSubscription(subscription)
+            // Double-check before inserting to prevent duplicates
+            val doubleCheck = repository.getSubscriptionByMerchantAndAmountSync(
+                subscription.merchantName,
+                subscription.amount
+            )
+            if (doubleCheck == null) {
+                repository.insertSubscription(subscription)
+            } else {
+                Log.i(TAG, "Subscription already exists for ${subscription.merchantName} - ₹${subscription.amount}")
+            }
             
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error creating subscription from transaction: ${e.message}")

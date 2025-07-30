@@ -87,9 +87,11 @@ class SmsReceiver : BroadcastReceiver() {
                             
                             // Insert new subscriptions
                             subscriptions.forEach { subscription ->
-                                // Check if this subscription already exists
-                                val existing = repository.getActiveSubscriptionsSync()
-                                    .find { it.merchantName.equals(subscription.merchantName, ignoreCase = true) }
+                                // Check if this subscription already exists with same merchant AND amount
+                                val existing = repository.getSubscriptionByMerchantAndAmountSync(
+                                    subscription.merchantName,
+                                    subscription.amount
+                                )
                                 
                                 if (existing == null) {
                                     repository.insertSubscription(subscription)
