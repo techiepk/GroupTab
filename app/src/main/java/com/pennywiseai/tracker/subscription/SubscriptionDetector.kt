@@ -3,22 +3,31 @@ package com.pennywiseai.tracker.subscription
 import com.pennywiseai.tracker.data.Subscription
 import com.pennywiseai.tracker.data.SubscriptionFrequency
 import com.pennywiseai.tracker.data.Transaction
+import com.pennywiseai.tracker.parser.bank.HDFCBankParser
 import java.util.*
 
 class SubscriptionDetector {
     
     companion object {
-        private const val SUBSCRIPTION_AMOUNT_THRESHOLD = 5000.0 // Max amount for subscription
-        private const val MIN_OCCURRENCES = 2 // Minimum occurrences to detect subscription
+        private const val MIN_OCCURRENCES = 3 // Minimum occurrences to detect subscription
         private const val DAY_TOLERANCE = 3 // Days tolerance for frequency matching
+        private const val MIN_INTERVAL_DAYS = 5 // Minimum days between transactions to be considered subscription
     }
     
+    /**
+     * Detect subscriptions from transactions
+     * This is now only used as a fallback - primary subscription detection comes from E-Mandate messages
+     */
     fun detectSubscriptions(transactions: List<Transaction>): List<Subscription> {
         val subscriptions = mutableListOf<Subscription>()
+        val processedMerchantAmounts = mutableSetOf<String>()
         
-        // Group transactions by merchant and similar amounts
-        val merchantGroups = transactions
-            .filter { it.amount <= SUBSCRIPTION_AMOUNT_THRESHOLD }
+        // Only process transactions that are already marked as subscriptions
+        // These would have been marked by E-Mandate processing
+        val subscriptionTransactions = transactions.filter { it.subscription }
+        
+        // Group by merchant to create subscription records
+        val merchantGroups = subscriptionTransactions
             .groupBy { it.merchant.lowercase().trim() }
         
         for ((merchant, merchantTransactions) in merchantGroups) {
@@ -30,15 +39,52 @@ class SubscriptionDetector {
             for (amountGroup in amountGroups) {
                 if (amountGroup.size < MIN_OCCURRENCES) continue
                 
+                // Check if intervals are consistent enough
+                if (!hasConsistentIntervals(amountGroup)) continue
+                
                 val frequency = detectFrequency(amountGroup)
                 if (frequency != null) {
                     val subscription = createSubscription(merchant, amountGroup, frequency)
-                    subscriptions.add(subscription)
+                    
+                    // Create a unique key for merchant + amount combination
+                    val key = "${subscription.merchantName.lowercase()}_${String.format("%.2f", subscription.amount)}"
+                    
+                    // Only add if we haven't already processed this merchant+amount combination
+                    if (!processedMerchantAmounts.contains(key)) {
+                        subscriptions.add(subscription)
+                        processedMerchantAmounts.add(key)
+                    }
                 }
             }
         }
         
         return subscriptions
+    }
+    
+    private fun hasConsistentIntervals(transactions: List<Transaction>): Boolean {
+        if (transactions.size < 2) return false
+        
+        val sortedTransactions = transactions.sortedBy { it.date }
+        val intervals = mutableListOf<Long>()
+        
+        for (i in 1 until sortedTransactions.size) {
+            val intervalDays = (sortedTransactions[i].date - sortedTransactions[i - 1].date) / (24 * 60 * 60 * 1000)
+            
+            // Skip if interval is too small (likely not a subscription)
+            if (intervalDays < MIN_INTERVAL_DAYS) return false
+            
+            intervals.add(intervalDays)
+        }
+        
+        // Check if intervals are consistent (coefficient of variation < 0.3)
+        if (intervals.isEmpty()) return false
+        
+        val mean = intervals.average()
+        val variance = intervals.map { (it - mean) * (it - mean) }.average()
+        val stdDev = kotlin.math.sqrt(variance)
+        val coefficientOfVariation = stdDev / mean
+        
+        return coefficientOfVariation < 0.3
     }
     
     private fun groupBySimilarAmounts(transactions: List<Transaction>): List<List<Transaction>> {
@@ -134,13 +180,42 @@ class SubscriptionDetector {
     }
     
     fun isLikelySubscription(transaction: Transaction, existingTransactions: List<Transaction>): Boolean {
-        if (transaction.amount > SUBSCRIPTION_AMOUNT_THRESHOLD) return false
-        
         val similarTransactions = existingTransactions.filter { existing ->
             existing.merchant.equals(transaction.merchant, ignoreCase = true) &&
             kotlin.math.abs(existing.amount - transaction.amount) / transaction.amount <= 0.1
         }
         
         return similarTransactions.isNotEmpty() && detectFrequency(similarTransactions + transaction) != null
+    }
+    
+    /**
+     * Create a subscription from E-Mandate info (from HDFC or other banks)
+     */
+    fun createSubscriptionFromEMandate(
+        emandateInfo: HDFCBankParser.EMandateInfo,
+        relatedTransactions: List<Transaction> = emptyList()
+    ): Subscription {
+        // Default to monthly frequency for E-Mandate
+        // Most E-Mandates are monthly recurring payments
+        val frequency = SubscriptionFrequency.MONTHLY
+        
+        val nextPaymentDate = calculateNextPaymentDate(System.currentTimeMillis(), frequency)
+        
+        return Subscription(
+            id = UUID.randomUUID().toString(),
+            merchantName = emandateInfo.merchant.trim(),
+            amount = emandateInfo.amount,
+            frequency = frequency,
+            nextPaymentDate = nextPaymentDate,
+            lastPaymentDate = System.currentTimeMillis(),
+            active = true,
+            transactionIds = relatedTransactions.map { it.id },
+            startDate = System.currentTimeMillis(),
+            paymentCount = relatedTransactions.size,
+            totalPaid = relatedTransactions.sumOf { it.amount },
+            lastAmountPaid = emandateInfo.amount,
+            averageAmount = emandateInfo.amount,
+            isEMandate = true // Add this flag to identify E-Mandate subscriptions
+        )
     }
 }
