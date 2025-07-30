@@ -16,6 +16,7 @@ import com.pennywiseai.tracker.databinding.FragmentChatBinding
 import com.pennywiseai.tracker.ui.adapter.ChatAdapter
 import com.pennywiseai.tracker.viewmodel.ChatViewModel
 import com.pennywiseai.tracker.firebase.FirebaseHelper
+import com.pennywiseai.tracker.MainActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Intent
 import androidx.core.content.FileProvider
@@ -51,10 +52,18 @@ class ChatFragment : Fragment() {
         // Log screen view
         FirebaseHelper.logScreenView("Chat", "ChatFragment")
 
+        // Adjust window soft input mode for better keyboard behavior
+        requireActivity().window.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN or
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+        )
+
         setupHeader()
         setupRecyclerView()
         setupInput()
         observeData()
+        setupEmptyStateSuggestions()
+        setupKeyboardListener()
 
         // Show welcome message
         viewModel.addWelcomeMessage()
@@ -334,6 +343,36 @@ class ChatFragment : Fragment() {
         binding.messageInput.setText(message)
         sendMessage()
     }
+    
+    private fun setupKeyboardListener() {
+        // Simple keyboard detection
+        var isKeyboardShowing = false
+        
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = android.graphics.Rect()
+            binding.root.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = binding.root.rootView.height
+            val keypadHeight = screenHeight - rect.bottom
+            
+            // If keyboard is shown (keypad height > 200dp)
+            val threshold = resources.getDimensionPixelSize(R.dimen.keyboard_height_threshold)
+            if (keypadHeight > threshold) {
+                if (!isKeyboardShowing) {
+                    isKeyboardShowing = true
+                    (requireActivity() as? MainActivity)?.hideBottomNavigation()
+                    // Scroll to bottom when keyboard appears
+                    if (chatAdapter.itemCount > 0) {
+                        binding.chatRecyclerView.smoothScrollToPosition(chatAdapter.itemCount - 1)
+                    }
+                }
+            } else {
+                if (isKeyboardShowing) {
+                    isKeyboardShowing = false
+                    (requireActivity() as? MainActivity)?.showBottomNavigation()
+                }
+            }
+        }
+    }
 
     private fun setupRecyclerView() {
         chatAdapter = ChatAdapter()
@@ -341,6 +380,15 @@ class ChatFragment : Fragment() {
             adapter = chatAdapter
             layoutManager = LinearLayoutManager(requireContext()).apply {
                 stackFromEnd = true
+            }
+            
+            // Add keyboard listener to scroll to bottom when keyboard appears
+            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+                if (bottom < oldBottom && chatAdapter.itemCount > 0) {
+                    post {
+                        smoothScrollToPosition(chatAdapter.itemCount - 1)
+                    }
+                }
             }
         }
     }
@@ -439,8 +487,33 @@ class ChatFragment : Fragment() {
         sendMessage()
     }
     
+    private fun setupEmptyStateSuggestions() {
+        // Set up click listeners for suggestion chips
+        binding.suggestionSpending?.setOnClickListener {
+            sendQuickMessage("What's my spending this month?")
+        }
+        
+        binding.suggestionSave?.setOnClickListener {
+            sendQuickMessage("How can I save money?")
+        }
+        
+        binding.suggestionSubscriptions?.setOnClickListener {
+            sendQuickMessage("Show me my subscriptions")
+        }
+    }
+    
     override fun onDestroyView() {
         super.onDestroyView()
+        
+        // Restore default window soft input mode
+        requireActivity().window.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+        )
+        
+        // Ensure bottom navigation is visible when leaving chat
+        (requireActivity() as? MainActivity)?.showBottomNavigation()
+        
         _binding = null
     }
     

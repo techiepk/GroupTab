@@ -22,3 +22,4 @@ crash_log.txt
 test_results.txt
 
 keys/
+*.local.*

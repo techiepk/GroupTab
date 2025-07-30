@@ -37,6 +37,13 @@ import com.pennywiseai.tracker.data.TransactionCategory
 import com.pennywiseai.tracker.ui.OrganizedSettingsFragment
 import com.pennywiseai.tracker.utils.ThemeColorUtils
 import java.io.File
+import com.pennywiseai.tracker.data.FinancialInsight
+import com.pennywiseai.tracker.viewmodel.ChatViewModel
+import com.pennywiseai.tracker.databinding.ItemDashboardInsightBinding
+import com.pennywiseai.tracker.ui.dialogs.ModelDownloadDialog
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SimplifiedDashboardFragment : Fragment() {
     
@@ -44,9 +51,11 @@ class SimplifiedDashboardFragment : Fragment() {
     private val binding get() = _binding!!
     
     private val viewModel: DashboardViewModel by viewModels()
+    private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var accountBalanceAdapter: AccountBalanceAdapter
     
     private var isCategoriesExpanded = false
+    private var currentInsightsPeriod = 7 // days
     
     companion object {
         private const val TAG = "SimplifiedDashboard"
@@ -69,6 +78,7 @@ class SimplifiedDashboardFragment : Fragment() {
         
         setupUI()
         observeData()
+        setupAIInsights()
         
         // Start initial scan if needed
         lifecycleScope.launch {
@@ -828,6 +838,167 @@ class SimplifiedDashboardFragment : Fragment() {
         } else {
             binding.totalBalanceValue.visibility = View.GONE
         }
+    }
+    
+    private fun setupAIInsights() {
+        // Setup download button
+        binding.downloadModelButton.setOnClickListener {
+            showModelDownloadDialog()
+        }
+        
+        // Load insights on startup
+        loadAIInsights()
+    }
+    
+    private fun loadAIInsights() {
+        Log.d(TAG, "📊 Starting AI insights loading...")
+        
+        // Show loading state
+        binding.insightsLoadingCard.visibility = View.VISIBLE
+        binding.insightsContainer.removeAllViews()
+        binding.downloadModelCard.visibility = View.GONE
+        
+        lifecycleScope.launch {
+            try {
+                // Check if model is downloaded
+                if (!chatViewModel.isModelDownloaded()) {
+                    Log.i(TAG, "🔄 AI model not downloaded, showing download prompt")
+                    // Show download prompt
+                    binding.insightsLoadingCard.visibility = View.GONE
+                    binding.downloadModelCard.visibility = View.VISIBLE
+                    return@launch
+                }
+                
+                Log.i(TAG, "🤖 Generating insights for $currentInsightsPeriod days...")
+                
+                // Generate insights
+                val insights = withContext(Dispatchers.IO) {
+                    chatViewModel.generateFinancialInsights(currentInsightsPeriod)
+                }
+                
+                Log.i(TAG, "✅ Generated ${insights.size} insights")
+                
+                // Hide loading
+                binding.insightsLoadingCard.visibility = View.GONE
+                
+                // Display insights
+                displayInsights(insights)
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to load AI insights", e)
+                binding.insightsLoadingCard.visibility = View.GONE
+                showInsightError()
+            }
+        }
+    }
+    
+    private fun displayInsights(insights: List<FinancialInsight>) {
+        binding.insightsContainer.removeAllViews()
+        
+        if (insights.isEmpty()) {
+            showNoInsights()
+            return
+        }
+        
+        insights.forEach { insight ->
+            val insightView = createInsightView(insight)
+            binding.insightsContainer.addView(insightView)
+        }
+    }
+    
+    private fun createInsightView(insight: FinancialInsight): View {
+        val insightBinding = ItemDashboardInsightBinding.inflate(
+            layoutInflater,
+            binding.insightsContainer,
+            false
+        )
+        
+        // Set icon
+        insightBinding.insightIcon.text = when (insight.type) {
+            FinancialInsight.Type.SPENDING_ALERT -> "⚠️"
+            FinancialInsight.Type.SAVING_TIP -> "💰"
+            FinancialInsight.Type.SUBSCRIPTION_ALERT -> "🔄"
+            FinancialInsight.Type.TREND_ANALYSIS -> "📊"
+            FinancialInsight.Type.BUDGET_RECOMMENDATION -> "🎯"
+        }
+        
+        // Set priority indicator color
+        val indicatorColor = when (insight.priority) {
+            FinancialInsight.Priority.HIGH -> requireContext().getColor(R.color.expense_red)
+            FinancialInsight.Priority.MEDIUM -> requireContext().getColor(R.color.md_theme_light_primary)
+            FinancialInsight.Priority.LOW -> requireContext().getColor(R.color.income_green)
+        }
+        insightBinding.priorityIndicator.setBackgroundColor(indicatorColor)
+        
+        // Set content
+        insightBinding.insightTitle.text = insight.title
+        insightBinding.insightDescription.text = insight.description
+        
+        // Set action button
+        if (insight.actionText != null) {
+            insightBinding.actionButton.visibility = View.VISIBLE
+            insightBinding.actionButton.text = insight.actionText
+            insightBinding.actionButton.setOnClickListener {
+                handleInsightAction(insight)
+            }
+        }
+        
+        // Add click listener for the whole card
+        insightBinding.root.setOnClickListener {
+            if (insight.actionQuery != null) {
+                navigateToChat(insight.actionQuery)
+            }
+        }
+        
+        return insightBinding.root
+    }
+    
+    private fun handleInsightAction(insight: FinancialInsight) {
+        when {
+            insight.actionQuery != null -> navigateToChat(insight.actionQuery)
+            insight.actionText == "Download Model" -> showModelDownloadDialog()
+            else -> {
+                // Handle other actions
+            }
+        }
+    }
+    
+    private fun navigateToChat(query: String) {
+        // Navigate to chat with the query
+        val mainActivity = activity as? MainActivity
+        mainActivity?.switchToChat(query)
+    }
+    
+    private fun showModelDownloadDialog() {
+        val dialog = ModelDownloadDialog.newInstance()
+        dialog.setOnDownloadCompleteListener {
+            // Reload insights after download
+            loadAIInsights()
+            Toast.makeText(requireContext(), "AI model downloaded successfully!", Toast.LENGTH_SHORT).show()
+        }
+        dialog.show(parentFragmentManager, "model_download")
+    }
+    
+    private fun showNoInsights() {
+        val emptyView = TextView(requireContext()).apply {
+            text = "No insights available. Try scanning more transactions."
+            textSize = 14f
+            setTextColor(requireContext().getColor(R.color.light_gray))
+            gravity = android.view.Gravity.CENTER
+            setPadding(16, 24, 16, 24)
+        }
+        binding.insightsContainer.addView(emptyView)
+    }
+    
+    private fun showInsightError() {
+        val errorView = TextView(requireContext()).apply {
+            text = "Unable to generate insights. Please try again later."
+            textSize = 14f
+            setTextColor(requireContext().getColor(R.color.light_gray))
+            gravity = android.view.Gravity.CENTER
+            setPadding(16, 24, 16, 24)
+        }
+        binding.insightsContainer.addView(errorView)
     }
     
     override fun onDestroyView() {

@@ -7,11 +7,14 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.*
 import androidx.work.workDataOf
+import java.util.concurrent.TimeUnit
 import com.pennywiseai.tracker.R
 import com.pennywiseai.tracker.llm.PersistentModelDownloader
 import com.pennywiseai.tracker.firebase.FirebaseHelper
 import kotlinx.coroutines.flow.collect
 import android.util.Log
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 class ModelDownloadWorker(
     context: Context,
@@ -34,11 +37,16 @@ class ModelDownloadWorker(
                         .setRequiresStorageNotLow(true) // Ensure enough storage
                         .build()
                 )
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    15,
+                    TimeUnit.SECONDS
+                )
                 .build()
             
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK_NAME,
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP, // Keep existing work to allow resume
                 downloadRequest
             )
             
@@ -54,6 +62,12 @@ class ModelDownloadWorker(
     override suspend fun doWork(): Result {
         return try {
             Log.i(TAG, "📥 Starting background model download...")
+            
+            // Validate network connectivity
+            if (!isNetworkSuitable()) {
+                Log.w(TAG, "⚠️ Network not suitable for download")
+                return Result.retry()
+            }
             
             // Create notification channel
             createNotificationChannel()
@@ -114,9 +128,25 @@ class ModelDownloadWorker(
             
         } catch (e: Exception) {
             Log.e(TAG, "❌ Background download error: ${e.message}")
-            showNotification("Model download error: ${e.message}", 100, 0, 0)
-            FirebaseHelper.logException(e)
-            Result.failure()
+            
+            // Check if we should retry
+            val shouldRetry = when {
+                runAttemptCount < 3 -> true // Retry up to 3 times
+                e is java.net.SocketTimeoutException -> true
+                e is java.net.UnknownHostException -> true
+                e is java.io.IOException && e.message?.contains("ECONNRESET") == true -> true
+                else -> false
+            }
+            
+            return if (shouldRetry) {
+                Log.i(TAG, "🔄 Will retry download (attempt ${runAttemptCount + 1})")
+                showNotification("Download failed, will retry...", 100, 0, 0)
+                Result.retry()
+            } else {
+                showNotification("Model download failed: ${e.message}", 100, 0, 0)
+                FirebaseHelper.logException(e)
+                Result.failure()
+            }
         }
     }
 
@@ -168,5 +198,24 @@ class ModelDownloadWorker(
         return if (elapsedMs > 0) {
             (bytesDownloaded / 1024) / (elapsedMs / 1000).coerceAtLeast(1)
         } else 0
+    }
+    
+    private fun isNetworkSuitable(): Boolean {
+        val connectivityManager = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            
+            // Check if network is unmetered (WiFi)
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) &&
+                   capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                   capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        } else {
+            // Fallback for older devices
+            @Suppress("DEPRECATION")
+            val networkInfo = connectivityManager.activeNetworkInfo
+            return networkInfo?.isConnected == true && networkInfo.type == ConnectivityManager.TYPE_WIFI
+        }
     }
 }

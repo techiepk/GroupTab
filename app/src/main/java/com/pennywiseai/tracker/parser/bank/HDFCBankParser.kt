@@ -147,16 +147,7 @@ class HDFCBankParser : BankParser() {
             .takeIf { it.isNotEmpty() } ?: merchant
     }
     
-    /**
-     * Parse E-Mandate subscription notification
-     * Example:
-     * E-Mandate!
-     * Rs.529.82 will be deducted on 19/07/25, 00:00:00
-     * For Microsoft Regional Sales Corporation mandate
-     * UMN 337adbca0a8e470c906ff907316f0dda@apl
-     * Maintain Balance
-     * -HDFC Bank
-     */
+
     fun parseEMandateSubscription(message: String): EMandateInfo? {
         if (!message.contains("E-Mandate!", ignoreCase = true)) {
             return null

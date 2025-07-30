@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/advisor_scroll_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊 Financial Analysis"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select time period for insights"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:alpha="0.8"
+                    android:layout_marginBottom="16dp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/period_chip_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:checkedChip="@+id/chip_7_days"
+                    app:chipSpacingHorizontal="12dp">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_7_days"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="Last 7 Days"
+                        style="@style/Widget.Material3.Chip.Filter.Elevated"
+                        app:chipBackgroundColor="@color/chip_background_state_list"
+                        app:chipStrokeWidth="0dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_30_days"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="Last 30 Days"
+                        style="@style/Widget.Material3.Chip.Filter.Elevated"
+                        app:chipBackgroundColor="@color/chip_background_state_list"
+                        app:chipStrokeWidth="0dp" />
+
+                </com.google.android.material.chip.ChipGroup>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Analysis Summary -->
+        <LinearLayout
+            android:id="@+id/analysis_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/summary_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Analyzing your spending..."
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <ProgressBar
+                android:id="@+id/analysis_progress"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Insights Container -->
+        <LinearLayout
+            android:id="@+id/insights_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Insights will be added dynamically -->
+
+        </LinearLayout>
+
+        <!-- Refresh Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/refresh_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardCornerRadius="12dp"
+            android:visibility="gone">
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/refresh_insights_button"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Generate New Insights"
+                app:icon="@drawable/ic_send_filled"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:textAllCaps="false" />
+                
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

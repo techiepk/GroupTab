@@ -87,4 +87,7 @@
     <dimen name="safe_area_bottom">16dp</dimen>          <!-- Bottom safe area -->
     <dimen name="status_bar_padding">8dp</dimen>         <!-- Status bar padding -->
     <dimen name="navigation_bar_padding">48dp</dimen>    <!-- Navigation bar height -->
+    
+    <!-- Keyboard Detection -->
+    <dimen name="keyboard_height_threshold">200dp</dimen>  <!-- Threshold for keyboard detection -->
 </resources>

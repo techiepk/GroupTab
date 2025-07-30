@@ -4,34 +4,59 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:fitsSystemWindows="true">
+    android:background="?attr/colorSurface">
 
-    <!-- Minimal Header -->
-    <TextView
-        android:id="@+id/header_title"
-        android:layout_width="wrap_content"
+    <!-- Header with Mode Toggle -->
+    <LinearLayout
+        android:id="@+id/header_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="AI Assistant"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
-        android:padding="16dp"
+        android:orientation="vertical"
+        android:background="?attr/colorSurface"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Options Button -->
-    <ImageButton
-        android:id="@+id/options_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_more_vert"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        app:tint="?attr/colorOnSurfaceVariant"
-        android:contentDescription="Options"
-        android:layout_margin="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <!-- Title Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/header_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="AI Assistant"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
+
+            <!-- Options Button -->
+            <ImageButton
+                android:id="@+id/options_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_more_vert"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="Options" />
+
+        </LinearLayout>
+
+        <!-- Simplified subtitle -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ask me about your finances"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="12dp" />
+
+    </LinearLayout>
 
     <!-- Chat Messages -->
     <androidx.recyclerview.widget.RecyclerView
@@ -40,11 +65,14 @@
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:scrollbars="vertical"
+        android:scrollbarStyle="outsideOverlay"
         app:layout_constraintBottom_toTopOf="@+id/input_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/header_title"
+        app:layout_constraintTop_toBottomOf="@+id/header_container"
         tools:listitem="@layout/item_chat_message" />
 
     <!-- Empty State -->
@@ -55,23 +83,33 @@
         android:orientation="vertical"
         android:gravity="center"
         android:padding="32dp"
-        app:layout_constraintTop_toBottomOf="@+id/header_title"
+        app:layout_constraintTop_toBottomOf="@+id/header_container"
         app:layout_constraintBottom_toTopOf="@+id/input_container"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💬"
-            android:textSize="48sp"
-            android:layout_marginBottom="16dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="40dp"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer"
+            android:layout_marginBottom="24dp">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="💬"
+                android:textSize="40sp" />
+                
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Ask me anything"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
@@ -80,9 +118,64 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="I can help with your spending insights"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:textAlignment="center" />
+            android:textAlignment="center"
+            android:layout_marginBottom="24dp" />
+            
+        <!-- Suggestion Pills -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Try asking:"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp" />
+                
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+                
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/suggestion_spending"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="This month's spending"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_marginEnd="8dp" />
+                        
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/suggestion_save"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="How to save money"
+                        style="@style/Widget.Material3.Chip.Suggestion"
+                        android:layout_marginEnd="8dp" />
+                        
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/suggestion_subscriptions"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="My subscriptions"
+                        style="@style/Widget.Material3.Chip.Suggestion" />
+                        
+                </LinearLayout>
+                
+            </HorizontalScrollView>
+            
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -95,6 +188,8 @@
         android:padding="12dp"
         android:gravity="center_vertical"
         android:background="?attr/colorSurface"
+        android:elevation="8dp"
+        android:layout_marginBottom="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

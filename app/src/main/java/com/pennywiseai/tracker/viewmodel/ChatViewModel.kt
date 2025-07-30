@@ -12,9 +12,19 @@ import com.pennywiseai.tracker.repository.TransactionRepository
 import com.pennywiseai.tracker.llm.LLMTransactionExtractor
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.NumberFormat
 import java.util.*
 import java.util.Calendar
+import com.pennywiseai.tracker.data.FinancialInsight
+import com.pennywiseai.tracker.data.SubscriptionFrequency
+import kotlin.math.abs
+import android.content.Context
+import com.pennywiseai.tracker.llm.PersistentModelDownloader
+import org.json.JSONArray
+import org.json.JSONObject
+import android.util.Log
+import com.pennywiseai.tracker.database.CategorySpending
 
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -167,20 +177,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val subscriptions = getActiveSubscriptions()
         val recentTransactions = getRecentTransactions()
         
-        return """You are a concise personal finance assistant. Answer briefly and directly.
-
-Data: Monthly ₹${String.format("%.0f", monthlySpending)} | Top: ${topCategories.joinToString(", ") { "${it.first} ₹${String.format("%.0f", it.second)}" }} | ${subscriptions.size} subscriptions
+        return """Finance Assistant:
+Monthly spending: ₹${String.format("%.0f", monthlySpending)}
+Top category: ${topCategories.firstOrNull()?.let { "${it.first} ₹${String.format("%.0f", it.second)}" } ?: "None"}
 
 Question: $userMessage
 
-Rules:
-- Max 3-4 sentences
-- Use **bold** for key amounts
-- Use bullet points (-) for tips
-- Include 1 relevant emoji
-- Be actionable and specific
-
-Response:"""
+Answer in 2-3 sentences. Be direct."""
     }
     
     private suspend fun getCurrentMonthSpending(): Double {
@@ -251,5 +254,198 @@ Response:"""
         aiSettings.showFinancialTips = !aiSettings.showFinancialTips
         val prefs = getApplication<Application>().getSharedPreferences("ai_settings", 0)
         prefs.edit().putBoolean("financial_tips", aiSettings.showFinancialTips).apply()
+    }
+    
+    fun isModelDownloaded(): Boolean {
+        val modelDownloader = PersistentModelDownloader(getApplication())
+        return modelDownloader.isModelDownloaded()
+    }
+    
+    suspend fun generateFinancialInsights(days: Int): List<FinancialInsight> {
+        val insights = mutableListOf<FinancialInsight>()
+        
+        try {
+            // Check if LLM is available
+            if (!llmExtractor.isInitialized()) {
+                // Try to initialize
+                if (!llmExtractor.initialize()) {
+                    // Model not downloaded
+                    return listOf(
+                        FinancialInsight(
+                            title = "AI Model Required",
+                            description = "Download the AI model to get personalized financial insights",
+                            type = FinancialInsight.Type.TREND_ANALYSIS,
+                            priority = FinancialInsight.Priority.HIGH,
+                            actionText = "Download Model",
+                            actionQuery = null
+                        )
+                    )
+                }
+            }
+            
+            // Get date range
+            val endDate = System.currentTimeMillis()
+            val startDate = endDate - (days * 24 * 60 * 60 * 1000L)
+            
+            // Get spending data
+            val totalSpending = repository.getTotalSpendingInPeriod(startDate, endDate)
+            val categorySpending = repository.getCategorySpending(startDate, endDate)
+                .sortedByDescending { it.total }
+            val transactions = repository.getTransactionsByDateRange(startDate, endDate).firstOrNull() ?: emptyList()
+            val subscriptions = repository.getActiveSubscriptions().firstOrNull() ?: emptyList()
+            
+            // Previous period for comparison
+            val prevEndDate = startDate
+            val prevStartDate = prevEndDate - (days * 24 * 60 * 60 * 1000L)
+            val prevSpending = repository.getTotalSpendingInPeriod(prevStartDate, prevEndDate)
+            
+            // Create prompt for LLM
+            val prompt = createFinancialInsightsPrompt(
+                days = days,
+                totalSpending = totalSpending,
+                prevSpending = prevSpending,
+                categorySpending = categorySpending,
+                transactions = transactions,
+                subscriptions = subscriptions
+            )
+            
+            // Get LLM insights with timeout
+            val llmResponse = try {
+                withTimeoutOrNull(15000) { // 15 second timeout for insights
+                    llmExtractor.generateFinancialInsights(prompt)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "LLM insights generation failed", e)
+                null
+            }
+            
+            if (llmResponse != null) {
+                // Parse LLM response
+                insights.addAll(parseLLMInsights(llmResponse))
+            } else {
+                Log.w("ChatViewModel", "LLM insights timed out or failed, using fallback")
+            }
+            
+            // If LLM didn't provide enough insights, add some basic ones
+            if (insights.size < 3) {
+                // Add basic spending insight
+                if (totalSpending > 0) {
+                    val change = totalSpending - prevSpending
+                    val changePercent = if (prevSpending > 0) ((change / prevSpending) * 100) else 0.0
+                    
+                    insights.add(FinancialInsight(
+                        title = if (change > 0) "Spending Increased" else "Spending Decreased",
+                        description = "Your spending ${if (change > 0) "increased" else "decreased"} by ₹${String.format("%.0f", abs(change))} (${String.format("%.0f", abs(changePercent))}%) compared to the previous $days days",
+                        type = if (change > 0) FinancialInsight.Type.SPENDING_ALERT else FinancialInsight.Type.SAVING_TIP,
+                        priority = if (abs(changePercent) > 20) FinancialInsight.Priority.HIGH else FinancialInsight.Priority.MEDIUM,
+                        amount = totalSpending
+                    ))
+                }
+                
+                // Add subscription insight if available
+                if (subscriptions.isNotEmpty()) {
+                    val activeCount = subscriptions.count { it.active }
+                    insights.add(FinancialInsight(
+                        title = "Active Subscriptions",
+                        description = "You have $activeCount active subscriptions. Review them to save money.",
+                        type = FinancialInsight.Type.SUBSCRIPTION_ALERT,
+                        priority = FinancialInsight.Priority.MEDIUM,
+                        actionText = "View All",
+                        actionQuery = "Show me all my subscriptions"
+                    ))
+                }
+            }
+            
+        } catch (e: Exception) {
+            // Return error insight
+            insights.add(FinancialInsight(
+                title = "Analysis Error",
+                description = "Unable to generate insights. Please try again.",
+                type = FinancialInsight.Type.TREND_ANALYSIS,
+                priority = FinancialInsight.Priority.LOW
+            ))
+        }
+        
+        // Sort by priority and limit to 5 insights
+        return insights
+            .sortedBy { insight -> insight.priority }
+            .take(5)
+    }
+    
+    private fun createFinancialInsightsPrompt(
+        days: Int,
+        totalSpending: Double,
+        prevSpending: Double,
+        categorySpending: List<CategorySpending>,
+        transactions: List<com.pennywiseai.tracker.data.Transaction>,
+        subscriptions: List<com.pennywiseai.tracker.data.Subscription>
+    ): String {
+        val topCategories = categorySpending.take(3).joinToString(", ") { 
+            "${it.category.name.replace("_", " ")}: ₹${String.format("%.0f", it.total)}" 
+        }
+        
+        val activeSubscriptions = subscriptions.filter { it.active }
+        val subscriptionInfo = if (activeSubscriptions.isNotEmpty()) {
+            "${activeSubscriptions.size} active subscriptions"
+        } else {
+            "No active subscriptions"
+        }
+        
+        return """Generate 3 brief financial insights:
+
+Spending: ₹${String.format("%.0f", totalSpending)} (last $days days)
+Previous: ₹${String.format("%.0f", prevSpending)}
+Top: $topCategories
+
+Return JSON array:
+[{"title":"...", "description":"...", "type":"SPENDING_ALERT", "priority":"HIGH"}]
+
+Types: SPENDING_ALERT, SAVING_TIP, SUBSCRIPTION_ALERT
+Priority: HIGH, MEDIUM, LOW
+Keep descriptions under 50 words."""
+    }
+    
+    private fun parseLLMInsights(response: String): List<FinancialInsight> {
+        val insights = mutableListOf<FinancialInsight>()
+        
+        try {
+            // Extract JSON array from response
+            val jsonStart = response.indexOf('[')
+            val jsonEnd = response.lastIndexOf(']')
+            
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                val jsonString = response.substring(jsonStart, jsonEnd + 1)
+                val jsonArray = JSONArray(jsonString)
+                
+                for (i in 0 until jsonArray.length()) {
+                    val jsonInsight = jsonArray.getJSONObject(i)
+                    
+                    val type = try {
+                        FinancialInsight.Type.valueOf(jsonInsight.getString("type"))
+                    } catch (e: Exception) {
+                        FinancialInsight.Type.TREND_ANALYSIS
+                    }
+                    
+                    val priority = try {
+                        FinancialInsight.Priority.valueOf(jsonInsight.getString("priority"))
+                    } catch (e: Exception) {
+                        FinancialInsight.Priority.MEDIUM
+                    }
+                    
+                    insights.add(FinancialInsight(
+                        title = jsonInsight.getString("title"),
+                        description = jsonInsight.getString("description"),
+                        type = type,
+                        priority = priority,
+                        actionText = jsonInsight.optString("actionText", null),
+                        actionQuery = jsonInsight.optString("actionQuery", null)
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "Failed to parse LLM insights: ${e.message}")
+        }
+        
+        return insights
     }
 }

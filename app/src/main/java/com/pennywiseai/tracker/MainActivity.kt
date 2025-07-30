@@ -218,6 +218,14 @@ class MainActivity : AppCompatActivity() {
         activeFragment = fragment
     }
     
+    fun hideBottomNavigation() {
+        binding.bottomNavigation.visibility = android.view.View.GONE
+    }
+    
+    fun showBottomNavigation() {
+        binding.bottomNavigation.visibility = android.view.View.VISIBLE
+    }
+    
     fun navigateToTransactions() {
         binding.bottomNavigation.selectedItemId = R.id.nav_transactions
     }
@@ -228,6 +236,14 @@ class MainActivity : AppCompatActivity() {
     
     fun navigateToSubscriptions() {
         binding.bottomNavigation.selectedItemId = R.id.nav_subscriptions
+    }
+    
+    fun switchToChat(query: String? = null) {
+        binding.bottomNavigation.selectedItemId = R.id.nav_chat
+        // If we have a query, pass it to the chat fragment
+        if (query != null) {
+            // TODO: Pass the query to ChatFragment
+        }
     }
     
     // AI FAB removed - using bottom navigation for AI Chat

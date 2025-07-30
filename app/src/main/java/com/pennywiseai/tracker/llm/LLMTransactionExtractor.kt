@@ -8,6 +8,7 @@ import com.pennywiseai.tracker.data.TransactionType
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.security.MessageDigest
 import com.pennywiseai.tracker.logging.LogStreamManager
 
@@ -284,9 +285,25 @@ Response:""".trimIndent()
                 return@withContext null
             }
             
-            
             try {
-                val response = llmInference!!.generateResponse(prompt)
+                Log.i(TAG, "🤖 Generating finance advice...")
+                Log.d(TAG, "📝 Prompt: ${prompt.take(200)}...") // Log first 200 chars
+                
+                val startTime = System.currentTimeMillis()
+                
+                // Add timeout
+                val response = withTimeoutOrNull(30000) { // 30 second timeout
+                    llmInference!!.generateResponse(prompt)
+                }
+                
+                val duration = System.currentTimeMillis() - startTime
+                
+                if (response == null) {
+                    Log.e(TAG, "⏰ Finance advice generation timed out after ${duration}ms")
+                    return@withContext null
+                }
+                
+                Log.i(TAG, "✅ Finance advice generated in ${duration}ms")
                 
                 // Clean up response (remove any parsing artifacts)
                 val cleanedResponse = cleanFinanceResponse(response)
@@ -308,4 +325,27 @@ Response:""".trimIndent()
             .replace(Regex("^Answer:\\s*"), "")
             .trim()
     }
+    
+    suspend fun generateFinancialInsights(prompt: String): String? {
+        return withContext(Dispatchers.IO) {
+            if (!isInitialized || llmInference == null) {
+                Log.e(TAG, "❌ Extractor not initialized for financial insights")
+                return@withContext null
+            }
+            
+            try {
+                val startTime = System.currentTimeMillis()
+                val response = llmInference!!.generateResponse(prompt)
+                val endTime = System.currentTimeMillis()
+                
+                Log.i(TAG, "✅ Generated financial insights in ${endTime - startTime}ms")
+                return@withContext response
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to generate financial insights: ${e.message}")
+                return@withContext null
+            }
+        }
+    }
+    
+    fun isInitialized(): Boolean = isInitialized
 }
