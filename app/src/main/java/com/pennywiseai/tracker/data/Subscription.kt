@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 
 @Entity(tableName = "subscriptions")
 data class Subscription(
@@ -23,7 +24,8 @@ data class Subscription(
     val paymentCount: Int = 0,
     val totalPaid: Double = 0.0,
     val lastAmountPaid: Double = amount,
-    val averageAmount: Double = amount
+    val averageAmount: Double = amount,
+    val isEMandate: Boolean = false // Flag to identify E-Mandate based subscriptions
 )
 
 enum class SubscriptionFrequency(val days: Int) {

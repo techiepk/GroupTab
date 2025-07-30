@@ -31,6 +31,9 @@ interface SubscriptionDao {
     @Query("SELECT * FROM subscriptions WHERE merchantName = :merchantName LIMIT 1")
     suspend fun getSubscriptionByMerchant(merchantName: String): Subscription?
     
+    @Query("SELECT * FROM subscriptions WHERE merchantName = :merchantName AND ABS(amount - :amount) < 0.01")
+    suspend fun getSubscriptionByMerchantAndAmount(merchantName: String, amount: Double): Subscription?
+    
     @Query("SELECT * FROM subscriptions WHERE id = :id")
     fun getSubscriptionById(id: String): Flow<Subscription?>
     
@@ -42,4 +45,7 @@ interface SubscriptionDao {
     
     @Query("SELECT * FROM subscriptions")
     suspend fun getAllSubscriptionsList(): List<Subscription>
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSubscription(subscription: Subscription)
 }
