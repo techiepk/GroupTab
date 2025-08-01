@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
-import com.pennywiseai.tracker.ui.components.PennyWiseTopBar
 import com.pennywiseai.tracker.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,18 +19,14 @@ fun HomeScreen(
 ) {
     PennyWiseScaffold(
         modifier = modifier,
-        topBar = {
-            PennyWiseTopBar(
-                title = "PennyWise",
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                }
-            )
+        title = "PennyWise",
+        actions = {
+            IconButton(onClick = onNavigateToSettings) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings"
+                )
+            }
         }
     ) { paddingValues ->
         Column(

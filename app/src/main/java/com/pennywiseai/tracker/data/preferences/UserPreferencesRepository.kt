@@ -21,13 +21,15 @@ class UserPreferencesRepository @Inject constructor(
     private object PreferencesKeys {
         val DARK_THEME_ENABLED = booleanPreferencesKey("dark_theme_enabled")
         val DYNAMIC_COLOR_ENABLED = booleanPreferencesKey("dynamic_color_enabled")
+        val HAS_SKIPPED_SMS_PERMISSION = booleanPreferencesKey("has_skipped_sms_permission")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
         .map { preferences ->
             UserPreferences(
                 isDarkThemeEnabled = preferences[PreferencesKeys.DARK_THEME_ENABLED],
-                isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: true
+                isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: true,
+                hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false
             )
         }
 
@@ -46,9 +48,16 @@ class UserPreferencesRepository @Inject constructor(
             preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] = enabled
         }
     }
+    
+    suspend fun updateSkippedSmsPermission(skipped: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] = skipped
+        }
+    }
 }
 
 data class UserPreferences(
     val isDarkThemeEnabled: Boolean? = null, // null means follow system
-    val isDynamicColorEnabled: Boolean = true
+    val isDynamicColorEnabled: Boolean = true,
+    val hasSkippedSmsPermission: Boolean = false
 )

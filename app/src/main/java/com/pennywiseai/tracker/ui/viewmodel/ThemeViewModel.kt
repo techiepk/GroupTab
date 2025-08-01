@@ -20,7 +20,8 @@ class ThemeViewModel @Inject constructor(
         .map { preferences ->
             ThemeUiState(
                 isDarkTheme = preferences.isDarkThemeEnabled,
-                isDynamicColorEnabled = preferences.isDynamicColorEnabled
+                isDynamicColorEnabled = preferences.isDynamicColorEnabled,
+                hasSkippedSmsPermission = preferences.hasSkippedSmsPermission
             )
         }
         .stateIn(
@@ -44,5 +45,6 @@ class ThemeViewModel @Inject constructor(
 
 data class ThemeUiState(
     val isDarkTheme: Boolean? = null, // null = follow system
-    val isDynamicColorEnabled: Boolean = true
+    val isDynamicColorEnabled: Boolean = true,
+    val hasSkippedSmsPermission: Boolean = false
 )
