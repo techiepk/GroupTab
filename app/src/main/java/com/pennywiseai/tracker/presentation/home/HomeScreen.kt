@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.core.Constants
@@ -43,6 +46,16 @@ fun HomeScreen(
                     monthlyChange = uiState.monthlyChange,
                     monthlyChangePercent = uiState.monthlyChangePercent
                 )
+            }
+            
+            // Upcoming Subscriptions Alert
+            if (uiState.upcomingSubscriptions.isNotEmpty()) {
+                item {
+                    UpcomingSubscriptionsCard(
+                        subscriptions = uiState.upcomingSubscriptions,
+                        totalAmount = uiState.upcomingSubscriptionsTotal
+                    )
+                }
             }
             
             // Recent Transactions Section
@@ -241,7 +254,67 @@ private fun TransactionItem(
 }
 
 private fun formatCurrency(amount: BigDecimal): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
-    formatter.maximumFractionDigits = 0
+    // Using Locale.Builder for India locale instead of deprecated constructor
+    val indiaLocale = Locale.Builder().setLanguage("en").setRegion("IN").build()
+    val formatter = NumberFormat.getCurrencyInstance(indiaLocale)
+    // Show decimals only if they exist
+    formatter.minimumFractionDigits = 0
+    formatter.maximumFractionDigits = 2
     return formatter.format(amount)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun UpcomingSubscriptionsCard(
+    subscriptions: List<SubscriptionEntity>,
+    totalAmount: BigDecimal,
+    onClick: () -> Unit = {}
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.Padding.content),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(Dimensions.Icon.medium)
+                )
+                Column {
+                    Text(
+                        text = "${subscriptions.size} active subscriptions",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = "Monthly total: ${formatCurrency(totalAmount)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = Dimensions.Alpha.subtitle)
+                    )
+                }
+            }
+            Text(
+                text = "View",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
 }

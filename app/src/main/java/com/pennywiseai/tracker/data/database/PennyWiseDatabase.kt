@@ -8,7 +8,9 @@ import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.converter.Converters
+import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
+import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 
 /**
@@ -22,16 +24,18 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class],
-    version = 2,
+    entities = [TransactionEntity::class, SubscriptionEntity::class],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2)
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3)
     ]
 )
 @TypeConverters(Converters::class)
 abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
+    abstract fun subscriptionDao(): SubscriptionDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"

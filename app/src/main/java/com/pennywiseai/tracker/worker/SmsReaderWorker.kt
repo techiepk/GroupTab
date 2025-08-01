@@ -9,6 +9,8 @@ import androidx.work.WorkerParameters
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
+import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
+import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -26,7 +28,8 @@ import java.time.ZoneId
 class SmsReaderWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val subscriptionRepository: SubscriptionRepository
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -53,14 +56,33 @@ class SmsReaderWorker @AssistedInject constructor(
             
             var parsedCount = 0
             var savedCount = 0
+            var subscriptionCount = 0
             
-            // Process messages
-            for (sms in messages.take(Constants.SmsProcessing.DEFAULT_BATCH_SIZE)) {
+            // Process all messages from last 3 months
+            for (sms in messages) {
                 // Check if sender is from a known bank
                 val parser = BankParserFactory.getParser(sms.sender)
                 if (parser != null) {
                     Log.d(TAG, "Processing SMS from ${parser.getBankName()}")
                     Log.d(TAG, "SMS Content: ${sms.body.take(Constants.SmsProcessing.SMS_PREVIEW_LENGTH)}...")
+                    
+                    // Check if it's an E-Mandate notification (HDFC specific for now)
+                    if (parser is HDFCBankParser && parser.isEMandateNotification(sms.body)) {
+                        val eMandateInfo = parser.parseEMandateSubscription(sms.body)
+                        if (eMandateInfo != null) {
+                            try {
+                                val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
+                                    eMandateInfo,
+                                    parser.getBankName()
+                                )
+                                subscriptionCount++
+                                Log.d(TAG, "Created/Updated subscription: $subscriptionId for ${eMandateInfo.merchant}")
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error saving subscription: ${e.message}")
+                            }
+                        }
+                        continue // Skip transaction parsing for E-Mandate
+                    }
                     
                     // Parse the transaction
                     val parsedTransaction = parser.parse(sms.body, sms.sender, sms.timestamp)
@@ -82,10 +104,29 @@ class SmsReaderWorker @AssistedInject constructor(
                         // Convert to entity and save
                         val entity = parsedTransaction.toEntity()
                         try {
-                            val rowId = transactionRepository.insertTransaction(entity)
+                            // Check if this transaction matches a subscription
+                            val matchedSubscription = subscriptionRepository.matchTransactionToSubscription(
+                                entity.merchantName,
+                                entity.amount
+                            )
+                            
+                            // If matched, update the entity to mark as recurring
+                            val finalEntity = if (matchedSubscription != null) {
+                                Log.d(TAG, "Transaction matched to subscription: ${matchedSubscription.merchantName}")
+                                // Update next payment date for the subscription
+                                subscriptionRepository.updateNextPaymentDateAfterCharge(
+                                    matchedSubscription.id,
+                                    entity.dateTime.toLocalDate()
+                                )
+                                entity.copy(isRecurring = true)
+                            } else {
+                                entity
+                            }
+                            
+                            val rowId = transactionRepository.insertTransaction(finalEntity)
                             if (rowId != -1L) {
                                 savedCount++
-                                Log.d(TAG, "Saved new transaction with ID: $rowId")
+                                Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
                             } else {
                                 Log.d(TAG, "Transaction already exists (duplicate), skipping: ${entity.transactionHash}")
                             }
@@ -96,7 +137,7 @@ class SmsReaderWorker @AssistedInject constructor(
                 }
             }
             
-            Log.d(TAG, "SMS parsing completed. Parsed: $parsedCount, Saved: $savedCount")
+            Log.d(TAG, "SMS parsing completed. Parsed: $parsedCount, Saved: $savedCount, Subscriptions: $subscriptionCount")
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error in SMS parsing work", e)
@@ -111,13 +152,16 @@ class SmsReaderWorker @AssistedInject constructor(
         val messages = mutableListOf<SmsMessage>()
         
         try {
-            // Query SMS inbox
+            // Calculate date 3 months ago
+            val threeMonthsAgo = System.currentTimeMillis() - (Constants.SmsProcessing.INITIAL_SCAN_MONTHS * 30L * 24 * 60 * 60 * 1000)
+            
+            // Query SMS inbox for last 3 months
             val cursor = applicationContext.contentResolver.query(
                 Telephony.Sms.CONTENT_URI,
                 SMS_PROJECTION,
-                "${Telephony.Sms.TYPE} = ?",
-                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString()),
-                "${Telephony.Sms.DATE} DESC LIMIT ${Constants.SmsProcessing.QUERY_LIMIT}"
+                "${Telephony.Sms.TYPE} = ? AND ${Telephony.Sms.DATE} >= ?",
+                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString(), threeMonthsAgo.toString()),
+                "${Telephony.Sms.DATE} DESC"
             )
             
             cursor?.use {

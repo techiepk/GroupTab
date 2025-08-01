@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
+import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import com.pennywiseai.tracker.worker.SmsReaderWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
+    private val subscriptionRepository: SubscriptionRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
@@ -55,6 +58,17 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     recentTransactions = transactions,
                     isLoading = false
+                )
+            }
+        }
+        
+        viewModelScope.launch {
+            // Load all active subscriptions
+            subscriptionRepository.getActiveSubscriptions().collect { subscriptions ->
+                val totalAmount = subscriptions.sumOf { it.amount }
+                _uiState.value = _uiState.value.copy(
+                    upcomingSubscriptions = subscriptions,
+                    upcomingSubscriptionsTotal = totalAmount
                 )
             }
         }
@@ -106,6 +120,8 @@ data class HomeUiState(
     val monthlyChange: BigDecimal = BigDecimal.ZERO,
     val monthlyChangePercent: Int = 0,
     val recentTransactions: List<TransactionEntity> = emptyList(),
+    val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
+    val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
     val isScanning: Boolean = false
 )
