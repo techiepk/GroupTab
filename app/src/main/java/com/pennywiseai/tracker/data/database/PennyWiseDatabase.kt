@@ -23,10 +23,10 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  */
 @Database(
     entities = [TransactionEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
     autoMigrations = [
-        // Example: AutoMigration(from = 1, to = 2, spec = PennyWiseDatabase.Migration1To2::class)
+        AutoMigration(from = 1, to = 2)
     ]
 )
 @TypeConverters(Converters::class)

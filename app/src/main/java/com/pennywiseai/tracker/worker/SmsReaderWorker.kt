@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -54,12 +55,12 @@ class SmsReaderWorker @AssistedInject constructor(
             var savedCount = 0
             
             // Process messages
-            for (sms in messages.take(100)) { // Process first 100 for testing
+            for (sms in messages.take(Constants.SmsProcessing.DEFAULT_BATCH_SIZE)) {
                 // Check if sender is from a known bank
                 val parser = BankParserFactory.getParser(sms.sender)
                 if (parser != null) {
                     Log.d(TAG, "Processing SMS from ${parser.getBankName()}")
-                    Log.d(TAG, "SMS Content: ${sms.body.take(200)}...")
+                    Log.d(TAG, "SMS Content: ${sms.body.take(Constants.SmsProcessing.SMS_PREVIEW_LENGTH)}...")
                     
                     // Parse the transaction
                     val parsedTransaction = parser.parse(sms.body, sms.sender, sms.timestamp)
@@ -81,8 +82,13 @@ class SmsReaderWorker @AssistedInject constructor(
                         // Convert to entity and save
                         val entity = parsedTransaction.toEntity()
                         try {
-                            transactionRepository.insertTransaction(entity)
-                            savedCount++
+                            val rowId = transactionRepository.insertTransaction(entity)
+                            if (rowId != -1L) {
+                                savedCount++
+                                Log.d(TAG, "Saved new transaction with ID: $rowId")
+                            } else {
+                                Log.d(TAG, "Transaction already exists (duplicate), skipping: ${entity.transactionHash}")
+                            }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error saving transaction: ${e.message}")
                         }
@@ -111,7 +117,7 @@ class SmsReaderWorker @AssistedInject constructor(
                 SMS_PROJECTION,
                 "${Telephony.Sms.TYPE} = ?",
                 arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString()),
-                "${Telephony.Sms.DATE} DESC LIMIT 100"
+                "${Telephony.Sms.DATE} DESC LIMIT ${Constants.SmsProcessing.QUERY_LIMIT}"
             )
             
             cursor?.use {

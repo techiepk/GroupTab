@@ -1,5 +1,7 @@
 package com.pennywiseai.tracker.data.parser.bank
 
+import com.pennywiseai.tracker.core.CompiledPatterns
+import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.parser.ParsedTransaction
 import java.math.BigDecimal
@@ -91,13 +93,7 @@ abstract class BankParser {
      * Extracts the transaction amount from the message.
      */
     protected open fun extractAmount(message: String): BigDecimal? {
-        val patterns = listOf(
-            Regex("""Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            Regex("""INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            Regex("""₹\s*([0-9,]+(?:\.\d{2})?)""")
-        )
-        
-        for (pattern in patterns) {
+        for (pattern in CompiledPatterns.Amount.ALL_PATTERNS) {
             pattern.find(message)?.let { match ->
                 val amountStr = match.groupValues[1].replace(",", "")
                 return try {
@@ -139,15 +135,7 @@ abstract class BankParser {
      * Extracts merchant/payee information.
      */
     protected open fun extractMerchant(message: String, sender: String): String? {
-        // Generic patterns - banks can override with specific patterns
-        val patterns = listOf(
-            Regex("""to\s+([^.\n]+?)(?:\s+on|\s+at|\s+Ref|\s+UPI)""", RegexOption.IGNORE_CASE),
-            Regex("""from\s+([^.\n]+?)(?:\s+on|\s+at|\s+Ref|\s+UPI)""", RegexOption.IGNORE_CASE),
-            Regex("""at\s+([^.\n]+?)(?:\s+on|\s+Ref)""", RegexOption.IGNORE_CASE),
-            Regex("""for\s+([^.\n]+?)(?:\s+on|\s+at|\s+Ref)""", RegexOption.IGNORE_CASE)
-        )
-        
-        for (pattern in patterns) {
+        for (pattern in CompiledPatterns.Merchant.ALL_PATTERNS) {
             pattern.find(message)?.let { match ->
                 val merchant = cleanMerchantName(match.groupValues[1].trim())
                 if (isValidMerchantName(merchant)) {
@@ -163,13 +151,7 @@ abstract class BankParser {
      * Extracts transaction reference number.
      */
     protected open fun extractReference(message: String): String? {
-        val patterns = listOf(
-            Regex("""(?:Ref|Reference|Txn|Transaction)(?:\s+No)?[:\s]+([A-Z0-9]+)""", RegexOption.IGNORE_CASE),
-            Regex("""UPI[:\s]+([0-9]+)""", RegexOption.IGNORE_CASE),
-            Regex("""Reference\s+Number[:\s]+([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
-        )
-        
-        for (pattern in patterns) {
+        for (pattern in CompiledPatterns.Reference.ALL_PATTERNS) {
             pattern.find(message)?.let { match ->
                 return match.groupValues[1].trim()
             }
@@ -182,13 +164,7 @@ abstract class BankParser {
      * Extracts last 4 digits of account number.
      */
     protected open fun extractAccountLast4(message: String): String? {
-        val patterns = listOf(
-            Regex("""(?:A/c|Account|Acct)(?:\s+No)?\.?\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE),
-            Regex("""Card\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE),
-            Regex("""(?:A/c|Account).*?(\d{4})(?:\s|$)""", RegexOption.IGNORE_CASE)
-        )
-        
-        for (pattern in patterns) {
+        for (pattern in CompiledPatterns.Account.ALL_PATTERNS) {
             pattern.find(message)?.let { match ->
                 return match.groupValues[1]
             }
@@ -201,12 +177,7 @@ abstract class BankParser {
      * Extracts balance after transaction.
      */
     protected open fun extractBalance(message: String): BigDecimal? {
-        val patterns = listOf(
-            Regex("""(?:Bal|Balance|Avl Bal|Available Balance)[:\s]+(?:Rs\.?\s*)?([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            Regex("""(?:Updated Balance|Remaining Balance)[:\s]+(?:Rs\.?\s*)?([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
-        )
-        
-        for (pattern in patterns) {
+        for (pattern in CompiledPatterns.Balance.ALL_PATTERNS) {
             pattern.find(message)?.let { match ->
                 val balanceStr = match.groupValues[1].replace(",", "")
                 return try {
@@ -225,10 +196,14 @@ abstract class BankParser {
      */
     protected open fun cleanMerchantName(merchant: String): String {
         return merchant
-            .replace(Regex("""\s*\(.*?\)\s*$"""), "") // Remove trailing parentheses
-            .replace(Regex("""\s+Ref\s+No.*""", RegexOption.IGNORE_CASE), "") // Remove reference numbers
-            .replace(Regex("""\s+on\s+\d{2}.*"""), "") // Remove dates
-            .replace(Regex("""\s+UPI.*""", RegexOption.IGNORE_CASE), "") // Remove UPI IDs
+            .replace(CompiledPatterns.Cleaning.TRAILING_PARENTHESES, "")
+            .replace(CompiledPatterns.Cleaning.REF_NUMBER_SUFFIX, "")
+            .replace(CompiledPatterns.Cleaning.DATE_SUFFIX, "")
+            .replace(CompiledPatterns.Cleaning.UPI_SUFFIX, "")
+            .replace(CompiledPatterns.Cleaning.TIME_SUFFIX, "")
+            .replace(CompiledPatterns.Cleaning.TRAILING_DASH, "")
+            .replace(CompiledPatterns.Cleaning.PVT_LTD, "")
+            .replace(CompiledPatterns.Cleaning.LTD, "")
             .trim()
     }
     
@@ -238,7 +213,7 @@ abstract class BankParser {
     protected open fun isValidMerchantName(name: String): Boolean {
         val commonWords = setOf("USING", "VIA", "THROUGH", "BY", "WITH", "FOR", "TO", "FROM", "AT", "THE")
         
-        return name.length >= 2 && 
+        return name.length >= Constants.Parsing.MIN_MERCHANT_NAME_LENGTH && 
                name.any { it.isLetter() } && 
                name.uppercase() !in commonWords &&
                !name.all { it.isDigit() } &&

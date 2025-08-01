@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.data.parser
 
+import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import java.math.BigDecimal
@@ -28,10 +29,10 @@ data class ParsedTransaction(
      * This helps in duplicate detection.
      */
     fun generateTransactionId(): String {
-        val normalizedAmount = amount.setScale(2, java.math.RoundingMode.HALF_UP)
+        val normalizedAmount = amount.setScale(Constants.Parsing.AMOUNT_SCALE, java.math.RoundingMode.HALF_UP)
         val data = "$sender|$normalizedAmount|$timestamp"
         
-        return MessageDigest.getInstance("MD5")
+        return MessageDigest.getInstance(Constants.Parsing.MD5_ALGORITHM)
             .digest(data.toByteArray())
             .joinToString("") { "%02x".format(it) }
     }
@@ -57,6 +58,7 @@ data class ParsedTransaction(
             bankName = bankName,
             accountNumber = accountLast4,
             balanceAfter = balance,
+            transactionHash = generateTransactionId(),
             isRecurring = false, // Will be determined later
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now()

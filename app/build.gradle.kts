@@ -60,10 +60,14 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
+    // Material Icons Extended
+    implementation("androidx.compose.material:material-icons-extended")
+    
     // Lifecycle and ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
-    
+    implementation(libs.vision.internal.vkp)
+
     // Navigation
     val navVersion = "2.9.3"
     implementation("androidx.navigation:navigation-compose:$navVersion")

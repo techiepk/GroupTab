@@ -9,7 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.pennywiseai.tracker.ui.screens.HomeScreen
+import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
 import com.pennywiseai.tracker.ui.screens.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
@@ -53,11 +53,7 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            HomeScreen(
-                onNavigateToSettings = {
-                    navController.navigate(Settings)
-                }
-            )
+            MainScreen()
         }
         
         composable<Settings>(
@@ -74,22 +70,5 @@ fun PennyWiseNavHost(
             )
         }
         
-        composable<Transactions>(
-            enterTransition = { EnterTransition.None },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { ExitTransition.None }
-        ) {
-            // TODO: Implement TransactionsScreen
-        }
-        
-        composable<Analytics>(
-            enterTransition = { EnterTransition.None },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { ExitTransition.None }
-        ) {
-            // TODO: Implement AnalyticsScreen
-        }
     }
 }

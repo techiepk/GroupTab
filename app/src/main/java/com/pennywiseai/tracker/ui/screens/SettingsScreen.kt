@@ -3,8 +3,6 @@ package com.pennywiseai.tracker.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
-import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
 import com.pennywiseai.tracker.ui.theme.Spacing
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
@@ -25,25 +22,12 @@ fun SettingsScreen(
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     
-    PennyWiseScaffold(
-        modifier = modifier,
-        title = "Settings",
-        navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Navigate back"
-                )
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = Spacing.sm)
-        ) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = Spacing.sm)
+    ) {
         // Theme Settings Section
         Text(
             text = "Appearance",
@@ -111,7 +95,6 @@ fun SettingsScreen(
             }
         }
         
-            // More settings sections can be added here
-        }
+        // More settings sections can be added here
     }
 }

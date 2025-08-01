@@ -4,7 +4,10 @@ import com.pennywiseai.tracker.data.database.dao.TransactionDao
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.YearMonth
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -62,4 +65,46 @@ class TransactionRepository @Inject constructor(
     
     suspend fun deleteAllTransactions() = 
         transactionDao.deleteAllTransactions()
+    
+    // Additional methods for Home screen
+    fun getCurrentMonthTotal(): Flow<BigDecimal> {
+        val now = YearMonth.now()
+        val startDate = now.atDay(1).atStartOfDay()
+        val endDate = now.atEndOfMonth().atTime(23, 59, 59)
+        
+        return transactionDao.getTransactionsBetweenDates(startDate, endDate)
+            .map { transactions ->
+                val income = transactions
+                    .filter { it.transactionType == TransactionType.INCOME }
+                    .sumOf { it.amount }
+                val expenses = transactions
+                    .filter { it.transactionType == TransactionType.EXPENSE }
+                    .sumOf { it.amount }
+                income - expenses // Net amount (positive if saved, negative if spent)
+            }
+    }
+    
+    fun getLastMonthTotal(): Flow<BigDecimal> {
+        val lastMonth = YearMonth.now().minusMonths(1)
+        val startDate = lastMonth.atDay(1).atStartOfDay()
+        val endDate = lastMonth.atEndOfMonth().atTime(23, 59, 59)
+        
+        return transactionDao.getTransactionsBetweenDates(startDate, endDate)
+            .map { transactions ->
+                val income = transactions
+                    .filter { it.transactionType == TransactionType.INCOME }
+                    .sumOf { it.amount }
+                val expenses = transactions
+                    .filter { it.transactionType == TransactionType.EXPENSE }
+                    .sumOf { it.amount }
+                income - expenses // Net amount
+            }
+    }
+    
+    fun getRecentTransactions(limit: Int = 5): Flow<List<TransactionEntity>> {
+        return transactionDao.getAllTransactions()
+            .map { transactions ->
+                transactions.take(limit)
+            }
+    }
 }

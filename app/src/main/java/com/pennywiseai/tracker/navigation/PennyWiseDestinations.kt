@@ -17,3 +17,6 @@ object Settings
 
 @Serializable
 object Analytics
+
+@Serializable
+object Chat

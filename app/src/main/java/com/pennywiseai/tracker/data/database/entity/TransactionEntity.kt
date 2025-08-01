@@ -2,11 +2,15 @@ package com.pennywiseai.tracker.data.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-@Entity(tableName = "transactions")
+@Entity(
+    tableName = "transactions",
+    indices = [Index(value = ["transaction_hash"], unique = true)]
+)
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -41,6 +45,9 @@ data class TransactionEntity(
     
     @ColumnInfo(name = "balance_after")
     val balanceAfter: BigDecimal? = null,
+    
+    @ColumnInfo(name = "transaction_hash", defaultValue = "")
+    val transactionHash: String,
     
     @ColumnInfo(name = "is_recurring")
     val isRecurring: Boolean = false,
