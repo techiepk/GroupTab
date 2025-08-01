@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keep Room schema files for version control
+# !/app/schemas/
