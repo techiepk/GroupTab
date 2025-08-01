@@ -1,5 +1,7 @@
 package com.pennywiseai.tracker.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -19,9 +21,18 @@ fun PennyWiseNavHost(
     NavHost(
         navController = navController,
         startDestination = Home,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
     ) {
-        composable<Home> {
+        composable<Home>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
             HomeScreen(
                 onNavigateToSettings = {
                     navController.navigate(Settings)
@@ -29,17 +40,35 @@ fun PennyWiseNavHost(
             )
         }
         
-        composable<Settings> {
+        composable<Settings>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
             SettingsScreen(
-                themeViewModel = themeViewModel
+                themeViewModel = themeViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
         
-        composable<Transactions> {
+        composable<Transactions>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
             // TODO: Implement TransactionsScreen
         }
         
-        composable<Analytics> {
+        composable<Analytics>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
             // TODO: Implement AnalyticsScreen
         }
     }

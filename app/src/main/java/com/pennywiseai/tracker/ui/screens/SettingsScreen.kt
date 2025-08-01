@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
+import com.pennywiseai.tracker.ui.components.PennyWiseTopBarWithBack
 import com.pennywiseai.tracker.ui.theme.Spacing
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
@@ -17,16 +19,27 @@ import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 @Composable
 fun SettingsScreen(
     themeViewModel: ThemeViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateBack: () -> Unit
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = Spacing.sm)
-    ) {
+    PennyWiseScaffold(
+        modifier = modifier,
+        topBar = {
+            PennyWiseTopBarWithBack(
+                title = "Settings",
+                onBackClick = onNavigateBack
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = Spacing.sm)
+        ) {
         // Theme Settings Section
         Text(
             text = "Appearance",
@@ -94,6 +107,7 @@ fun SettingsScreen(
             }
         }
         
-        // More settings sections can be added here
+            // More settings sections can be added here
+        }
     }
 }
