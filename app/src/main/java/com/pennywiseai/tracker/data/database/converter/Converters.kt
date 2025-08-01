@@ -9,7 +9,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
+    // Handle both ISO format (2025-08-01T18:17:16) and space format (2025-08-01 18:17:16)
     private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    private val dateTimeFormatterWithSpace = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     
     @TypeConverter
@@ -29,7 +31,15 @@ class Converters {
     
     @TypeConverter
     fun toLocalDateTime(value: String?): LocalDateTime? {
-        return value?.let { LocalDateTime.parse(it, dateTimeFormatter) }
+        return value?.let { dateStr ->
+            try {
+                // Try ISO format first (with 'T')
+                LocalDateTime.parse(dateStr, dateTimeFormatter)
+            } catch (e: Exception) {
+                // Fall back to space format
+                LocalDateTime.parse(dateStr, dateTimeFormatterWithSpace)
+            }
+        }
     }
     
     @TypeConverter
