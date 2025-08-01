@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,24 +26,24 @@ fun PennyWiseApp(
     
     val darkTheme = themeUiState.isDarkTheme ?: isSystemInDarkTheme()
     
-    // Check if SMS permission is granted
-    val hasSmsPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.READ_SMS
-    ) == PackageManager.PERMISSION_GRANTED
+    val navController = rememberNavController()
     
-    // Check if user has previously skipped the permission
-    val hasSkippedPermission = themeUiState.hasSkippedSmsPermission
-    
-    // Determine start destination based on permission status
-    val startDestination = if (hasSmsPermission || hasSkippedPermission) Home else Permission
+    // Check initial permission state only once
+    val startDestination = remember {
+        val hasSmsPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        // Note: We can't check hasSkippedPermission here because it's async from DataStore
+        // So we always start at Permission if no SMS permission, and let the screen handle skipped state
+        if (hasSmsPermission) Home else Permission
+    }
     
     PennyWiseTheme(
         darkTheme = darkTheme,
         dynamicColor = themeUiState.isDynamicColorEnabled
     ) {
-        val navController = rememberNavController()
-        
         PennyWiseNavHost(
             navController = navController,
             themeViewModel = themeViewModel,

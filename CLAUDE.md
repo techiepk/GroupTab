@@ -24,8 +24,8 @@ Please reference these documents when working on this project:
 - **Spacing**: 8dp grid system
 - **Typography**: Material 3 type scale
 - **Navigation**: NavigationBar for phones, NavigationRail for tablets
-- **Edge-to-Edge**: All screens use PennyWiseScaffold with proper system bar handling
-- **Consistent UI**: Screens without back navigation use transparent TopAppBar for status bar handling
+- **Edge-to-Edge**: All screens use PennyWiseScaffold with default TopAppBar for consistent system bar handling
+- **Consistent UI**: PennyWiseScaffold provides default TopAppBar with options for title, navigation, actions, and transparency
 
 ## Code Style Guidelines
 - Follow Kotlin coding conventions

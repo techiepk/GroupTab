@@ -42,12 +42,6 @@ fun PermissionScreen(
         }
     }
     
-    // Navigate if already has permission or has skipped before
-    LaunchedEffect(uiState) {
-        if (uiState.hasPermission || uiState.hasSkippedPermission) {
-            onPermissionGranted()
-        }
-    }
     
     PennyWiseScaffold(
         modifier = modifier,

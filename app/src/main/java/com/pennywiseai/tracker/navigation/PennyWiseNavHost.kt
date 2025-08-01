@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.navigation
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -20,9 +21,12 @@ fun PennyWiseNavHost(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     startDestination: Any = Home
 ) {
+    // Use a stable start destination
+    val stableStartDestination = remember { startDestination }
+    
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = stableStartDestination,
         modifier = modifier,
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
