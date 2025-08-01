@@ -8,14 +8,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
 import com.pennywiseai.tracker.ui.theme.Spacing
+import com.pennywiseai.tracker.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     PennyWiseScaffold(
         modifier = modifier,
@@ -58,6 +61,16 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(0.8f)
             ) {
                 Text("Open Settings")
+            }
+            
+            Spacer(modifier = Modifier.height(Spacing.md))
+            
+            // Test SMS scanning button
+            OutlinedButton(
+                onClick = { viewModel.startSmsLogging() },
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Text("Test SMS Scan (Check Logs)")
             }
         }
     }

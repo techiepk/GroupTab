@@ -85,8 +85,17 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
     
+    // WorkManager
+    val workVersion = "2.10.3"
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
+    
+    // Hilt WorkManager integration
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
+    
     testImplementation(libs.junit)
     testImplementation("androidx.room:room-testing:$roomVersion")
+    androidTestImplementation("androidx.work:work-testing:$workVersion")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
