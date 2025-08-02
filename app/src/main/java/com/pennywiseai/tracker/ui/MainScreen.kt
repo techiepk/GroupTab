@@ -25,6 +25,7 @@ import com.pennywiseai.tracker.navigation.Home
 import com.pennywiseai.tracker.navigation.Settings
 import com.pennywiseai.tracker.navigation.Transactions
 import com.pennywiseai.tracker.presentation.home.HomeScreen
+import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
 import com.pennywiseai.tracker.ui.components.PennyWiseBottomNavigation
 import com.pennywiseai.tracker.ui.screens.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
@@ -47,6 +48,7 @@ fun MainScreen(
                         text = when (currentRoute) {
                             "home" -> "PennyWise"
                             "transactions" -> "Transactions"
+                            "subscriptions" -> "Subscriptions"
                             "analytics" -> "Analytics"
                             "chat" -> "AI Assistant"
                             "settings" -> "Settings"
@@ -58,7 +60,7 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
                 ),
                 navigationIcon = {
-                    if (currentRoute == "settings") {
+                    if (currentRoute in listOf("settings", "subscriptions", "transactions")) {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -123,7 +125,11 @@ fun MainScreen(
             }
             
             composable("subscriptions") {
-                // TODO: SubscriptionsScreen()
+                SubscriptionsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
             
             composable("analytics") {

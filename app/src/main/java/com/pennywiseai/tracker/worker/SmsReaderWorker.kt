@@ -104,23 +104,41 @@ class SmsReaderWorker @AssistedInject constructor(
                         // Convert to entity and save
                         val entity = parsedTransaction.toEntity()
                         try {
-                            // Check if this transaction matches a subscription
+                            // Check if this transaction matches an active subscription
                             val matchedSubscription = subscriptionRepository.matchTransactionToSubscription(
                                 entity.merchantName,
                                 entity.amount
                             )
                             
-                            // If matched, update the entity to mark as recurring
-                            val finalEntity = if (matchedSubscription != null) {
-                                Log.d(TAG, "Transaction matched to subscription: ${matchedSubscription.merchantName}")
-                                // Update next payment date for the subscription
-                                subscriptionRepository.updateNextPaymentDateAfterCharge(
-                                    matchedSubscription.id,
+                            // Check if this transaction matches a hidden subscription (for reactivation)
+                            val reactivatedSubscription = if (matchedSubscription == null) {
+                                subscriptionRepository.checkAndReactivateHiddenSubscription(
+                                    entity.merchantName,
+                                    entity.amount,
                                     entity.dateTime.toLocalDate()
                                 )
-                                entity.copy(isRecurring = true)
                             } else {
-                                entity
+                                null
+                            }
+                            
+                            // If matched to active or reactivated subscription, update the entity to mark as recurring
+                            val finalEntity = when {
+                                matchedSubscription != null -> {
+                                    Log.d(TAG, "Transaction matched to active subscription: ${matchedSubscription.merchantName}")
+                                    // Update next payment date for the subscription
+                                    subscriptionRepository.updateNextPaymentDateAfterCharge(
+                                        matchedSubscription.id,
+                                        entity.dateTime.toLocalDate()
+                                    )
+                                    entity.copy(isRecurring = true)
+                                }
+                                reactivatedSubscription != null -> {
+                                    Log.d(TAG, "Transaction matched to hidden subscription, reactivating: ${reactivatedSubscription.merchantName}")
+                                    entity.copy(isRecurring = true)
+                                }
+                                else -> {
+                                    entity
+                                }
                             }
                             
                             val rowId = transactionRepository.insertTransaction(finalEntity)

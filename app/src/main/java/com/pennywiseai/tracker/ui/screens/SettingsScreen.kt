@@ -7,9 +7,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.ui.components.SectionHeader
+import com.pennywiseai.tracker.ui.theme.Dimensions
 import com.pennywiseai.tracker.ui.theme.Spacing
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
@@ -26,23 +29,27 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(vertical = Spacing.sm)
+            .padding(Dimensions.Padding.content),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
         // Theme Settings Section
-        Text(
-            text = "Appearance",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
-        )
+        SectionHeader(title = "Appearance")
         
-        PennyWiseCard {
-            // Theme Mode Selection
-            Column {
-                Text(
-                    text = "Theme",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Spacer(modifier = Modifier.height(Spacing.sm))
+        PennyWiseCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(Dimensions.Padding.content),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                // Theme Mode Selection
+                Column {
+                    Text(
+                        text = "Theme",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -67,31 +74,33 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
-            }
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.md))
-            
-            // Dynamic Color Toggle
+                }
+                
+                HorizontalDivider()
+                
+                // Dynamic Color Toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Dynamic Colors",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    Text(
-                        text = "Use colors from your wallpaper",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Dynamic Colors",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Use colors from your wallpaper",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = themeUiState.isDynamicColorEnabled,
+                        onCheckedChange = { themeViewModel.updateDynamicColor(it) }
                     )
                 }
-                Switch(
-                    checked = themeUiState.isDynamicColorEnabled,
-                    onCheckedChange = { themeViewModel.updateDynamicColor(it) }
-                )
             }
         }
         

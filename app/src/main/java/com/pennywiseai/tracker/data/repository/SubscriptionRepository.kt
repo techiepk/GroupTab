@@ -39,14 +39,11 @@ class SubscriptionRepository @Inject constructor(
     suspend fun updateSubscriptionState(id: Long, state: SubscriptionState) = 
         subscriptionDao.updateSubscriptionState(id, state)
     
-    suspend fun pauseSubscription(id: Long) = 
-        updateSubscriptionState(id, SubscriptionState.PAUSED)
+    suspend fun hideSubscription(id: Long) = 
+        updateSubscriptionState(id, SubscriptionState.HIDDEN)
     
-    suspend fun activateSubscription(id: Long) = 
+    suspend fun unhideSubscription(id: Long) = 
         updateSubscriptionState(id, SubscriptionState.ACTIVE)
-    
-    suspend fun cancelSubscription(id: Long) = 
-        updateSubscriptionState(id, SubscriptionState.CANCELLED)
     
     suspend fun deleteSubscription(id: Long) = 
         subscriptionDao.deleteSubscriptionById(id)
@@ -74,11 +71,16 @@ class SubscriptionRepository @Inject constructor(
         } ?: LocalDate.now().plusDays(30)
         
         val subscription = if (existing != null) {
+            // Check if this is a hidden subscription with a new date (reactivation)
+            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
+                                  existing.nextPaymentDate != nextPaymentDate
+            
             // Update existing subscription
             existing.copy(
                 amount = eMandateInfo.amount,
                 nextPaymentDate = nextPaymentDate,
                 merchantName = eMandateInfo.merchant,
+                state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
                 updatedAt = java.time.LocalDateTime.now()
             )
         } else {
@@ -125,6 +127,31 @@ class SubscriptionRepository @Inject constructor(
         // Assume monthly subscription, add 30 days
         val nextDate = chargeDate.plusDays(30)
         subscriptionDao.updateNextPaymentDate(subscriptionId, nextDate)
+    }
+    
+    /**
+     * Checks if a transaction matches a hidden subscription and reactivates it
+     */
+    suspend fun checkAndReactivateHiddenSubscription(
+        merchantName: String,
+        amount: BigDecimal,
+        transactionDate: LocalDate
+    ): SubscriptionEntity? {
+        val hiddenSubscription = subscriptionDao.getHiddenSubscriptionByMerchant(merchantName)
+        
+        return if (hiddenSubscription != null && areAmountsEqual(hiddenSubscription.amount, amount)) {
+            // Reactivate the subscription
+            subscriptionDao.updateSubscriptionState(hiddenSubscription.id, SubscriptionState.ACTIVE)
+            
+            // Update next payment date
+            val nextDate = transactionDate.plusDays(30)
+            subscriptionDao.updateNextPaymentDate(hiddenSubscription.id, nextDate)
+            
+            // Return the updated subscription
+            subscriptionDao.getSubscriptionById(hiddenSubscription.id)
+        } else {
+            null
+        }
     }
     
     private fun areAmountsEqual(amount1: BigDecimal, amount2: BigDecimal): Boolean {

@@ -25,6 +25,10 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.ui.theme.*
+import com.pennywiseai.tracker.ui.components.SummaryCard
+import com.pennywiseai.tracker.ui.components.ListItemCard
+import com.pennywiseai.tracker.ui.components.SectionHeader
+import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -59,27 +63,22 @@ fun HomeScreen(
                 item {
                     UpcomingSubscriptionsCard(
                         subscriptions = uiState.upcomingSubscriptions,
-                        totalAmount = uiState.upcomingSubscriptionsTotal
+                        totalAmount = uiState.upcomingSubscriptionsTotal,
+                        onClick = onNavigateToSubscriptions
                     )
                 }
             }
             
             // Recent Transactions Section
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Recent Transactions",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    TextButton(onClick = onNavigateToTransactions) {
-                        Text("View All")
+                SectionHeader(
+                    title = "Recent Transactions",
+                    action = {
+                        TextButton(onClick = onNavigateToTransactions) {
+                            Text("View All")
+                        }
                     }
-                }
+                )
             }
             
             if (uiState.isLoading) {
@@ -95,11 +94,8 @@ fun HomeScreen(
                 }
             } else if (uiState.recentTransactions.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                    PennyWiseCard(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(
                             modifier = Modifier
@@ -183,115 +179,49 @@ private fun MonthSummaryCard(
     monthlyChange: BigDecimal,
     monthlyChangePercent: Int
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Dimensions.Padding.card),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "This Month",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = Dimensions.Alpha.subtitle)
-            )
-            Spacer(modifier = Modifier.height(Spacing.sm))
-            val isPositive = monthTotal >= BigDecimal.ZERO
-            val displayAmount = if (isPositive) {
-                "+${formatCurrency(monthTotal)}"
-            } else {
-                formatCurrency(monthTotal) // Already has minus sign
-            }
-            val amountColor = if (isPositive) {
-                if (!isSystemInDarkTheme()) income_light else income_dark // Green for savings
-            } else {
-                if (!isSystemInDarkTheme()) expense_light else expense_dark // Red for net spending
-            }
-            
-            Text(
-                text = displayAmount,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = amountColor
-            )
-            if (monthlyChange != BigDecimal.ZERO) {
-                Spacer(modifier = Modifier.height(Spacing.sm))
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val isIncrease = monthlyChange > BigDecimal.ZERO
-                    val changeColor = if (isIncrease) {
-                        MaterialTheme.colorScheme.error // Red for increased spending
-                    } else {
-                        MaterialTheme.colorScheme.primary // Green/Primary for decreased spending
-                    }
-                    
-                    Text(
-                        text = "${if (isIncrease) "↑" else "↓"} ${Math.abs(monthlyChangePercent)}%",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = changeColor
-                    )
-                    Spacer(modifier = Modifier.width(Spacing.sm))
-                    Text(
-                        text = "from last month",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = Dimensions.Alpha.surface)
-                    )
-                }
-            }
-        }
+    val isPositive = monthTotal >= BigDecimal.ZERO
+    val displayAmount = if (isPositive) {
+        "+${formatCurrency(monthTotal)}"
+    } else {
+        formatCurrency(monthTotal)
     }
+    val amountColor = if (isPositive) {
+        if (!isSystemInDarkTheme()) income_light else income_dark
+    } else {
+        if (!isSystemInDarkTheme()) expense_light else expense_dark
+    }
+    
+    val subtitle = if (monthlyChange != BigDecimal.ZERO) {
+        val isIncrease = monthlyChange > BigDecimal.ZERO
+        val arrow = if (isIncrease) "↑" else "↓"
+        "$arrow ${Math.abs(monthlyChangePercent)}% from last month"
+    } else null
+    
+    SummaryCard(
+        title = "This Month",
+        amount = displayAmount,
+        subtitle = subtitle,
+        amountColor = amountColor
+    )
 }
 
 @Composable
 private fun TransactionItem(
     transaction: TransactionEntity
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Dimensions.Padding.content),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = transaction.merchantName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(
-                text = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${formatCurrency(transaction.amount)}",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = if (transaction.transactionType == TransactionType.EXPENSE) 
-                    if (!isSystemInDarkTheme()) expense_light else expense_dark
-                else 
-                    if (!isSystemInDarkTheme()) income_light else income_dark
-            )
-        }
+    val amountText = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${formatCurrency(transaction.amount)}"
+    val amountColor = if (transaction.transactionType == TransactionType.EXPENSE) {
+        if (!isSystemInDarkTheme()) expense_light else expense_dark
+    } else {
+        if (!isSystemInDarkTheme()) income_light else income_dark
     }
+    
+    ListItemCard(
+        title = transaction.merchantName,
+        subtitle = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
+        amount = amountText,
+        amountColor = amountColor
+    )
 }
 
 private fun formatCurrency(amount: BigDecimal): String {

@@ -43,7 +43,5 @@ data class SubscriptionEntity(
 
 enum class SubscriptionState {
     ACTIVE,
-    PAUSED,
-    CANCELLED,
-    EXPIRED
+    HIDDEN  // Soft delete - hidden from view but kept for reactivation detection
 }
