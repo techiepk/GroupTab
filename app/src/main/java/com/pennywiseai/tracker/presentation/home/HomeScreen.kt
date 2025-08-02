@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,8 +20,7 @@ import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.core.Constants
-import com.pennywiseai.tracker.ui.theme.Dimensions
-import com.pennywiseai.tracker.ui.theme.Spacing
+import com.pennywiseai.tracker.ui.theme.*
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -29,7 +29,9 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToTransactions: () -> Unit = {},
+    onNavigateToSubscriptions: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -60,11 +62,20 @@ fun HomeScreen(
             
             // Recent Transactions Section
             item {
-                Text(
-                    text = "Recent Transactions",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recent Transactions",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    TextButton(onClick = onNavigateToTransactions) {
+                        Text("View All")
+                    }
+                }
             }
             
             if (uiState.isLoading) {
@@ -81,7 +92,10 @@ fun HomeScreen(
             } else if (uiState.recentTransactions.isEmpty()) {
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
                         Box(
                             modifier = Modifier
@@ -167,9 +181,9 @@ private fun MonthSummaryCard(
                 formatCurrency(monthTotal) // Already has minus sign
             }
             val amountColor = if (isPositive) {
-                MaterialTheme.colorScheme.primary // Green for savings
+                if (!isSystemInDarkTheme()) income_light else income_dark // Green for savings
             } else {
-                MaterialTheme.colorScheme.error // Red for net spending
+                if (!isSystemInDarkTheme()) expense_light else expense_dark // Red for net spending
             }
             
             Text(
@@ -245,9 +259,9 @@ private fun TransactionItem(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = if (transaction.transactionType == TransactionType.EXPENSE) 
-                    MaterialTheme.colorScheme.error 
+                    if (!isSystemInDarkTheme()) expense_light else expense_dark
                 else 
-                    MaterialTheme.colorScheme.primary
+                    if (!isSystemInDarkTheme()) income_light else income_dark
             )
         }
     }

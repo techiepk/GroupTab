@@ -45,6 +45,6 @@ class ThemeViewModel @Inject constructor(
 
 data class ThemeUiState(
     val isDarkTheme: Boolean? = null, // null = follow system
-    val isDynamicColorEnabled: Boolean = true,
+    val isDynamicColorEnabled: Boolean = false, // Default to custom theme colors
     val hasSkippedSmsPermission: Boolean = false
 )

@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomNavItem(
@@ -16,12 +15,6 @@ sealed class BottomNavItem(
         route = "home",
         title = "Home",
         icon = Icons.Default.Home
-    )
-    
-    data object Transactions : BottomNavItem(
-        route = "transactions",
-        title = "Transactions",
-        icon = Icons.Default.Receipt
     )
     
     data object Analytics : BottomNavItem(

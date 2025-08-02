@@ -2,12 +2,14 @@ package com.pennywiseai.tracker.ui
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -44,7 +46,8 @@ fun MainScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
+            Column {
+                TopAppBar(
                 title = { 
                     Text(
                         text = when (currentRoute) {
@@ -57,6 +60,9 @@ fun MainScreen(
                         }
                     )
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+                ),
                 navigationIcon = {
                     if (currentRoute == "settings") {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -82,9 +88,15 @@ fun MainScreen(
                     }
                 }
             )
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            }
         },
         bottomBar = {
-            if (currentRoute != "settings") {
+            // Show bottom navigation only for main screens
+            if (currentRoute in listOf("home", "analytics", "chat")) {
                 PennyWiseBottomNavigation(navController = navController)
             }
         },
@@ -95,8 +107,8 @@ fun MainScreen(
                     onClick = { homeViewModel.scanSmsMessages() }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan SMS"
+                        imageVector = Icons.Default.Sync,
+                        contentDescription = "Sync SMS"
                     )
                 }
             }
@@ -115,12 +127,22 @@ fun MainScreen(
                 HomeScreen(
                     onNavigateToSettings = {
                         navController.navigate("settings")
+                    },
+                    onNavigateToTransactions = {
+                        navController.navigate("transactions")
+                    },
+                    onNavigateToSubscriptions = {
+                        navController.navigate("subscriptions")
                     }
                 )
             }
             
             composable("transactions") {
                 // TODO: TransactionsScreen()
+            }
+            
+            composable("subscriptions") {
+                // TODO: SubscriptionsScreen()
             }
             
             composable("analytics") {

@@ -28,7 +28,7 @@ class UserPreferencesRepository @Inject constructor(
         .map { preferences ->
             UserPreferences(
                 isDarkThemeEnabled = preferences[PreferencesKeys.DARK_THEME_ENABLED],
-                isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: true,
+                isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: false,
                 hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false
             )
         }
@@ -58,6 +58,6 @@ class UserPreferencesRepository @Inject constructor(
 
 data class UserPreferences(
     val isDarkThemeEnabled: Boolean? = null, // null means follow system
-    val isDynamicColorEnabled: Boolean = true,
+    val isDynamicColorEnabled: Boolean = false, // Default to custom brand colors
     val hasSkippedSmsPermission: Boolean = false
 )

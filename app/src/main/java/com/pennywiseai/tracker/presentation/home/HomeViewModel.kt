@@ -53,8 +53,8 @@ class HomeViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            // Load recent transactions (last 5)
-            transactionRepository.getRecentTransactions(limit = 5).collect { transactions ->
+            // Load recent transactions (last 3)
+            transactionRepository.getRecentTransactions(limit = 3).collect { transactions ->
                 _uiState.value = _uiState.value.copy(
                     recentTransactions = transactions,
                     isLoading = false
