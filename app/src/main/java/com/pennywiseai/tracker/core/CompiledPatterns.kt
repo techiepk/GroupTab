@@ -95,9 +95,9 @@ object CompiledPatterns {
         val ACCOUNT_SIMPLE = Regex("""HDFC\s+Bank\s+A/c\s+(\d{4})""", RegexOption.IGNORE_CASE)
         val ACCOUNT_GENERIC = Regex("""A/c\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE)
         
-        // E-Mandate patterns
+        // E-Mandate patterns (multi-line format)
         val AMOUNT_WILL_DEDUCT = Regex("""Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+will\s+be\s+deducted""", RegexOption.IGNORE_CASE)
-        val DEDUCTION_DATE = Regex("""deducted\s+on\s+(\d{2}/\d{2}/\d{2})""", RegexOption.IGNORE_CASE)
+        val DEDUCTION_DATE = Regex("""deducted\s+on\s+(\d{2}/\d{2}/\d{2}),?\s*\d{2}:\d{2}:\d{2}""", RegexOption.IGNORE_CASE)
         val MANDATE_MERCHANT = Regex("""For\s+([^\n]+?)\s+mandate""", RegexOption.IGNORE_CASE)
         val UMN_PATTERN = Regex("""UMN\s+([a-zA-Z0-9@]+)""", RegexOption.IGNORE_CASE)
     }

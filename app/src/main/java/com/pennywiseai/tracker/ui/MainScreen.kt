@@ -26,6 +26,7 @@ import com.pennywiseai.tracker.navigation.Settings
 import com.pennywiseai.tracker.navigation.Transactions
 import com.pennywiseai.tracker.presentation.home.HomeScreen
 import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
+import com.pennywiseai.tracker.presentation.transactions.TransactionsScreen
 import com.pennywiseai.tracker.ui.components.PennyWiseBottomNavigation
 import com.pennywiseai.tracker.ui.screens.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
@@ -121,7 +122,11 @@ fun MainScreen(
             }
             
             composable("transactions") {
-                // TODO: TransactionsScreen()
+                TransactionsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
             
             composable("subscriptions") {

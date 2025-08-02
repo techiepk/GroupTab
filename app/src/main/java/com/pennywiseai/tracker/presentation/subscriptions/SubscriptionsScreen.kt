@@ -53,13 +53,9 @@ fun SubscriptionsScreen(
         }
     }
     
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(Dimensions.Padding.content),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
@@ -105,6 +101,11 @@ fun SubscriptionsScreen(
             }
         }
         }
+        
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -185,21 +186,33 @@ private fun SwipeableSubscriptionItem(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Top
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = Spacing.sm)
+                        ) {
                             Text(
                                 text = subscription.merchantName,
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val daysUntilNext = ChronoUnit.DAYS.between(
-                                    LocalDate.now(),
-                                    subscription.nextPaymentDate
-                                )
+                                // Calculate the actual next payment date
+                                val today = LocalDate.now()
+                                var nextPaymentDate = subscription.nextPaymentDate
+                                
+                                // If the stored date is in the past, calculate the next occurrence
+                                while (nextPaymentDate.isBefore(today) || nextPaymentDate.isEqual(today)) {
+                                    nextPaymentDate = nextPaymentDate.plusMonths(1)
+                                }
+                                
+                                val daysUntilNext = ChronoUnit.DAYS.between(today, nextPaymentDate)
                                 
                                 Icon(
                                     imageVector = Icons.Default.CalendarToday,
@@ -210,10 +223,10 @@ private fun SwipeableSubscriptionItem(
                                 
                                 Text(
                                     text = when {
-                                        daysUntilNext <= 0 -> "Due today"
+                                        daysUntilNext == 0L -> "Due today"
                                         daysUntilNext == 1L -> "Due tomorrow"
-                                        daysUntilNext <= 7 -> "Due in $daysUntilNext days"
-                                        else -> subscription.nextPaymentDate.format(
+                                        daysUntilNext in 2..7 -> "Due in $daysUntilNext days"
+                                        else -> nextPaymentDate.format(
                                             DateTimeFormatter.ofPattern("MMM d")
                                         )
                                     },

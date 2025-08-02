@@ -176,8 +176,7 @@ class HDFCBankParser : BankParser() {
      * Checks if this is an E-Mandate notification (not a transaction).
      */
     fun isEMandateNotification(message: String): Boolean {
-        return message.contains("E-Mandate!", ignoreCase = true) ||
-               message.contains("will be deducted", ignoreCase = true)
+        return message.contains("E-Mandate!", ignoreCase = true)
     }
     
     /**

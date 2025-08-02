@@ -71,9 +71,21 @@ class SubscriptionRepository @Inject constructor(
         } ?: LocalDate.now().plusDays(30)
         
         val subscription = if (existing != null) {
-            // Check if this is a hidden subscription with a new date (reactivation)
+            // If subscription is hidden and the payment date is the same, don't update it
+            // This prevents re-adding hidden subscriptions when rescanning the same SMS
+            if (existing.state == SubscriptionState.HIDDEN && 
+                existing.nextPaymentDate == nextPaymentDate) {
+                // Return the existing ID without updating
+                return existing.id
+            }
+            
+            // Check if this is a hidden subscription that should be reactivated
+            // Reactivate only if:
+            // 1. Subscription is currently hidden
+            // 2. New payment date is different AND in the future
             val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
-                                  existing.nextPaymentDate != nextPaymentDate
+                                  existing.nextPaymentDate != nextPaymentDate &&
+                                  nextPaymentDate.isAfter(LocalDate.now())
             
             // Update existing subscription
             existing.copy(
@@ -140,15 +152,22 @@ class SubscriptionRepository @Inject constructor(
         val hiddenSubscription = subscriptionDao.getHiddenSubscriptionByMerchant(merchantName)
         
         return if (hiddenSubscription != null && areAmountsEqual(hiddenSubscription.amount, amount)) {
-            // Reactivate the subscription
-            subscriptionDao.updateSubscriptionState(hiddenSubscription.id, SubscriptionState.ACTIVE)
-            
-            // Update next payment date
-            val nextDate = transactionDate.plusDays(30)
-            subscriptionDao.updateNextPaymentDate(hiddenSubscription.id, nextDate)
-            
-            // Return the updated subscription
-            subscriptionDao.getSubscriptionById(hiddenSubscription.id)
+            // Only reactivate if the transaction date is after the last known payment date
+            // This prevents old transactions from reactivating subscriptions
+            if (transactionDate.isAfter(hiddenSubscription.nextPaymentDate.minusDays(30))) {
+                // Reactivate the subscription
+                subscriptionDao.updateSubscriptionState(hiddenSubscription.id, SubscriptionState.ACTIVE)
+                
+                // Update next payment date (30 days from transaction)
+                val nextDate = transactionDate.plusDays(30)
+                subscriptionDao.updateNextPaymentDate(hiddenSubscription.id, nextDate)
+                
+                // Return the updated subscription
+                subscriptionDao.getSubscriptionById(hiddenSubscription.id)
+            } else {
+                // Transaction is too old, don't reactivate
+                null
+            }
         } else {
             null
         }
