@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.presentation.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
@@ -26,6 +27,6 @@ sealed class BottomNavItem(
     data object Chat : BottomNavItem(
         route = "chat",
         title = "Chat",
-        icon = Icons.Default.Chat
+        icon = Icons.AutoMirrored.Filled.Chat
     )
 }

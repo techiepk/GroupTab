@@ -202,7 +202,14 @@ private fun TransactionItem(
         title = transaction.merchantName,
         subtitle = subtitleParts.joinToString(" • "),
         amount = formatCurrency(transaction.amount),
-        amountColor = amountColor
+        amountColor = amountColor,
+        leadingContent = {
+            BrandIcon(
+                merchantName = transaction.merchantName,
+                size = 40.dp,
+                showBackground = true
+            )
+        }
     )
 }
 

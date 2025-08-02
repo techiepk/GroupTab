@@ -23,3 +23,6 @@ test_results.txt
 
 keys/
 *.local.*
+
+# Scripts
+scripts/.env

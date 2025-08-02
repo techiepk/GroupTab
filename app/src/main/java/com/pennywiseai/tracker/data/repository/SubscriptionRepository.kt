@@ -4,6 +4,7 @@ import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
+import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -181,40 +182,7 @@ class SubscriptionRepository @Inject constructor(
     }
     
     private fun determineCategory(merchantName: String): String {
-        val merchantLower = merchantName.lowercase()
-        
-        return when {
-            // Streaming services
-            merchantLower.contains("netflix") || 
-            merchantLower.contains("spotify") || 
-            merchantLower.contains("prime") ||
-            merchantLower.contains("hotstar") ||
-            merchantLower.contains("youtube") -> "Entertainment"
-            
-            // Utilities
-            merchantLower.contains("electricity") || 
-            merchantLower.contains("water") || 
-            merchantLower.contains("gas") ||
-            merchantLower.contains("broadband") ||
-            merchantLower.contains("internet") -> "Utilities"
-            
-            // Insurance
-            merchantLower.contains("insurance") || 
-            merchantLower.contains("lic") || 
-            merchantLower.contains("policy") -> "Insurance"
-            
-            // Gym/Fitness
-            merchantLower.contains("gym") || 
-            merchantLower.contains("fitness") || 
-            merchantLower.contains("cult") -> "Fitness"
-            
-            // Mobile/Phone
-            merchantLower.contains("airtel") || 
-            merchantLower.contains("jio") || 
-            merchantLower.contains("vodafone") ||
-            merchantLower.contains("mobile") -> "Mobile"
-            
-            else -> "Subscriptions"
-        }
+        // Use unified category mapping
+        return CategoryMapping.getCategory(merchantName)
     }
 }

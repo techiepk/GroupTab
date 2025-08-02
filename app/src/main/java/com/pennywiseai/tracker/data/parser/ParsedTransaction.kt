@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.data.parser
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import java.math.BigDecimal
 import java.security.MessageDigest
 import java.time.Instant
@@ -66,63 +67,25 @@ data class ParsedTransaction(
     }
     
     /**
-     * Determines the category based on merchant name.
-     * This is a simple implementation - can be enhanced later.
+     * Determines the category based on merchant name and transaction type.
      */
     private fun determineCategory(): String {
-        val merchantLower = merchant?.lowercase() ?: return "Others"
+        val merchantName = merchant ?: return "Others"
         
-        return when {
-            // Food & Dining
-            merchantLower.contains("swiggy") || 
-            merchantLower.contains("zomato") || 
-            merchantLower.contains("restaurant") ||
-            merchantLower.contains("cafe") ||
-            merchantLower.contains("food") -> "Food & Dining"
-            
-            // Transportation
-            merchantLower.contains("uber") || 
-            merchantLower.contains("ola") || 
-            merchantLower.contains("rapido") ||
-            merchantLower.contains("petrol") ||
-            merchantLower.contains("fuel") -> "Transportation"
-            
-            // Shopping
-            merchantLower.contains("amazon") || 
-            merchantLower.contains("flipkart") || 
-            merchantLower.contains("myntra") ||
-            merchantLower.contains("store") ||
-            merchantLower.contains("mart") -> "Shopping"
-            
-            // Bills & Utilities
-            merchantLower.contains("electricity") || 
-            merchantLower.contains("water") || 
-            merchantLower.contains("gas") ||
-            merchantLower.contains("broadband") ||
-            merchantLower.contains("bill") -> "Bills & Utilities"
-            
-            // Entertainment
-            merchantLower.contains("netflix") || 
-            merchantLower.contains("spotify") || 
-            merchantLower.contains("prime") ||
-            merchantLower.contains("hotstar") ||
-            merchantLower.contains("cinema") -> "Entertainment"
-            
-            // Healthcare
-            merchantLower.contains("pharmacy") || 
-            merchantLower.contains("medical") || 
-            merchantLower.contains("hospital") ||
-            merchantLower.contains("clinic") ||
-            merchantLower.contains("doctor") -> "Healthcare"
-            
-            // Income
-            type == TransactionType.INCOME -> when {
+        // Special handling for income transactions
+        if (type == TransactionType.INCOME) {
+            val merchantLower = merchantName.lowercase()
+            return when {
                 merchantLower.contains("salary") -> "Salary"
                 merchantLower.contains("refund") -> "Refunds"
+                merchantLower.contains("cashback") -> "Cashback"
+                merchantLower.contains("interest") -> "Interest"
+                merchantLower.contains("dividend") -> "Dividends"
                 else -> "Income"
             }
-            
-            else -> "Others"
         }
+        
+        // Use unified category mapping for expenses
+        return CategoryMapping.getCategory(merchantName)
     }
 }

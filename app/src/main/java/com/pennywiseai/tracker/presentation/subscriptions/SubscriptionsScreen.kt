@@ -176,11 +176,19 @@ private fun SwipeableSubscriptionItem(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(Dimensions.Padding.content)
+                        .padding(Dimensions.Padding.content),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
+                    // Brand Icon
+                    BrandIcon(
+                        merchantName = subscription.merchantName,
+                        size = 48.dp,
+                        showBackground = true
+                    )
+                    
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

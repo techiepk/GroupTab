@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Sync
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.ui.components.BrandIcon
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.ui.theme.*
 import com.pennywiseai.tracker.ui.components.SummaryCard
@@ -220,7 +221,14 @@ private fun TransactionItem(
         title = transaction.merchantName,
         subtitle = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
         amount = amountText,
-        amountColor = amountColor
+        amountColor = amountColor,
+        leadingContent = {
+            BrandIcon(
+                merchantName = transaction.merchantName,
+                size = 40.dp,
+                showBackground = true
+            )
+        }
     )
 }
 
