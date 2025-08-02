@@ -34,6 +34,7 @@ fun SettingsScreen(
     val downloadProgress by settingsViewModel.downloadProgress.collectAsStateWithLifecycle()
     val downloadedMB by settingsViewModel.downloadedMB.collectAsStateWithLifecycle()
     val totalMB by settingsViewModel.totalMB.collectAsStateWithLifecycle()
+    val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle(initialValue = false)
     
     Column(
         modifier = modifier
@@ -282,6 +283,38 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+        
+        // Developer Section
+        SectionHeader(title = "Developer")
+        
+        PennyWiseCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Developer Mode",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Show technical information in chat",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = isDeveloperModeEnabled,
+                    onCheckedChange = { settingsViewModel.toggleDeveloperMode(it) }
+                )
             }
         }
     }

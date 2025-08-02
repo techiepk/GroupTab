@@ -97,11 +97,15 @@ class LlmRepository @Inject constructor(
             }
         }
         
+        // Get conversation history
+        val recentMessages = chatDao.getRecentMessages(10) // Get last 10 messages
+        val conversationContext = buildConversationContext(recentMessages, userMessage)
+        
         // Stream response and accumulate for saving
         val responseBuilder = StringBuilder()
         var messageInserted = false
         
-        llmService.generateResponseStream(userMessage)
+        llmService.generateResponseStream(conversationContext)
             .collect { partialResponse ->
                 responseBuilder.append(partialResponse)
                 emit(partialResponse)
@@ -133,4 +137,24 @@ class LlmRepository @Inject constructor(
     suspend fun getAllSessions(): List<String> = chatDao.getAllSessions()
     
     suspend fun getMessageCount(): Int = chatDao.getMessageCount()
+    
+    private suspend fun buildConversationContext(history: List<ChatMessage>, currentMessage: String): String {
+        val contextBuilder = StringBuilder()
+        
+        // Add conversation history (reverse since we got them in DESC order)
+        if (history.isNotEmpty()) {
+            contextBuilder.append("Previous conversation:\n")
+            history.reversed().forEach { msg ->
+                val role = if (msg.isUser) "User" else "Assistant"
+                contextBuilder.append("$role: ${msg.message}\n")
+            }
+            contextBuilder.append("\n")
+        }
+        
+        // Add current message
+        contextBuilder.append("User: $currentMessage\n")
+        contextBuilder.append("Assistant:")
+        
+        return contextBuilder.toString()
+    }
 }

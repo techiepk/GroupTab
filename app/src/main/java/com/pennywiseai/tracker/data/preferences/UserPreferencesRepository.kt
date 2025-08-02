@@ -22,6 +22,7 @@ class UserPreferencesRepository @Inject constructor(
         val DARK_THEME_ENABLED = booleanPreferencesKey("dark_theme_enabled")
         val DYNAMIC_COLOR_ENABLED = booleanPreferencesKey("dynamic_color_enabled")
         val HAS_SKIPPED_SMS_PERMISSION = booleanPreferencesKey("has_skipped_sms_permission")
+        val DEVELOPER_MODE_ENABLED = booleanPreferencesKey("developer_mode_enabled")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
@@ -29,8 +30,14 @@ class UserPreferencesRepository @Inject constructor(
             UserPreferences(
                 isDarkThemeEnabled = preferences[PreferencesKeys.DARK_THEME_ENABLED],
                 isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: false,
-                hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false
+                hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false,
+                isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false
             )
+        }
+    
+    val isDeveloperModeEnabled: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false
         }
 
     suspend fun updateDarkThemeEnabled(enabled: Boolean?) {
@@ -54,10 +61,17 @@ class UserPreferencesRepository @Inject constructor(
             preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] = skipped
         }
     }
+    
+    suspend fun setDeveloperModeEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] = enabled
+        }
+    }
 }
 
 data class UserPreferences(
     val isDarkThemeEnabled: Boolean? = null, // null means follow system
     val isDynamicColorEnabled: Boolean = false, // Default to custom brand colors
-    val hasSkippedSmsPermission: Boolean = false
+    val hasSkippedSmsPermission: Boolean = false,
+    val isDeveloperModeEnabled: Boolean = false
 )

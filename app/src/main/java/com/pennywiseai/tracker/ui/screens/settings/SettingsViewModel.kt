@@ -17,13 +17,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.repository.ModelRepository
+import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val modelRepository: ModelRepository
+    private val modelRepository: ModelRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
     
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -42,6 +44,9 @@ class SettingsViewModel @Inject constructor(
     val totalMB: StateFlow<Long> = _totalMB.asStateFlow()
     
     private var currentDownloadId: Long? = null
+    
+    // Developer mode state
+    val isDeveloperModeEnabled = userPreferencesRepository.isDeveloperModeEnabled
     
     init {
         checkIfModelDownloaded()
@@ -175,6 +180,12 @@ class SettingsViewModel @Inject constructor(
             _totalMB.value = 0
             // Update model repository state
             modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.NOT_DOWNLOADED)
+        }
+    }
+    
+    fun toggleDeveloperMode(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setDeveloperModeEnabled(enabled)
         }
     }
 }

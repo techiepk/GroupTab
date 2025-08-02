@@ -7,12 +7,15 @@ import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.ModelRepository
 import com.pennywiseai.tracker.data.repository.ModelState
+import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
+import com.pennywiseai.tracker.utils.TokenUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,7 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val llmRepository: LlmRepository,
-    private val modelRepository: ModelRepository
+    private val modelRepository: ModelRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
     
     val messages: StateFlow<List<ChatMessage>> = llmRepository.getAllMessages()
@@ -43,6 +47,33 @@ class ChatViewModel @Inject constructor(
     
     private val _currentResponse = MutableStateFlow("")
     val currentResponse: StateFlow<String> = _currentResponse.asStateFlow()
+    
+    val isDeveloperModeEnabled = userPreferencesRepository.isDeveloperModeEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+    
+    // Chat statistics for developer mode
+    val chatStats = messages.combine(currentResponse) { msgs, current ->
+        val allText = msgs.joinToString(" ") { it.message } + " " + current
+        val totalChars = allText.length
+        val estimatedTokens = TokenUtils.estimateTokens(allText)
+        val maxTokens = 8192 // Gemma 2B context window
+        
+        ChatStats(
+            messageCount = msgs.size,
+            totalCharacters = totalChars,
+            estimatedTokens = estimatedTokens,
+            maxTokens = maxTokens,
+            contextUsagePercent = TokenUtils.calculateContextUsagePercent(estimatedTokens, maxTokens)
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ChatStats()
+    )
     
     init {
         Log.d("ChatViewModel", "Initializing ChatViewModel")
@@ -116,4 +147,12 @@ class ChatViewModel @Inject constructor(
 data class ChatUiState(
     val isLoading: Boolean = false,
     val error: String? = null
+)
+
+data class ChatStats(
+    val messageCount: Int = 0,
+    val totalCharacters: Int = 0,
+    val estimatedTokens: Int = 0,
+    val maxTokens: Int = 8192,
+    val contextUsagePercent: Int = 0
 )

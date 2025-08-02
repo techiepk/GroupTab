@@ -36,4 +36,7 @@ interface ChatDao {
     
     @Query("SELECT DISTINCT sessionId FROM chat_messages WHERE sessionId IS NOT NULL ORDER BY timestamp DESC")
     suspend fun getAllSessions(): List<String>
+    
+    @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecentMessages(limit: Int): List<ChatMessage>
 }

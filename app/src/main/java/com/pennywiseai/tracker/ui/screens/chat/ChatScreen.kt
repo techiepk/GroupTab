@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pennywiseai.tracker.data.repository.ModelState
 import com.pennywiseai.tracker.ui.theme.Dimensions
 import com.pennywiseai.tracker.ui.theme.Spacing
+import com.pennywiseai.tracker.utils.TokenUtils
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -39,6 +41,8 @@ fun ChatScreen(
     val modelState by viewModel.modelState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentResponse by viewModel.currentResponse.collectAsStateWithLifecycle()
+    val isDeveloperMode by viewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle()
+    val chatStats by viewModel.chatStats.collectAsStateWithLifecycle()
     
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -117,6 +121,15 @@ fun ChatScreen(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+                    // Developer info card
+                    AnimatedVisibility(
+                        visible = isDeveloperMode && messages.isNotEmpty(),
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        DeveloperInfoCard(chatStats = chatStats)
+                    }
+                    
                     // Clear chat button when there are messages
                     AnimatedVisibility(
                         visible = messages.isNotEmpty(),
@@ -261,6 +274,133 @@ fun ChatScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DeveloperInfoCard(
+    chatStats: ChatStats,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val usageHint = remember(chatStats.contextUsagePercent) {
+        TokenUtils.getUsageColorHint(chatStats.contextUsagePercent)
+    }
+    val usageColor = when (usageHint) {
+        "critical" -> MaterialTheme.colorScheme.error
+        "warning" -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.primary
+    }
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimensions.Padding.content)
+            .padding(bottom = Spacing.sm),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        onClick = { isExpanded = !isExpanded }
+    ) {
+        Column(
+            modifier = Modifier.padding(Dimensions.Padding.content)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Code,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Gemma 2B • ${chatStats.messageCount} messages",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${TokenUtils.formatNumber(chatStats.estimatedTokens)} tokens",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = usageColor
+                    )
+                    Icon(
+                        if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    
+                    // Context usage
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Context Usage",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${chatStats.contextUsagePercent}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = usageColor
+                        )
+                    }
+                    
+                    LinearProgressIndicator(
+                        progress = { chatStats.contextUsagePercent / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = usageColor,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        drawStopIndicator = {}
+                    )
+                    
+                    Text(
+                        text = "${TokenUtils.formatNumber(chatStats.estimatedTokens)} / ${TokenUtils.formatNumber(chatStats.maxTokens)} tokens",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
                 }
             }
         }
