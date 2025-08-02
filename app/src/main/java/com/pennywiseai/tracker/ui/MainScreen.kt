@@ -25,7 +25,6 @@ import com.pennywiseai.tracker.navigation.Home
 import com.pennywiseai.tracker.navigation.Settings
 import com.pennywiseai.tracker.navigation.Transactions
 import com.pennywiseai.tracker.presentation.home.HomeScreen
-import com.pennywiseai.tracker.presentation.home.HomeViewModel
 import com.pennywiseai.tracker.ui.components.PennyWiseBottomNavigation
 import com.pennywiseai.tracker.ui.screens.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
@@ -38,11 +37,6 @@ fun MainScreen(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    
-    // Get HomeViewModel when on home screen for FAB
-    val homeViewModel: HomeViewModel? = if (currentRoute == "home") {
-        hiltViewModel()
-    } else null
     
     Scaffold(
         topBar = {
@@ -98,19 +92,6 @@ fun MainScreen(
             // Show bottom navigation only for main screens
             if (currentRoute in listOf("home", "analytics", "chat")) {
                 PennyWiseBottomNavigation(navController = navController)
-            }
-        },
-        floatingActionButton = {
-            // Show FAB only on home screen
-            if (currentRoute == "home" && homeViewModel != null) {
-                FloatingActionButton(
-                    onClick = { homeViewModel.scanSmsMessages() }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Sync,
-                        contentDescription = "Sync SMS"
-                    )
-                }
             }
         }
     ) { paddingValues ->

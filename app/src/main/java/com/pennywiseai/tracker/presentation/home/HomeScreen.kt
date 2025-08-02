@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.presentation.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,11 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Sync
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
@@ -118,31 +122,54 @@ fun HomeScreen(
             }
         }
         
+        // FAB
+        FloatingActionButton(
+            onClick = { viewModel.scanSmsMessages() },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(Dimensions.Padding.content)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Sync,
+                contentDescription = "Sync SMS"
+            )
+        }
+        
         // Scanning overlay
         AnimatedVisibility(
             visible = uiState.isScanning,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.Center)
         ) {
             Card(
-                modifier = Modifier.padding(Dimensions.Padding.content),
+                modifier = Modifier
+                    .padding(Dimensions.Padding.content)
+                    .widthIn(max = 280.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Row(
-                    modifier = Modifier.padding(Dimensions.Padding.content),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm + Spacing.xs),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(Dimensions.Component.progressIndicatorSize),
-                        strokeWidth = Constants.UI.PROGRESS_STROKE_WIDTH.dp
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 4.dp
                     )
                     Text(
-                        text = "Scanning SMS messages...",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Scanning SMS messages",
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Looking for transactions...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
