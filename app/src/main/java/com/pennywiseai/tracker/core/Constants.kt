@@ -64,4 +64,15 @@ object Constants {
         const val CHAT = "chat"
         const val SETTINGS = "settings"
     }
+    
+    /**
+     * LLM Model Configuration
+     */
+    object ModelDownload {
+        const val MODEL_URL = "https://d3q489kjw0f759.cloudfront.net/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task"
+        const val MODEL_FILE_NAME = "gemma2-2b.task"
+        const val MODEL_SIZE_MB = 1536L // 1.5GB in MB
+        const val MODEL_SIZE_BYTES = 1_610_612_736L // 1.5GB in bytes
+        const val REQUIRED_SPACE_BYTES = 3_221_225_472L // 3GB (2x model size for safety)
+    }
 }

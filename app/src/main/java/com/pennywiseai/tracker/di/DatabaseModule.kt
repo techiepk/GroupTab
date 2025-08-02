@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.di
 import android.content.Context
 import androidx.room.Room
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
+import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
 import dagger.Module
@@ -73,5 +74,17 @@ object DatabaseModule {
     @Singleton
     fun provideSubscriptionDao(database: PennyWiseDatabase): SubscriptionDao {
         return database.subscriptionDao()
+    }
+    
+    /**
+     * Provides the ChatDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return ChatDao for accessing chat message data
+     */
+    @Provides
+    @Singleton
+    fun provideChatDao(database: PennyWiseDatabase): ChatDao {
+        return database.chatDao()
     }
 }

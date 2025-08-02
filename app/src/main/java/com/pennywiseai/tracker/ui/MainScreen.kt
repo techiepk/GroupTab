@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.ui.unit.dp
@@ -28,7 +29,7 @@ import com.pennywiseai.tracker.presentation.home.HomeScreen
 import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
 import com.pennywiseai.tracker.presentation.transactions.TransactionsScreen
 import com.pennywiseai.tracker.ui.components.PennyWiseBottomNavigation
-import com.pennywiseai.tracker.ui.screens.SettingsScreen
+import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,7 +143,11 @@ fun MainScreen(
             }
             
             composable("chat") {
-                // TODO: ChatScreen()
+                com.pennywiseai.tracker.ui.screens.chat.ChatScreen(
+                    onNavigateToSettings = {
+                        navController.navigate("settings")
+                    }
+                )
             }
             
             composable("settings") {

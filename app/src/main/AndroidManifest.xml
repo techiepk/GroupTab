@@ -4,6 +4,9 @@
 
     <!-- SMS Permission for reading transaction messages -->
     <uses-permission android:name="android.permission.READ_SMS" />
+    
+    <!-- Internet permission for downloading AI model -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".PennyWiseApplication"

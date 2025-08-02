@@ -106,6 +106,9 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
     
+    // MediaPipe for LLM inference
+    implementation("com.google.mediapipe:tasks-genai:0.10.24")
+    
     testImplementation(libs.junit)
     testImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:$workVersion")

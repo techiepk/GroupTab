@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
-import com.pennywiseai.tracker.ui.screens.SettingsScreen
+import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
 @Composable
