@@ -138,7 +138,7 @@ fun MainScreen(
             }
             
             composable("analytics") {
-                // TODO: AnalyticsScreen()
+                com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen()
             }
             
             composable("chat") {

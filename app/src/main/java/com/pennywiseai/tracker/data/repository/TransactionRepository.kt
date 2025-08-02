@@ -6,6 +6,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import javax.inject.Inject
@@ -26,6 +27,15 @@ class TransactionRepository @Inject constructor(
         endDate: LocalDateTime
     ): Flow<List<TransactionEntity>> = 
         transactionDao.getTransactionsBetweenDates(startDate, endDate)
+    
+    fun getTransactionsBetweenDates(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<TransactionEntity>> = 
+        transactionDao.getTransactionsBetweenDates(
+            startDate.atStartOfDay(),
+            endDate.atTime(23, 59, 59)
+        )
     
     fun getTransactionsByType(type: TransactionType): Flow<List<TransactionEntity>> = 
         transactionDao.getTransactionsByType(type)

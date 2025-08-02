@@ -116,10 +116,19 @@ fun PennyWiseTheme(
 
     val view = LocalView.current
     if (!view.isInEditMode) {
+        val window = (view.context as Activity).window
+        val darkTheme = darkTheme
+        
         SideEffect {
-            val window = (view.context as Activity).window
+            // This is the recommended approach for API 21+
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            // For newer APIs, also update the navigation bar
+            window.navigationBarColor = colorScheme.background.toArgb()
+            
+            // Control whether status bar icons should be dark or light
+            val windowInsetsController = WindowCompat.getInsetsController(window, view)
+            windowInsetsController.isAppearanceLightStatusBars = !darkTheme
+            windowInsetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

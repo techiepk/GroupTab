@@ -23,12 +23,11 @@ import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.theme.*
 import kotlinx.coroutines.launch
+import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
-import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +117,7 @@ private fun TotalSubscriptionsSummary(
     
     SummaryCard(
         title = "Monthly Subscriptions",
-        amount = formatCurrency(totalAmount),
+        amount = CurrencyFormatter.formatCurrency(totalAmount),
         subtitle = "$activeCount active subscription${if (activeCount != 1) "s" else ""}",
         amountColor = amountColor,
         containerColor = CardDefaults.cardColors(
@@ -256,7 +255,7 @@ private fun SwipeableSubscriptionItem(
                         }
                         
                         Text(
-                            text = formatCurrency(subscription.amount),
+                            text = CurrencyFormatter.formatCurrency(subscription.amount),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = if (!isSystemInDarkTheme()) expense_light else expense_dark
@@ -299,12 +298,4 @@ private fun EmptySubscriptionsState() {
             )
         }
     }
-}
-
-private fun formatCurrency(amount: BigDecimal): String {
-    val indiaLocale = Locale.Builder().setLanguage("en").setRegion("IN").build()
-    val formatter = NumberFormat.getCurrencyInstance(indiaLocale)
-    formatter.minimumFractionDigits = 0
-    formatter.maximumFractionDigits = 2
-    return formatter.format(amount)
 }

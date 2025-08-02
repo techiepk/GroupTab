@@ -30,10 +30,9 @@ import com.pennywiseai.tracker.ui.components.SummaryCard
 import com.pennywiseai.tracker.ui.components.ListItemCard
 import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
-import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -182,9 +181,9 @@ private fun MonthSummaryCard(
 ) {
     val isPositive = monthTotal >= BigDecimal.ZERO
     val displayAmount = if (isPositive) {
-        "+${formatCurrency(monthTotal)}"
+        "+${CurrencyFormatter.formatCurrency(monthTotal)}"
     } else {
-        formatCurrency(monthTotal)
+        CurrencyFormatter.formatCurrency(monthTotal)
     }
     val amountColor = if (isPositive) {
         if (!isSystemInDarkTheme()) income_light else income_dark
@@ -210,7 +209,7 @@ private fun MonthSummaryCard(
 private fun TransactionItem(
     transaction: TransactionEntity
 ) {
-    val amountText = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${formatCurrency(transaction.amount)}"
+    val amountText = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${CurrencyFormatter.formatCurrency(transaction.amount)}"
     val amountColor = if (transaction.transactionType == TransactionType.EXPENSE) {
         if (!isSystemInDarkTheme()) expense_light else expense_dark
     } else {
@@ -230,16 +229,6 @@ private fun TransactionItem(
             )
         }
     )
-}
-
-private fun formatCurrency(amount: BigDecimal): String {
-    // Using Locale.Builder for India locale instead of deprecated constructor
-    val indiaLocale = Locale.Builder().setLanguage("en").setRegion("IN").build()
-    val formatter = NumberFormat.getCurrencyInstance(indiaLocale)
-    // Show decimals only if they exist
-    formatter.minimumFractionDigits = 0
-    formatter.maximumFractionDigits = 2
-    return formatter.format(amount)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -282,7 +271,7 @@ private fun UpcomingSubscriptionsCard(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Monthly total: ${formatCurrency(totalAmount)}",
+                        text = "Monthly total: ${CurrencyFormatter.formatCurrency(totalAmount)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = Dimensions.Alpha.subtitle)
                     )

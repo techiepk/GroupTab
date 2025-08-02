@@ -18,10 +18,9 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.theme.*
+import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
-import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,7 +200,7 @@ private fun TransactionItem(
     ListItemCard(
         title = transaction.merchantName,
         subtitle = subtitleParts.joinToString(" • "),
-        amount = formatCurrency(transaction.amount),
+        amount = CurrencyFormatter.formatCurrency(transaction.amount),
         amountColor = amountColor,
         leadingContent = {
             BrandIcon(
@@ -260,12 +259,4 @@ private fun EmptyTransactionsState(
             }
         }
     }
-}
-
-private fun formatCurrency(amount: BigDecimal): String {
-    val indiaLocale = Locale.Builder().setLanguage("en").setRegion("IN").build()
-    val formatter = NumberFormat.getCurrencyInstance(indiaLocale)
-    formatter.minimumFractionDigits = 0
-    formatter.maximumFractionDigits = 2
-    return formatter.format(amount)
 }
