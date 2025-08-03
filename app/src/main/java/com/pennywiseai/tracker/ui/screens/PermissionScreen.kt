@@ -138,28 +138,6 @@ fun PermissionScreen(
         ) {
             Text("Enable Automatic Detection")
         }
-        
-        Spacer(modifier = Modifier.height(Spacing.sm))
-        
-        // Secondary action - skip
-        OutlinedButton(
-            onClick = {
-                viewModel.onSkipPermission()
-                onPermissionGranted()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("I'll Add Transactions Manually")
-        }
-        
-        Spacer(modifier = Modifier.height(Spacing.md))
-        
-        Text(
-            text = "You can always enable this later in Settings",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
         }
     }
 }

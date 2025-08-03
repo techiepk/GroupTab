@@ -86,32 +86,6 @@ fun SettingsScreen(
                     )
                 }
                 }
-                
-                HorizontalDivider()
-                
-                // Dynamic Color Toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Dynamic Colors",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "Use colors from your wallpaper",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = themeUiState.isDynamicColorEnabled,
-                        onCheckedChange = { themeViewModel.updateDynamicColor(it) }
-                    )
-                }
             }
         }
         

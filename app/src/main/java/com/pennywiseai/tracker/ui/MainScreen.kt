@@ -112,7 +112,9 @@ fun MainScreen(
             }
             
             composable("analytics") {
-                com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen()
+                com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen(
+                    onNavigateToChat = { navController.navigate("chat") }
+                )
             }
             
             composable("chat") {
@@ -141,7 +143,7 @@ private fun ChatScreenWrapper(
     Scaffold(
         topBar = {
             PennyWiseTopAppBar(
-                title = "AI Assistant",
+                title = "PennyWise AI",
                 showBackButton = true,
                 showSettingsButton = true,
                 onBackClick = { navController.popBackStack() },
