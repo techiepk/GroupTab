@@ -10,6 +10,7 @@ import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
+import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import dagger.assisted.Assisted
@@ -29,7 +30,8 @@ class SmsReaderWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val transactionRepository: TransactionRepository,
-    private val subscriptionRepository: SubscriptionRepository
+    private val subscriptionRepository: SubscriptionRepository,
+    private val llmRepository: LlmRepository
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -156,6 +158,17 @@ class SmsReaderWorker @AssistedInject constructor(
             }
             
             Log.d(TAG, "SMS parsing completed. Parsed: $parsedCount, Saved: $savedCount, Subscriptions: $subscriptionCount")
+            
+            // Update system prompt with new financial data if any transactions were saved
+            if (savedCount > 0) {
+                try {
+                    llmRepository.updateSystemPrompt()
+                    Log.d(TAG, "Updated system prompt with latest financial data")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating system prompt: ${e.message}")
+                }
+            }
+            
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error in SMS parsing work", e)

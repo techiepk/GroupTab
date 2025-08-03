@@ -4,10 +4,12 @@ import android.util.Log
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.model.ChatContext
+import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import com.pennywiseai.tracker.domain.service.LlmService
 import com.pennywiseai.tracker.utils.CurrencyUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import java.math.BigDecimal
@@ -20,7 +22,8 @@ class LlmRepository @Inject constructor(
     private val llmService: LlmService,
     private val chatDao: ChatDao,
     private val modelRepository: ModelRepository,
-    private val aiContextRepository: AiContextRepository
+    private val aiContextRepository: AiContextRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) {
     fun getAllMessages(): Flow<List<ChatMessage>> = chatDao.getAllMessages()
     
@@ -73,8 +76,19 @@ class LlmRepository @Inject constructor(
         
         // If new chat, add system prompt first
         if (isNewChat) {
-            val chatContext = aiContextRepository.getChatContext()
-            val systemPrompt = buildSystemPrompt(chatContext)
+            // Try to get stored system prompt first
+            val storedPrompt = userPreferencesRepository.getSystemPrompt().first()
+            val systemPrompt = if (storedPrompt.isNullOrEmpty()) {
+                // Generate new prompt if none exists
+                val chatContext = aiContextRepository.getChatContext()
+                val newPrompt = buildSystemPrompt(chatContext)
+                // Save for future use
+                userPreferencesRepository.updateSystemPrompt(newPrompt)
+                newPrompt
+            } else {
+                storedPrompt
+            }
+            
             val systemMessage = ChatMessage(
                 message = systemPrompt,
                 isUser = false,
@@ -221,5 +235,12 @@ class LlmRepository @Inject constructor(
         - Reference actual data when answering
         - Keep responses concise and relevant
         """.trimIndent()
+    }
+    
+    suspend fun updateSystemPrompt() {
+        val chatContext = aiContextRepository.getChatContext()
+        val newPrompt = buildSystemPrompt(chatContext)
+        userPreferencesRepository.updateSystemPrompt(newPrompt)
+        Log.d("LlmRepository", "System prompt updated with latest financial data")
     }
 }
