@@ -50,4 +50,7 @@ interface SubscriptionDao {
     
     @Query("DELETE FROM subscriptions WHERE id = :id")
     suspend fun deleteSubscriptionById(id: Long)
+    
+    @Query("SELECT * FROM subscriptions WHERE state = :state ORDER BY next_payment_date ASC")
+    suspend fun getSubscriptionsByStateList(state: SubscriptionState): List<SubscriptionEntity>
 }

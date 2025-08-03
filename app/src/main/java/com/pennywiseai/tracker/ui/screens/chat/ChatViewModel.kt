@@ -55,17 +55,38 @@ class ChatViewModel @Inject constructor(
             initialValue = false
         )
     
+    // Get all messages including system for accurate token count
+    private val allMessagesIncludingSystem = llmRepository.getAllMessagesIncludingSystem()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
     // Chat statistics for developer mode
-    val chatStats = messages.combine(currentResponse) { msgs, current ->
-        val allText = msgs.joinToString(" ") { it.message } + " " + current
+    val chatStats = allMessagesIncludingSystem.combine(currentResponse) { allMsgs, current ->
+        // Calculate system prompt tokens separately
+        val systemPromptText = allMsgs.filter { it.isSystemPrompt }.joinToString(" ") { it.message }
+        val systemPromptTokens = if (systemPromptText.isNotEmpty()) {
+            TokenUtils.estimateTokens(systemPromptText)
+        } else {
+            0
+        }
+        
+        // Calculate total tokens
+        val allText = allMsgs.joinToString(" ") { it.message } + " " + current
         val totalChars = allText.length
         val estimatedTokens = TokenUtils.estimateTokens(allText)
         val maxTokens = 8192 // Gemma 2B context window
         
+        // Count only visible messages for UI
+        val visibleCount = allMsgs.count { !it.isSystemPrompt }
+        
         ChatStats(
-            messageCount = msgs.size,
+            messageCount = visibleCount,
             totalCharacters = totalChars,
             estimatedTokens = estimatedTokens,
+            systemPromptTokens = systemPromptTokens,
             maxTokens = maxTokens,
             contextUsagePercent = TokenUtils.calculateContextUsagePercent(estimatedTokens, maxTokens)
         )
@@ -153,6 +174,7 @@ data class ChatStats(
     val messageCount: Int = 0,
     val totalCharacters: Int = 0,
     val estimatedTokens: Int = 0,
+    val systemPromptTokens: Int = 0,
     val maxTokens: Int = 8192,
     val contextUsagePercent: Int = 0
 )

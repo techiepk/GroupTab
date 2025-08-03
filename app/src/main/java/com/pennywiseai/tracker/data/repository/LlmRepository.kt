@@ -3,11 +3,14 @@ package com.pennywiseai.tracker.data.repository
 import android.util.Log
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
+import com.pennywiseai.tracker.data.model.ChatContext
 import com.pennywiseai.tracker.domain.service.LlmService
+import com.pennywiseai.tracker.utils.CurrencyUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
+import java.math.BigDecimal
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,28 +19,18 @@ import javax.inject.Singleton
 class LlmRepository @Inject constructor(
     private val llmService: LlmService,
     private val chatDao: ChatDao,
-    private val modelRepository: ModelRepository
+    private val modelRepository: ModelRepository,
+    private val aiContextRepository: AiContextRepository
 ) {
-    private var currentSessionId: String = UUID.randomUUID().toString()
-    
     fun getAllMessages(): Flow<List<ChatMessage>> = chatDao.getAllMessages()
     
-    fun getSessionMessages(sessionId: String): Flow<List<ChatMessage>> = 
-        chatDao.getMessagesBySession(sessionId)
-    
-    fun getCurrentSessionMessages(): Flow<List<ChatMessage>> = 
-        chatDao.getMessagesBySession(currentSessionId)
-    
-    suspend fun startNewSession() {
-        currentSessionId = UUID.randomUUID().toString()
-    }
+    fun getAllMessagesIncludingSystem(): Flow<List<ChatMessage>> = chatDao.getAllMessagesIncludingSystem()
     
     suspend fun sendMessage(userMessage: String): Result<String> {
         // Save user message
         val userChatMessage = ChatMessage(
             message = userMessage,
-            isUser = true,
-            sessionId = currentSessionId
+            isUser = true
         )
         chatDao.insertMessage(userChatMessage)
         
@@ -63,8 +56,7 @@ class LlmRepository @Inject constructor(
             // Save AI response
             val aiChatMessage = ChatMessage(
                 message = response,
-                isUser = false,
-                sessionId = currentSessionId
+                isUser = false
             )
             chatDao.insertMessage(aiChatMessage)
             
@@ -75,6 +67,23 @@ class LlmRepository @Inject constructor(
     }
     
     fun sendMessageStream(userMessage: String): Flow<String> = flow {
+        // Check if this is the first message (no existing messages)
+        val existingMessages = chatDao.getAllMessagesForContext()
+        val isNewChat = existingMessages.isEmpty()
+        
+        // If new chat, add system prompt first
+        if (isNewChat) {
+            val chatContext = aiContextRepository.getChatContext()
+            val systemPrompt = buildSystemPrompt(chatContext)
+            val systemMessage = ChatMessage(
+                message = systemPrompt,
+                isUser = false,
+                isSystemPrompt = true
+            )
+            chatDao.insertMessage(systemMessage)
+            Log.d("LlmRepository", "System prompt added to new chat")
+        }
+        
         // Save user message
         val userChatMessage = ChatMessage(
             message = userMessage,
@@ -97,9 +106,18 @@ class LlmRepository @Inject constructor(
             }
         }
         
-        // Get conversation history
-        val recentMessages = chatDao.getRecentMessages(10) // Get last 10 messages
-        val conversationContext = buildConversationContext(recentMessages, userMessage)
+        // Get ALL conversation history (including system prompt)
+        val allMessages = chatDao.getAllMessagesForContext()
+        val conversationContext = buildConversationContext(allMessages, userMessage)
+        
+        // Log the final message being sent to LLM
+        Log.d("LlmRepository", "=== SENDING TO LLM ===")
+        Log.d("LlmRepository", "Total messages in context: ${allMessages.size}")
+        Log.d("LlmRepository", "Context length: ${conversationContext.length} characters")
+        Log.d("LlmRepository", "Estimated tokens: ${conversationContext.length / 4}")
+        Log.d("LlmRepository", "=== FULL CONTEXT ===")
+        Log.d("LlmRepository", conversationContext)
+        Log.d("LlmRepository", "=== END CONTEXT ===")
         
         // Stream response and accumulate for saving
         val responseBuilder = StringBuilder()
@@ -130,31 +148,78 @@ class LlmRepository @Inject constructor(
         chatDao.deleteMessagesBefore(beforeTimestamp)
     }
     
-    suspend fun deleteSession(sessionId: String) {
-        chatDao.deleteSession(sessionId)
-    }
-    
-    suspend fun getAllSessions(): List<String> = chatDao.getAllSessions()
-    
     suspend fun getMessageCount(): Int = chatDao.getMessageCount()
     
-    private suspend fun buildConversationContext(history: List<ChatMessage>, currentMessage: String): String {
+    private suspend fun buildConversationContext(
+        history: List<ChatMessage>, 
+        currentMessage: String
+    ): String {
         val contextBuilder = StringBuilder()
+        var systemPromptCount = 0
+        var userMessageCount = 0
+        var aiMessageCount = 0
         
-        // Add conversation history (reverse since we got them in DESC order)
-        if (history.isNotEmpty()) {
-            contextBuilder.append("Previous conversation:\n")
-            history.reversed().forEach { msg ->
-                val role = if (msg.isUser) "User" else "Assistant"
-                contextBuilder.append("$role: ${msg.message}\n")
+        // Add all conversation history (already in ASC order)
+        history.forEach { msg ->
+            when {
+                msg.isSystemPrompt -> {
+                    systemPromptCount++
+                    // System prompt is already formatted
+                    contextBuilder.append(msg.message)
+                    contextBuilder.append("\n\n")
+                }
+                msg.isUser -> {
+                    userMessageCount++
+                    contextBuilder.append("User: ${msg.message}\n")
+                }
+                else -> {
+                    aiMessageCount++
+                    contextBuilder.append("Assistant: ${msg.message}\n")
+                }
             }
-            contextBuilder.append("\n")
         }
         
-        // Add current message
+        // Add current message (not yet in history)
         contextBuilder.append("User: $currentMessage\n")
         contextBuilder.append("Assistant:")
         
+        Log.d("LlmRepository", "Context composition: $systemPromptCount system prompts, $userMessageCount user messages, $aiMessageCount AI messages")
+        
         return contextBuilder.toString()
+    }
+    
+    private fun buildSystemPrompt(context: ChatContext): String {
+        val monthSummary = context.monthSummary
+        val topCategories = context.topCategories
+        val activeSubs = context.activeSubscriptions
+        val stats = context.quickStats
+        
+        val totalSubAmount = activeSubs.sumOf { it.amount.toDouble() }.toBigDecimal()
+        val upcomingPayments = activeSubs.filter { it.nextPaymentDays <= 7 }
+        
+        return """
+        You are PennyWise AI, a friendly financial assistant helping users track expenses and manage money.
+        
+        Current Financial Overview (${context.currentDate}):
+        - This month: ${CurrencyUtils.formatCurrency(monthSummary.totalExpense)} spent, ${CurrencyUtils.formatCurrency(monthSummary.totalIncome)} income
+        - ${monthSummary.transactionCount} transactions (Day ${monthSummary.currentDay}/${monthSummary.daysInMonth})
+        - Daily average: ${CurrencyUtils.formatCurrency(stats.avgDailySpending)}
+        
+        Top spending categories:
+        ${topCategories.joinToString("\n") { "- ${it.category}: ${CurrencyUtils.formatCurrency(it.amount)} (${it.percentage.toInt()}%)" }}
+        
+        Active subscriptions: ${activeSubs.size} services (${CurrencyUtils.formatCurrency(totalSubAmount)}/month)
+        ${if (upcomingPayments.isNotEmpty()) "⚠️ ${upcomingPayments.size} payments due in next 7 days" else ""}
+        
+        Recent activity: ${context.recentTransactions.size} transactions in last 14 days
+        ${if (stats.mostFrequentMerchant != null) "Most visited: ${stats.mostFrequentMerchant} (${stats.mostFrequentMerchantCount} times)" else ""}
+        
+        Guidelines:
+        - Be helpful and non-judgmental about spending
+        - Provide actionable insights when asked
+        - Use ₹ symbol for amounts
+        - Reference actual data when answering
+        - Keep responses concise and relevant
+        """.trimIndent()
     }
 }

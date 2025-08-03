@@ -21,8 +21,7 @@ fun PennyWiseBottomNavigation(
 ) {
     val items = listOf(
         BottomNavItem.Home,
-        BottomNavItem.Analytics,
-        BottomNavItem.Chat
+        BottomNavItem.Analytics
     )
     
     Column {

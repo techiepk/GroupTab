@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.ui
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -14,6 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -41,7 +49,19 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     
-    Scaffold(
+    // Check if keyboard is visible
+    val ime = WindowInsets.ime
+    val density = LocalDensity.current
+    val keyboardVisible = ime.getBottom(density) > 0
+    
+    // Handle chat screen separately to avoid keyboard issues
+    if (currentRoute == "chat") {
+        ChatScreenWrapper(
+            navController = navController,
+            themeViewModel = themeViewModel
+        )
+    } else {
+        Scaffold(
         topBar = {
             Column {
                 TopAppBar(
@@ -62,7 +82,7 @@ fun MainScreen(
                     containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
                 ),
                 navigationIcon = {
-                    if (currentRoute in listOf("settings", "subscriptions", "transactions")) {
+                    if (currentRoute in listOf("settings", "subscriptions", "transactions", "chat")) {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -94,7 +114,7 @@ fun MainScreen(
         },
         bottomBar = {
             // Show bottom navigation only for main screens
-            if (currentRoute in listOf("home", "analytics", "chat")) {
+            if (currentRoute in listOf("home", "analytics")) {
                 PennyWiseBottomNavigation(navController = navController)
             }
         }
@@ -118,6 +138,9 @@ fun MainScreen(
                     },
                     onNavigateToSubscriptions = {
                         navController.navigate("subscriptions")
+                    },
+                    onNavigateToChat = {
+                        navController.navigate("chat")
                     }
                 )
             }
@@ -143,11 +166,7 @@ fun MainScreen(
             }
             
             composable("chat") {
-                com.pennywiseai.tracker.ui.screens.chat.ChatScreen(
-                    onNavigateToSettings = {
-                        navController.navigate("settings")
-                    }
-                )
+                // Empty composable - actual chat screen is handled separately
             }
             
             composable("settings") {
@@ -158,6 +177,66 @@ fun MainScreen(
                     }
                 )
             }
+        }
+    }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChatScreenWrapper(
+    navController: NavHostController,
+    themeViewModel: ThemeViewModel
+) {
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("AI Assistant") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { 
+                                navController.navigate("settings")
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings"
+                            )
+                        }
+                    }
+                )
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
+        ) {
+            com.pennywiseai.tracker.ui.screens.chat.ChatScreen(
+                onNavigateToSettings = {
+                    navController.navigate("settings")
+                }
+            )
         }
     }
 }

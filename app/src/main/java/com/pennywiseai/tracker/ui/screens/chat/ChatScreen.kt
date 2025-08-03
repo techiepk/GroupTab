@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.ui.screens.chat
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,11 +54,16 @@ fun ChatScreen(
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
     
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size, currentResponse) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty() || currentResponse.isNotEmpty()) {
+            scope.launch {
+                listState.animateScrollToItem(
+                    index = if (currentResponse.isNotEmpty()) messages.size else messages.size - 1
+                )
+            }
         }
     }
     
@@ -91,7 +103,7 @@ fun ChatScreen(
                     }
                 }
             }
-            
+
             ModelState.DOWNLOADING -> {
                 Box(
                     modifier = Modifier
@@ -115,161 +127,205 @@ fun ChatScreen(
                     }
                 }
             }
-            
+
             ModelState.READY, ModelState.LOADING -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    // Developer info card
-                    AnimatedVisibility(
-                        visible = isDeveloperMode && messages.isNotEmpty(),
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
+                // Show loading overlay when model is loading
+                if (modelState == ModelState.LOADING) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        DeveloperInfoCard(chatStats = chatStats)
-                    }
-                    
-                    // Clear chat button when there are messages
-                    AnimatedVisibility(
-                        visible = messages.isNotEmpty(),
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 1.dp
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = Dimensions.Padding.content, vertical = Spacing.sm),
-                                horizontalArrangement = Arrangement.End
+                            CircularProgressIndicator()
+                            Text(
+                                text = "Initializing AI Model...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "This may take a few seconds",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // Developer info card
+                        AnimatedVisibility(
+                            visible = isDeveloperMode && messages.isNotEmpty(),
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            DeveloperInfoCard(chatStats = chatStats)
+                        }
+
+                        // Clear chat button when there are messages
+                        AnimatedVisibility(
+                            visible = messages.isNotEmpty(),
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp
                             ) {
-                                TextButton(
-                                    onClick = { viewModel.clearChat() },
-                                    colors = ButtonDefaults.textButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                    )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = Dimensions.Padding.content,
+                                            vertical = Spacing.sm
+                                        ),
+                                    horizontalArrangement = Arrangement.End
                                 ) {
-                                    Icon(
-                                        Icons.Outlined.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(Spacing.xs))
-                                    Text("Clear Chat")
+                                    TextButton(
+                                        onClick = { viewModel.clearChat() },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Delete,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(Spacing.xs))
+                                        Text("Clear Chat")
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    // Messages list
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentPadding = PaddingValues(Dimensions.Padding.content),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-                    ) {
-                        items(messages) { message ->
-                            ChatMessageItem(message = message)
-                        }
-                        
-                        // Show streaming response if available
-                        if (currentResponse.isNotEmpty()) {
-                            item {
-                                ChatMessageItem(
-                                    message = com.pennywiseai.tracker.data.database.entity.ChatMessage(
-                                        message = currentResponse,
-                                        isUser = false,
-                                        timestamp = System.currentTimeMillis()
-                                    ),
-                                    isStreaming = true
-                                )
+
+                        // Messages list
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(
+                                start = Dimensions.Padding.content,
+                                end = Dimensions.Padding.content,
+                                top = Dimensions.Padding.content,
+                                bottom = Spacing.lg
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            reverseLayout = false
+                        ) {
+                            items(messages) { message ->
+                                ChatMessageItem(message = message)
+                            }
+
+                            // Show streaming response if available
+                            if (currentResponse.isNotEmpty()) {
+                                item {
+                                    ChatMessageItem(
+                                        message = com.pennywiseai.tracker.data.database.entity.ChatMessage(
+                                            message = currentResponse,
+                                            isUser = false,
+                                            timestamp = System.currentTimeMillis()
+                                        ),
+                                        isStreaming = true
+                                    )
+                                }
+                            } else if (uiState.isLoading) {
+                                // Show typing indicator while waiting for response
+                                item {
+                                    TypingIndicator()
+                                }
                             }
                         }
-                    }
-                    
-                    // Error message
-                    AnimatedVisibility(
-                        visible = uiState.error != null,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Dimensions.Padding.content),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
+
+                        // Error message
+                        AnimatedVisibility(
+                            visible = uiState.error != null,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Dimensions.Padding.content),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(Dimensions.Padding.content),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = uiState.error ?: "",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(onClick = { viewModel.clearError() }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Dismiss",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Input field
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 3.dp
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(Dimensions.Padding.content),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.Bottom
                             ) {
-                                Text(
-                                    text = uiState.error ?: "",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.weight(1f)
+                                OutlinedTextField(
+                                    value = inputText,
+                                    onValueChange = { inputText = it },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .focusRequester(focusRequester),
+                                    placeholder = { Text("Ask about your expenses...") },
+                                    enabled = !uiState.isLoading,
+                                    maxLines = 3,
+                                    shape = RoundedCornerShape(24.dp)
                                 )
-                                IconButton(onClick = { viewModel.clearError() }) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Dismiss",
-                                        tint = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Input field
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 3.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(Dimensions.Padding.content),
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            OutlinedTextField(
-                                value = inputText,
-                                onValueChange = { inputText = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("Ask about your expenses...") },
-                                enabled = !uiState.isLoading,
-                                maxLines = 3,
-                                shape = RoundedCornerShape(24.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(Spacing.sm))
-                            
-                            FilledIconButton(
-                                onClick = {
-                                    viewModel.sendMessage(inputText)
-                                    inputText = ""
-                                },
-                                enabled = inputText.isNotBlank() && !uiState.isLoading,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                if (uiState.isLoading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+
+                                Spacer(modifier = Modifier.width(Spacing.sm))
+
+                                FilledIconButton(
+                                    onClick = {
+                                        viewModel.sendMessage(inputText)
+                                        inputText = ""
+                                        // Keep keyboard open by requesting focus
+                                        focusRequester.requestFocus()
+                                    },
+                                    enabled = inputText.isNotBlank() && !uiState.isLoading,
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    if (uiState.isLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.Send,
+                                            contentDescription = "Send"
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -396,10 +452,78 @@ fun DeveloperInfoCard(
                         drawStopIndicator = {}
                     )
                     
-                    Text(
-                        text = "${TokenUtils.formatNumber(chatStats.estimatedTokens)} / ${TokenUtils.formatNumber(chatStats.maxTokens)} tokens",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "${TokenUtils.formatNumber(chatStats.estimatedTokens)} / ${TokenUtils.formatNumber(chatStats.maxTokens)} tokens",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        if (chatStats.systemPromptTokens > 0) {
+                            Text(
+                                text = "System: ${TokenUtils.formatNumber(chatStats.systemPromptTokens)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TypingIndicator(
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Card(
+            modifier = Modifier.widthIn(max = 280.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(
+                    horizontal = Dimensions.Padding.content,
+                    vertical = Spacing.md
+                ),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Three animated dots
+                val infiniteTransition = rememberInfiniteTransition(label = "typing")
+                
+                for (i in 0..2) {
+                    val alpha by infiniteTransition.animateFloat(
+                        initialValue = 0.3f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = keyframes {
+                                durationMillis = 1200
+                                0.3f at 0
+                                1f at 400
+                                0.3f at 800
+                            },
+                            repeatMode = RepeatMode.Restart,
+                            initialStartOffset = StartOffset(i * 200)
+                        ),
+                        label = "dot_alpha_$i"
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = alpha),
+                                shape = RoundedCornerShape(50)
+                            )
                     )
                 }
             }
@@ -413,7 +537,7 @@ fun ChatMessageItem(
     isStreaming: Boolean = false
 ) {
     val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
-    
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
@@ -423,9 +547,9 @@ fun ChatMessageItem(
                 .widthIn(max = 280.dp)
                 .animateContentSize(),
             colors = CardDefaults.cardColors(
-                containerColor = if (message.isUser) 
-                    MaterialTheme.colorScheme.primaryContainer 
-                else 
+                containerColor = if (message.isUser)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
                     MaterialTheme.colorScheme.secondaryContainer
             )
         ) {
@@ -440,9 +564,9 @@ fun ChatMessageItem(
                     else
                         MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                
+
                 Spacer(modifier = Modifier.height(Spacing.xs))
-                
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs)

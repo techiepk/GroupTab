@@ -81,4 +81,14 @@ interface TransactionDao {
     
     @Query("DELETE FROM transactions")
     suspend fun deleteAllTransactions()
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE date_time BETWEEN :startDate AND :endDate 
+        ORDER BY date_time DESC
+    """)
+    suspend fun getTransactionsBetweenDatesList(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): List<TransactionEntity>
 }

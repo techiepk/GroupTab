@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.data.database
 
 import androidx.room.AutoMigration
 import androidx.room.Database
+import androidx.room.DeleteColumn
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
@@ -27,12 +28,13 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5, spec = Migration4To5::class)
     ]
 )
 @TypeConverters(Converters::class)
@@ -73,3 +75,16 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     //     }
     // }
 }
+
+/**
+ * Migration from version 4 to 5.
+ * - Removes sessionId column from chat_messages table
+ * - Adds isSystemPrompt column to chat_messages table
+ */
+@DeleteColumn.Entries(
+    DeleteColumn(
+        tableName = "chat_messages",
+        columnName = "sessionId"
+    )
+)
+class Migration4To5 : AutoMigrationSpec

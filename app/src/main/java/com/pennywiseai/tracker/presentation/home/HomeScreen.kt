@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Chat
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
@@ -39,14 +40,20 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
-    onNavigateToSubscriptions: () -> Unit = {}
+    onNavigateToSubscriptions: () -> Unit = {},
+    onNavigateToChat: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(Dimensions.Padding.content),
+            contentPadding = PaddingValues(
+                start = Dimensions.Padding.content,
+                end = Dimensions.Padding.content,
+                top = Dimensions.Padding.content,
+                bottom = Dimensions.Padding.content + 80.dp // Space for FAB
+            ),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // Month Summary Card
@@ -118,17 +125,34 @@ fun HomeScreen(
             }
         }
         
-        // FAB
-        FloatingActionButton(
-            onClick = { viewModel.scanSmsMessages() },
+        // FABs
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(Dimensions.Padding.content)
+                .padding(Dimensions.Padding.content),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            Icon(
-                imageVector = Icons.Default.Sync,
-                contentDescription = "Sync SMS"
-            )
+            // Chat FAB
+            SmallFloatingActionButton(
+                onClick = onNavigateToChat,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = "Open AI Assistant"
+                )
+            }
+            
+            // Sync FAB
+            FloatingActionButton(
+                onClick = { viewModel.scanSmsMessages() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Sync,
+                    contentDescription = "Sync SMS"
+                )
+            }
         }
         
         // Scanning overlay
