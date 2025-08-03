@@ -11,11 +11,16 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class SubscriptionRepository @Inject constructor(
     private val subscriptionDao: SubscriptionDao
 ) {
+    
+    companion object {
+        private const val TAG = "SubscriptionRepository"
+    }
     
     fun getAllSubscriptions(): Flow<List<SubscriptionEntity>> = 
         subscriptionDao.getAllSubscriptions()
@@ -40,8 +45,10 @@ class SubscriptionRepository @Inject constructor(
     suspend fun updateSubscriptionState(id: Long, state: SubscriptionState) = 
         subscriptionDao.updateSubscriptionState(id, state)
     
-    suspend fun hideSubscription(id: Long) = 
+    suspend fun hideSubscription(id: Long) {
+        Log.d(TAG, "Hiding subscription with ID: $id")
         updateSubscriptionState(id, SubscriptionState.HIDDEN)
+    }
     
     suspend fun unhideSubscription(id: Long) = 
         updateSubscriptionState(id, SubscriptionState.ACTIVE)
@@ -56,11 +63,6 @@ class SubscriptionRepository @Inject constructor(
         eMandateInfo: HDFCBankParser.EMandateInfo,
         bankName: String
     ): Long {
-        // Check if subscription already exists with this UMN
-        val existing = eMandateInfo.umn?.let { 
-            subscriptionDao.getSubscriptionByUmn(it) 
-        }
-        
         val nextPaymentDate = eMandateInfo.nextDeductionDate?.let { dateStr ->
             try {
                 // Parse DD/MM/YY format
@@ -71,33 +73,56 @@ class SubscriptionRepository @Inject constructor(
             }
         } ?: LocalDate.now().plusDays(30)
         
+        // First try to find by merchant and amount (ignoring date)
+        val existing = subscriptionDao.getSubscriptionByMerchantAndAmount(
+            eMandateInfo.merchant,
+            eMandateInfo.amount
+        ) ?: eMandateInfo.umn?.let { 
+            // Fallback to UMN if available and no match found
+            subscriptionDao.getSubscriptionByUmn(it) 
+        }
+        
+        Log.d(TAG, "E-Mandate lookup - Merchant: ${eMandateInfo.merchant}, Amount: ${eMandateInfo.amount}, " +
+                  "Next Date: $nextPaymentDate, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}, " +
+                  "StoredDate=${it.nextPaymentDate}" } ?: "NOT FOUND"}")
+        
         val subscription = if (existing != null) {
-            // If subscription is hidden and the payment date is the same, don't update it
-            // This prevents re-adding hidden subscriptions when rescanning the same SMS
-            if (existing.state == SubscriptionState.HIDDEN && 
-                existing.nextPaymentDate == nextPaymentDate) {
-                // Return the existing ID without updating
+            // Check if this is a hidden subscription that should be reactivated
+            // Only reactivate if the new payment date is LATER than the stored date
+            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
+                                  nextPaymentDate.isAfter(existing.nextPaymentDate) &&
+                                  nextPaymentDate.isAfter(LocalDate.now())
+            
+            Log.d(TAG, "Subscription state check - Hidden: ${existing.state == SubscriptionState.HIDDEN}, " +
+                      "New date after stored: ${nextPaymentDate.isAfter(existing.nextPaymentDate)}, " +
+                      "New date is future: ${nextPaymentDate.isAfter(LocalDate.now())}, " +
+                      "Should reactivate: $shouldReactivate")
+            
+            // If hidden and payment date hasn't changed, don't update
+            if (existing.state == SubscriptionState.HIDDEN && !shouldReactivate) {
+                // Return the existing ID without any updates
+                Log.d(TAG, "Subscription ${existing.id} is HIDDEN and won't be reactivated " +
+                          "(payment date not newer). Skipping update.")
                 return existing.id
             }
             
-            // Check if this is a hidden subscription that should be reactivated
-            // Reactivate only if:
-            // 1. Subscription is currently hidden
-            // 2. New payment date is different AND in the future
-            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
-                                  existing.nextPaymentDate != nextPaymentDate &&
-                                  nextPaymentDate.isAfter(LocalDate.now())
-            
-            // Update existing subscription
+            // Update existing subscription (reactivate if needed)
+            if (shouldReactivate) {
+                Log.i(TAG, "REACTIVATING subscription ${existing.id} - ${existing.merchantName} " +
+                          "(old date: ${existing.nextPaymentDate}, new date: $nextPaymentDate)")
+            }
             existing.copy(
                 amount = eMandateInfo.amount,
                 nextPaymentDate = nextPaymentDate,
                 merchantName = eMandateInfo.merchant,
+                umn = eMandateInfo.umn ?: existing.umn, // Update UMN if provided
                 state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
                 updatedAt = java.time.LocalDateTime.now()
             )
         } else {
             // Create new subscription
+            Log.d(TAG, "Creating NEW subscription - Merchant: ${eMandateInfo.merchant}, " +
+                      "Amount: ${eMandateInfo.amount}, Date: $nextPaymentDate")
             SubscriptionEntity(
                 merchantName = eMandateInfo.merchant,
                 amount = eMandateInfo.amount,
@@ -142,37 +167,6 @@ class SubscriptionRepository @Inject constructor(
         subscriptionDao.updateNextPaymentDate(subscriptionId, nextDate)
     }
     
-    /**
-     * Checks if a transaction matches a hidden subscription and reactivates it
-     */
-    suspend fun checkAndReactivateHiddenSubscription(
-        merchantName: String,
-        amount: BigDecimal,
-        transactionDate: LocalDate
-    ): SubscriptionEntity? {
-        val hiddenSubscription = subscriptionDao.getHiddenSubscriptionByMerchant(merchantName)
-        
-        return if (hiddenSubscription != null && areAmountsEqual(hiddenSubscription.amount, amount)) {
-            // Only reactivate if the transaction date is after the last known payment date
-            // This prevents old transactions from reactivating subscriptions
-            if (transactionDate.isAfter(hiddenSubscription.nextPaymentDate.minusDays(30))) {
-                // Reactivate the subscription
-                subscriptionDao.updateSubscriptionState(hiddenSubscription.id, SubscriptionState.ACTIVE)
-                
-                // Update next payment date (30 days from transaction)
-                val nextDate = transactionDate.plusDays(30)
-                subscriptionDao.updateNextPaymentDate(hiddenSubscription.id, nextDate)
-                
-                // Return the updated subscription
-                subscriptionDao.getSubscriptionById(hiddenSubscription.id)
-            } else {
-                // Transaction is too old, don't reactivate
-                null
-            }
-        } else {
-            null
-        }
-    }
     
     private fun areAmountsEqual(amount1: BigDecimal, amount2: BigDecimal): Boolean {
         // Allow for small variations (up to 5%)

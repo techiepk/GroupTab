@@ -4,6 +4,7 @@ import androidx.room.*
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Dao
@@ -29,6 +30,19 @@ interface SubscriptionDao {
     
     @Query("SELECT * FROM subscriptions WHERE umn = :umn LIMIT 1")
     suspend fun getSubscriptionByUmn(umn: String): SubscriptionEntity?
+    
+    @Query("SELECT * FROM subscriptions WHERE merchant_name = :merchantName AND amount = :amount AND next_payment_date = :paymentDate LIMIT 1")
+    suspend fun getSubscriptionByMerchantAmountAndDate(
+        merchantName: String,
+        amount: BigDecimal,
+        paymentDate: LocalDate
+    ): SubscriptionEntity?
+    
+    @Query("SELECT * FROM subscriptions WHERE merchant_name = :merchantName AND amount = :amount LIMIT 1")
+    suspend fun getSubscriptionByMerchantAndAmount(
+        merchantName: String,
+        amount: BigDecimal
+    ): SubscriptionEntity?
     
     @Query("SELECT * FROM subscriptions WHERE id = :id")
     suspend fun getSubscriptionById(id: Long): SubscriptionEntity?
