@@ -6,33 +6,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.ui.platform.LocalDensity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.pennywiseai.tracker.navigation.Analytics
-import com.pennywiseai.tracker.navigation.Chat
-import com.pennywiseai.tracker.navigation.Home
-import com.pennywiseai.tracker.navigation.Settings
-import com.pennywiseai.tracker.navigation.Transactions
 import com.pennywiseai.tracker.presentation.home.HomeScreen
 import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
 import com.pennywiseai.tracker.presentation.transactions.TransactionsScreen
@@ -49,68 +39,28 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     
-    // Check if keyboard is visible
-    val ime = WindowInsets.ime
-    val density = LocalDensity.current
-    val keyboardVisible = ime.getBottom(density) > 0
-    
     // Handle chat screen separately to avoid keyboard issues
     if (currentRoute == "chat") {
         ChatScreenWrapper(
-            navController = navController,
-            themeViewModel = themeViewModel
+            navController = navController
         )
     } else {
         Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                title = { 
-                    Text(
-                        text = when (currentRoute) {
-                            "home" -> "PennyWise"
-                            "transactions" -> "Transactions"
-                            "subscriptions" -> "Subscriptions"
-                            "analytics" -> "Analytics"
-                            "chat" -> "AI Assistant"
-                            "settings" -> "Settings"
-                            else -> "PennyWise"
-                        }
-                    )
+            PennyWiseTopAppBar(
+                title = when (currentRoute) {
+                    "home" -> "PennyWise"
+                    "transactions" -> "Transactions"
+                    "subscriptions" -> "Subscriptions"
+                    "analytics" -> "Analytics"
+                    "settings" -> "Settings"
+                    else -> "PennyWise"
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
-                ),
-                navigationIcon = {
-                    if (currentRoute in listOf("settings", "subscriptions", "transactions", "chat")) {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (currentRoute != "settings") {
-                        IconButton(
-                            onClick = { 
-                                navController.navigate("settings")
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings"
-                            )
-                        }
-                    }
-                }
+                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions"),
+                showSettingsButton = currentRoute != "settings",
+                onBackClick = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate("settings") }
             )
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                )
-            }
         },
         bottomBar = {
             // Show bottom navigation only for main screens
@@ -166,7 +116,8 @@ fun MainScreen(
             }
             
             composable("chat") {
-                // Empty composable - actual chat screen is handled separately
+                // Empty composable - chat screen is rendered separately in ChatScreenWrapper
+                // to avoid keyboard handling issues with edge-to-edge display
             }
             
             composable("settings") {
@@ -185,43 +136,17 @@ fun MainScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatScreenWrapper(
-    navController: NavHostController,
-    themeViewModel: ThemeViewModel
+    navController: NavHostController
 ) {
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("AI Assistant") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
-                    ),
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = { 
-                                navController.navigate("settings")
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings"
-                            )
-                        }
-                    }
-                )
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                )
-            }
+            PennyWiseTopAppBar(
+                title = "AI Assistant",
+                showBackButton = true,
+                showSettingsButton = true,
+                onBackClick = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate("settings") }
+            )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
@@ -238,5 +163,48 @@ private fun ChatScreenWrapper(
                 }
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PennyWiseTopAppBar(
+    title: String,
+    showBackButton: Boolean = false,
+    showSettingsButton: Boolean = true,
+    onBackClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
+) {
+    Column {
+        TopAppBar(
+            title = { Text(title) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+            ),
+            navigationIcon = {
+                if (showBackButton) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            },
+            actions = {
+                if (showSettingsButton) {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
+            }
+        )
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        )
     }
 }
