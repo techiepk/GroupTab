@@ -63,6 +63,13 @@ class SmsReaderWorker @AssistedInject constructor(
             
             // Process all messages from last 3 months
             for (sms in messages) {
+                // Skip promotional (-P) and government (-G) messages
+                val senderUpper = sms.sender.uppercase()
+                if (senderUpper.endsWith("-P") || senderUpper.endsWith("-G")) {
+                    Log.d(TAG, "Skipping promotional/government SMS from: ${sms.sender}")
+                    continue
+                }
+                
                 // Check if sender is from a known bank
                 val parser = BankParserFactory.getParser(sms.sender)
                 if (parser != null) {
