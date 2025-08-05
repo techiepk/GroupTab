@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,19 +21,49 @@ android {
         applicationId = "com.pennywiseai.tracker"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 9
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val localProperties = Properties()
+            val localPropertiesFile = rootProject.file("local.properties")
+            if (localPropertiesFile.exists()) {
+                localProperties.load(localPropertiesFile.inputStream())
+                
+                val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
+                if (keystorePath.isNotEmpty()) {
+                    storeFile = file(keystorePath)
+                    storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
+                    keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS", "")
+                    keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
+                }
+            }
+        }
+    }
+    
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            val releaseSigningConfig = signingConfigs.getByName("release")
+            // Only use release signing if keystore is configured
+            if (releaseSigningConfig.storeFile != null) {
+                signingConfig = releaseSigningConfig
+            }
+            
+            // Include debug symbols for native crashes
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
     }
     compileOptions {
@@ -118,4 +150,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    
+    // Markdown support
+    implementation("org.jetbrains:markdown:0.7.3")
 }

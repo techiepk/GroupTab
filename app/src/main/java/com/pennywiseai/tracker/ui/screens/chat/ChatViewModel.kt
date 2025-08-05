@@ -77,7 +77,7 @@ class ChatViewModel @Inject constructor(
         val allText = allMsgs.joinToString(" ") { it.message } + " " + current
         val totalChars = allText.length
         val estimatedTokens = TokenUtils.estimateTokens(allText)
-        val maxTokens = 8192 // Gemma 2B context window
+        val maxTokens = 1280 // Gemma 2B with KV cache size 1280
         
         // Count only visible messages for UI
         val visibleCount = allMsgs.count { !it.isSystemPrompt }
@@ -175,6 +175,6 @@ data class ChatStats(
     val totalCharacters: Int = 0,
     val estimatedTokens: Int = 0,
     val systemPromptTokens: Int = 0,
-    val maxTokens: Int = 8192,
+    val maxTokens: Int = 1280,
     val contextUsagePercent: Int = 0
 )
