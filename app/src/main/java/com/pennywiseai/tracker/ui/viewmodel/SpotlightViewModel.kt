@@ -32,7 +32,7 @@ class SpotlightViewModel @Inject constructor(
     fun updateFabPosition(position: Rect) {
         _spotlightState.value = _spotlightState.value.copy(
             fabPosition = position,
-            showTutorial = _spotlightState.value.shouldShowTutorial && position != null
+            showTutorial = _spotlightState.value.shouldShowTutorial
         )
     }
     

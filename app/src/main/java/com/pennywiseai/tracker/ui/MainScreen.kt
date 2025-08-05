@@ -88,7 +88,9 @@ fun MainScreen(
             popExitTransition = { ExitTransition.None }
         ) {
             composable("home") {
+                val homeViewModel: com.pennywiseai.tracker.presentation.home.HomeViewModel = hiltViewModel()
                 HomeScreen(
+                    viewModel = homeViewModel,
                     onNavigateToSettings = {
                         navController.navigate("settings")
                     },
@@ -147,12 +149,18 @@ fun MainScreen(
             
             // Spotlight Tutorial overlay - outside Scaffold to overlay everything
             if (currentRoute == "home" && spotlightState.showTutorial && spotlightState.fabPosition != null) {
+                val homeViewModel: com.pennywiseai.tracker.presentation.home.HomeViewModel? = 
+                    navController.currentBackStackEntry?.let { hiltViewModel(it) }
+                
                 SpotlightTutorial(
                     isVisible = true,
                     targetPosition = spotlightState.fabPosition,
                     message = "Tap here to scan your SMS messages for transactions",
                     onDismiss = {
                         spotlightViewModel.dismissTutorial()
+                    },
+                    onTargetClick = {
+                        homeViewModel?.scanSmsMessages()
                     }
                 )
             }

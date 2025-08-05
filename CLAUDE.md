@@ -42,4 +42,16 @@ Working on Phase 1: Core Foundation (Project setup, Material 3 theming, Room dat
 - Test: `./gradlew test`
 - Lint: `./gradlew lint`
 
+## Versioning Strategy
+We follow Semantic Versioning (SemVer) - MAJOR.MINOR.PATCH:
+- **MAJOR**: Breaking changes, major UI overhauls, architecture changes
+- **MINOR**: New features, significant improvements
+- **PATCH**: Bug fixes, minor improvements, performance optimizations
+
+Current version: 2.1.2 (versionCode: 12)
+
+Recent version history:
+- 2.1.2: Spotlight tutorial, SBI/Indian Bank support, auto-scan on launch
+- 2.0.1: Previous release
+
 When implementing any feature, please ensure it aligns with the architecture patterns and design system defined in the documentation.
