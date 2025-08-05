@@ -25,6 +25,7 @@ class UserPreferencesRepository @Inject constructor(
         val HAS_SKIPPED_SMS_PERMISSION = booleanPreferencesKey("has_skipped_sms_permission")
         val DEVELOPER_MODE_ENABLED = booleanPreferencesKey("developer_mode_enabled")
         val SYSTEM_PROMPT = stringPreferencesKey("system_prompt")
+        val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
@@ -33,7 +34,8 @@ class UserPreferencesRepository @Inject constructor(
                 isDarkThemeEnabled = preferences[PreferencesKeys.DARK_THEME_ENABLED],
                 isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: false,
                 hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false,
-                isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false
+                isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false,
+                hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false
             )
         }
     
@@ -80,11 +82,18 @@ class UserPreferencesRepository @Inject constructor(
         .map { preferences ->
             preferences[PreferencesKeys.SYSTEM_PROMPT]
         }
+    
+    suspend fun markScanTutorialShown() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] = true
+        }
+    }
 }
 
 data class UserPreferences(
     val isDarkThemeEnabled: Boolean? = null, // null means follow system
     val isDynamicColorEnabled: Boolean = false, // Default to custom brand colors
     val hasSkippedSmsPermission: Boolean = false,
-    val isDeveloperModeEnabled: Boolean = false
+    val isDeveloperModeEnabled: Boolean = false,
+    val hasShownScanTutorial: Boolean = false
 )

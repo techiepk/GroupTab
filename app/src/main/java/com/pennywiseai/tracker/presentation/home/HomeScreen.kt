@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +32,7 @@ import com.pennywiseai.tracker.ui.components.SummaryCard
 import com.pennywiseai.tracker.ui.components.ListItemCard
 import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
@@ -41,7 +43,8 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
-    onNavigateToChat: () -> Unit = {}
+    onNavigateToChat: () -> Unit = {},
+    onFabPositioned: (Rect) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -146,7 +149,8 @@ fun HomeScreen(
             
             // Sync FAB
             FloatingActionButton(
-                onClick = { viewModel.scanSmsMessages() }
+                onClick = { viewModel.scanSmsMessages() },
+                modifier = Modifier.spotlightTarget(onFabPositioned)
             ) {
                 Icon(
                     imageVector = Icons.Default.Sync,

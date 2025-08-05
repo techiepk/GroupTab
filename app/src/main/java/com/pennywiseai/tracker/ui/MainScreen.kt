@@ -12,7 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,17 +31,21 @@ import com.pennywiseai.tracker.presentation.home.HomeScreen
 import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
 import com.pennywiseai.tracker.presentation.transactions.TransactionsScreen
 import com.pennywiseai.tracker.ui.components.PennyWiseBottomNavigation
+import com.pennywiseai.tracker.ui.components.SpotlightTutorial
 import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
+import com.pennywiseai.tracker.ui.viewmodel.SpotlightViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavHostController = rememberNavController(),
-    themeViewModel: ThemeViewModel = hiltViewModel()
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+    spotlightViewModel: SpotlightViewModel = hiltViewModel()
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val spotlightState by spotlightViewModel.spotlightState.collectAsState()
     
     // Handle chat screen separately to avoid keyboard issues
     if (currentRoute == "chat") {
@@ -45,8 +53,9 @@ fun MainScreen(
             navController = navController
         )
     } else {
-        Scaffold(
-        topBar = {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+            topBar = {
             PennyWiseTopAppBar(
                 title = when (currentRoute) {
                     "home" -> "PennyWise"
@@ -91,6 +100,9 @@ fun MainScreen(
                     },
                     onNavigateToChat = {
                         navController.navigate("chat")
+                    },
+                    onFabPositioned = { position ->
+                        spotlightViewModel.updateFabPosition(position)
                     }
                 )
             }
@@ -132,6 +144,19 @@ fun MainScreen(
             }
         }
     }
+            
+            // Spotlight Tutorial overlay - outside Scaffold to overlay everything
+            if (currentRoute == "home" && spotlightState.showTutorial && spotlightState.fabPosition != null) {
+                SpotlightTutorial(
+                    isVisible = true,
+                    targetPosition = spotlightState.fabPosition,
+                    message = "Tap here to scan your SMS messages for transactions",
+                    onDismiss = {
+                        spotlightViewModel.dismissTutorial()
+                    }
+                )
+            }
+        }
     }
 }
 
