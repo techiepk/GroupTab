@@ -4,6 +4,7 @@ import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
+import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
 import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -173,6 +174,82 @@ class SubscriptionRepository @Inject constructor(
         val tolerance = amount1.multiply(BigDecimal("0.05"))
         val diff = amount1.subtract(amount2).abs()
         return diff <= tolerance
+    }
+    
+    /**
+     * Creates or updates a subscription from Indian Bank Mandate info
+     */
+    suspend fun createOrUpdateFromIndianBankMandate(
+        mandateInfo: IndianBankParser.MandateInfo,
+        bankName: String
+    ): Long {
+        val nextPaymentDate = mandateInfo.nextDeductionDate?.let { dateStr ->
+            try {
+                // Parse dd-MMM-yy format
+                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("d-MMM-yy"))
+            } catch (e: Exception) {
+                // Fallback to 30 days from now if parsing fails
+                LocalDate.now().plusDays(30)
+            }
+        } ?: LocalDate.now().plusDays(30)
+        
+        // First try to find by merchant and amount (ignoring date)
+        val existing = subscriptionDao.getSubscriptionByMerchantAndAmount(
+            mandateInfo.merchant,
+            mandateInfo.amount
+        )
+        
+        Log.d(TAG, "Indian Bank Mandate lookup - Merchant: ${mandateInfo.merchant}, Amount: ${mandateInfo.amount}, " +
+                  "Next Date: $nextPaymentDate, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}, " +
+                  "StoredDate=${it.nextPaymentDate}" } ?: "NOT FOUND"}")
+        
+        val subscription = if (existing != null) {
+            // Check if this is a hidden subscription that should be reactivated
+            // Only reactivate if the new payment date is LATER than the stored date
+            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
+                                  nextPaymentDate.isAfter(existing.nextPaymentDate) &&
+                                  nextPaymentDate.isAfter(LocalDate.now())
+            
+            Log.d(TAG, "Subscription state check - Hidden: ${existing.state == SubscriptionState.HIDDEN}, " +
+                      "New date after stored: ${nextPaymentDate.isAfter(existing.nextPaymentDate)}, " +
+                      "New date is future: ${nextPaymentDate.isAfter(LocalDate.now())}, " +
+                      "Should reactivate: $shouldReactivate")
+            
+            // If hidden and payment date hasn't changed, don't update
+            if (existing.state == SubscriptionState.HIDDEN && !shouldReactivate) {
+                // Return the existing ID without any updates
+                Log.d(TAG, "Subscription ${existing.id} is HIDDEN and won't be reactivated " +
+                          "(payment date not newer). Skipping update.")
+                return existing.id
+            }
+            
+            // Update existing subscription (reactivate if needed)
+            if (shouldReactivate) {
+                Log.i(TAG, "REACTIVATING subscription ${existing.id} - ${existing.merchantName} " +
+                          "(old date: ${existing.nextPaymentDate}, new date: $nextPaymentDate)")
+            }
+            existing.copy(
+                amount = mandateInfo.amount,
+                nextPaymentDate = nextPaymentDate,
+                merchantName = mandateInfo.merchant,
+                state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
+                updatedAt = java.time.LocalDateTime.now()
+            )
+        } else {
+            // Create new subscription
+            Log.d(TAG, "Creating NEW subscription - Merchant: ${mandateInfo.merchant}, " +
+                      "Amount: ${mandateInfo.amount}, Date: $nextPaymentDate")
+            SubscriptionEntity(
+                merchantName = mandateInfo.merchant,
+                amount = mandateInfo.amount,
+                nextPaymentDate = nextPaymentDate,
+                state = SubscriptionState.ACTIVE,
+                bankName = bankName,
+                category = determineCategory(mandateInfo.merchant)
+            )
+        }
+        
+        return subscriptionDao.insertSubscription(subscription)
     }
     
     private fun determineCategory(merchantName: String): String {

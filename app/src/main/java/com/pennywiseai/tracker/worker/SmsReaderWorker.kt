@@ -10,6 +10,7 @@ import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
+import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -68,22 +69,44 @@ class SmsReaderWorker @AssistedInject constructor(
                     Log.d(TAG, "Processing SMS from ${parser.getBankName()}")
                     Log.d(TAG, "SMS Content: ${sms.body.take(Constants.SmsProcessing.SMS_PREVIEW_LENGTH)}...")
                     
-                    // Check if it's an E-Mandate notification (HDFC specific for now)
-                    if (parser is HDFCBankParser && parser.isEMandateNotification(sms.body)) {
-                        val eMandateInfo = parser.parseEMandateSubscription(sms.body)
-                        if (eMandateInfo != null) {
-                            try {
-                                val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
-                                    eMandateInfo,
-                                    parser.getBankName()
-                                )
-                                subscriptionCount++
-                                Log.d(TAG, "Created/Updated subscription: $subscriptionId for ${eMandateInfo.merchant}")
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error saving subscription: ${e.message}")
+                    // Check if it's a mandate/subscription notification
+                    when (parser) {
+                        is HDFCBankParser -> {
+                            if (parser.isEMandateNotification(sms.body)) {
+                                val eMandateInfo = parser.parseEMandateSubscription(sms.body)
+                                if (eMandateInfo != null) {
+                                    try {
+                                        val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
+                                            eMandateInfo,
+                                            parser.getBankName()
+                                        )
+                                        subscriptionCount++
+                                        Log.d(TAG, "Created/Updated HDFC subscription: $subscriptionId for ${eMandateInfo.merchant}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving HDFC subscription: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing for E-Mandate
                             }
                         }
-                        continue // Skip transaction parsing for E-Mandate
+                        is IndianBankParser -> {
+                            if (parser.isMandateNotification(sms.body)) {
+                                val mandateInfo = parser.parseMandateSubscription(sms.body)
+                                if (mandateInfo != null) {
+                                    try {
+                                        val subscriptionId = subscriptionRepository.createOrUpdateFromIndianBankMandate(
+                                            mandateInfo,
+                                            parser.getBankName()
+                                        )
+                                        subscriptionCount++
+                                        Log.d(TAG, "Created/Updated Indian Bank subscription: $subscriptionId for ${mandateInfo.merchant}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving Indian Bank subscription: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing for mandate
+                            }
+                        }
                     }
                     
                     // Parse the transaction

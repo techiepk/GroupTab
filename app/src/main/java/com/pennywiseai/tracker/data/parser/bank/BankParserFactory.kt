@@ -6,11 +6,13 @@ package com.pennywiseai.tracker.data.parser.bank
 object BankParserFactory {
     
     private val parsers = listOf(
-        HDFCBankParser()
+        HDFCBankParser(),
+        SBIBankParser(),
+        IndianBankParser()
         // Add more bank parsers here as we implement them
         // ICICIBankParser(),
-        // SBIBankParser(),
         // AxisBankParser(),
+        // IndusIndBankParser(),
         // etc.
     )
     

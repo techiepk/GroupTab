@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "pennywise-compose"
+rootProject.name = "pennywiseai-tracker"
 include(":app")
