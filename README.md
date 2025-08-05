@@ -43,9 +43,9 @@ All processing happens on your device using MediaPipe's LLM. Your financial data
 <table>
 <tr>
 <td><img src="screenshots/home.png" width="160"/></td>
-<td><img src="screenshots/analytics.png" width="160"/></td>
+<td><img src="screenshots/analytics-v2.png" width="160"/></td>
 <td><img src="screenshots/chat.png" width="160"/></td>
-<td><img src="screenshots/subscription.png" width="160"/></td>
+<td><img src="screenshots/subscription-v2.png" width="160"/></td>
 <td><img src="screenshots/transactions.png" width="160"/></td>
 </tr>
 <tr>
