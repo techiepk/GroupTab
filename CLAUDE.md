@@ -54,4 +54,28 @@ Recent version history:
 - 2.1.2: Spotlight tutorial, SBI/Indian Bank support, auto-scan on launch
 - 2.0.1: Previous release
 
+## Bank Parser Architecture
+When adding new bank parsers:
+1. **Base Class**: All bank parsers extend `BankParser` abstract class
+2. **Key Methods**:
+   - `getBankName()`: Returns the bank's display name
+   - `canHandle(sender: String)`: Checks if parser can handle SMS from sender
+   - `parse(smsBody, sender, timestamp)`: Returns `ParsedTransaction` or null
+3. **Override Patterns**: Banks typically override:
+   - `extractAmount()`: Bank-specific amount patterns
+   - `extractMerchant()`: Bank-specific merchant extraction
+   - `extractTransactionType()`: If needed for special cases
+4. **Registration**: Add new parser to `BankParserFactory.parsers` list
+5. **Return Type**: Use `ParsedTransaction` (not Transaction)
+6. **Imports**: 
+   - `com.pennywiseai.tracker.data.database.entity.TransactionType`
+   - `com.pennywiseai.tracker.data.parser.ParsedTransaction`
+   - `java.math.BigDecimal` for amounts
+
+## Supported Banks
+- HDFC Bank (HDFCBankParser)
+- State Bank of India (SBIBankParser) 
+- Indian Bank (IndianBankParser)
+- Federal Bank (FederalBankParser) - in progress
+
 When implementing any feature, please ensure it aligns with the architecture patterns and design system defined in the documentation.
