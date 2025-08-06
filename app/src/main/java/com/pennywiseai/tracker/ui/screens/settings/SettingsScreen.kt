@@ -1,6 +1,9 @@
 package com.pennywiseai.tracker.ui.screens.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -288,6 +292,83 @@ fun SettingsScreen(
                 Switch(
                     checked = isDeveloperModeEnabled,
                     onCheckedChange = { settingsViewModel.toggleDeveloperMode(it) }
+                )
+            }
+        }
+        
+        // Support Section
+        SectionHeader(title = "Support & Community")
+        
+        val context = LocalContext.current
+        
+        PennyWiseCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column {
+                // Discord Community
+                ListItem(
+                    headlineContent = { 
+                        Text(
+                            text = "Join Discord Community",
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    supportingContent = { 
+                        Text("Get help, request features, report bugs")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.Group,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/eqbPUYSR"))
+                        context.startActivity(intent)
+                    }
+                )
+                
+                HorizontalDivider(modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
+                
+                // GitHub Issues
+                ListItem(
+                    headlineContent = { 
+                        Text(
+                            text = "Report an Issue",
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    supportingContent = { 
+                        Text("Submit bug reports or bank requests on GitHub")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.BugReport,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sarim2000/pennywiseai-tracker/issues/new/choose"))
+                        context.startActivity(intent)
+                    }
                 )
             }
         }

@@ -48,9 +48,10 @@ We follow Semantic Versioning (SemVer) - MAJOR.MINOR.PATCH:
 - **MINOR**: New features, significant improvements
 - **PATCH**: Bug fixes, minor improvements, performance optimizations
 
-Current version: 2.1.2 (versionCode: 12)
+Current version: 2.1.3 (versionCode: 13)
 
 Recent version history:
+- 2.1.3: Federal Bank support, Discord community, GitHub issue templates
 - 2.1.2: Spotlight tutorial, SBI/Indian Bank support, auto-scan on launch
 - 2.0.1: Previous release
 
