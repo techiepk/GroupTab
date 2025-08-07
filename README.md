@@ -23,7 +23,13 @@
 
 PennyWise automatically reads transaction SMS messages and transforms them into organized financial data using on-device AI. No manual entry, no cloud processing, complete privacy.
 
-> **🧪 Beta Testing**: PennyWise is currently in closed beta testing. To join the beta and get early access, send your Gmail address to sarimahmed3520@gmail.com
+> ### 🚨 **BETA TESTING OPEN** 🚨
+> 
+> <a href="https://forms.gle/7FTkx7Z6BAwqzWJE9">
+>   <img src="https://img.shields.io/badge/JOIN_BETA-Limited_Spots_Available-FF0000?style=for-the-badge&labelColor=FF0000&color=FF4444" alt="Join Beta" />
+> </a>
+> 
+> **Get early access** • Test new features first • Shape the future of PennyWise
 
 ## Key Features
 
