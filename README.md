@@ -1,23 +1,21 @@
-<div align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" alt="PennyWise" width="80" height="80">
-  
-  # PennyWise AI
-  
-  Transform your SMS transactions into financial insights with on-device AI
-  
-  <p>
-    <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-    <img alt="Android" src="https://img.shields.io/badge/Android-12+-3DDC84">
-    <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.0.21-7F52FF">
-    <img alt="Privacy" src="https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B">
-  </p>
-  
-  <p>
-    <a href="https://play.google.com/store/apps/details?id=com.pennywiseai.tracker">
-      <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80">
-    </a>
-  </p>
-</div>
+<a name="top"></a>
+[![PennyWise AI Banner](banner.png)](https://github.com/sarim2000/pennywiseai-tracker)
+[![GitHub stars](https://img.shields.io/github/stars/sarim2000/pennywiseai-tracker?style=social)](https://github.com/sarim2000/pennywiseai-tracker)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Android](https://img.shields.io/badge/Android-12+-3DDC84)](https://developer.android.com/about/versions/12)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF)](https://kotlinlang.org/)
+[![Privacy](https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B)](https://developers.google.com/mediapipe)
+[![Beta Testers](https://img.shields.io/badge/Beta_Testers-50+-orange)](https://forms.gle/7FTkx7Z6BAwqzWJE9)
+[![GitHub release](https://img.shields.io/github/v/release/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
+[![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/your-invite-code)
+
+⭐ **Star us on GitHub — help us reach 100 stars!**
+
+[![Share](https://img.shields.io/badge/share-000000?logo=x&logoColor=white)](https://x.com/intent/tweet?text=Check%20out%20PennyWise%20AI%20-%20Privacy-first%20expense%20tracker%20with%20on-device%20AI:%20https://github.com/sarim2000/pennywiseai-tracker%20%23Android%20%23PrivacyFirst%20%23OnDeviceAI)
+[![Share](https://img.shields.io/badge/share-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/sharing/share-offsite/?url=https://github.com/sarim2000/pennywiseai-tracker)
+[![Share](https://img.shields.io/badge/share-FF4500?logo=reddit&logoColor=white)](https://www.reddit.com/submit?title=PennyWise%20AI%20-%20Privacy-first%20expense%20tracker&url=https://github.com/sarim2000/pennywiseai-tracker)
+[![Share](https://img.shields.io/badge/share-0088CC?logo=telegram&logoColor=white)](https://t.me/share/url?url=https://github.com/sarim2000/pennywiseai-tracker&text=Check%20out%20PennyWise%20AI)
 
 ## Overview
 
@@ -26,7 +24,7 @@ PennyWise automatically reads transaction SMS messages and transforms them into 
 > ### 🚨 **BETA TESTING OPEN** 🚨
 > 
 > <a href="https://forms.gle/7FTkx7Z6BAwqzWJE9">
->   <img src="https://img.shields.io/badge/JOIN_BETA-Limited_Spots_Available-FF0000?style=for-the-badge&labelColor=FF0000&color=FF4444" alt="Join Beta" />
+>   <img src="https://img.shields.io/badge/JOIN_THE_BETA-Get_Early_Access-FF0000?style=for-the-badge&labelColor=FF0000&color=FF4444" alt="Join Beta" />
 > </a>
 > 
 > **Get early access** • Test new features first • Shape the future of PennyWise
