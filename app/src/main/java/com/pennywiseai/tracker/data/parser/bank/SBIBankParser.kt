@@ -251,4 +251,16 @@ class SBIBankParser : BankParser() {
         // Fall back to base class
         return super.extractReference(message)
     }
+    
+    override fun isTransactionMessage(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // Skip e-statement notifications
+        if (lowerMessage.contains("e-statement of sbi credit card")) {
+            return false
+        }
+        
+        // Fall back to base class for other checks
+        return super.isTransactionMessage(message)
+    }
 }
