@@ -8,7 +8,7 @@
 [![Beta Testers](https://img.shields.io/badge/Beta_Testers-50+-orange)](https://forms.gle/7FTkx7Z6BAwqzWJE9)
 [![GitHub release](https://img.shields.io/github/v/release/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
-[![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/your-invite-code)
+[![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/eqbPUYSR)
 
 ⭐ **Star us on GitHub — help us reach 100 stars!**
 
