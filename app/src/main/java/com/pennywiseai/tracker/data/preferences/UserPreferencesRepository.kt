@@ -5,10 +5,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,6 +28,7 @@ class UserPreferencesRepository @Inject constructor(
         val DEVELOPER_MODE_ENABLED = booleanPreferencesKey("developer_mode_enabled")
         val SYSTEM_PROMPT = stringPreferencesKey("system_prompt")
         val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
+        val ACTIVE_DOWNLOAD_ID = longPreferencesKey("active_download_id")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
@@ -86,6 +89,24 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun markScanTutorialShown() {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] = true
+        }
+    }
+    
+    suspend fun saveActiveDownloadId(id: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ACTIVE_DOWNLOAD_ID] = id
+        }
+    }
+    
+    suspend fun getActiveDownloadId(): Long? {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.ACTIVE_DOWNLOAD_ID] }
+            .first()
+    }
+    
+    suspend fun clearActiveDownloadId() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.ACTIVE_DOWNLOAD_ID)
         }
     }
 }
