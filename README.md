@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="branding/app-store/ic_launcher_180.png" alt="PennyWise" width="80" height="80">
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" alt="PennyWise" width="80" height="80">
   
   # PennyWise AI
   
