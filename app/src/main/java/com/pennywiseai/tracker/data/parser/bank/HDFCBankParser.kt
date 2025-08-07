@@ -224,6 +224,17 @@ class HDFCBankParser : BankParser() {
         
         val lowerMessage = message.lowercase()
         
+        // Skip credit card payment confirmations
+        if (lowerMessage.contains("received towards your credit card")) {
+            return false
+        }
+        
+        // Skip credit card payment credited notifications
+        if (lowerMessage.contains("payment") && 
+            lowerMessage.contains("credited to your card")) {
+            return false
+        }
+        
         // Skip OTP and promotional messages
         if (lowerMessage.contains("otp") || 
             lowerMessage.contains("one time password") ||
