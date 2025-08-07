@@ -224,6 +224,11 @@ class HDFCBankParser : BankParser() {
         
         val lowerMessage = message.lowercase()
         
+        // Skip credit card blocking notifications
+        if (lowerMessage.contains("block cc")) {
+            return false
+        }
+        
         // Skip credit card payment confirmations
         if (lowerMessage.contains("received towards your credit card")) {
             return false
