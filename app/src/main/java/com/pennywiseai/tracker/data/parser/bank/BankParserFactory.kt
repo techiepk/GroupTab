@@ -10,9 +10,9 @@ object BankParserFactory {
         SBIBankParser(),
         IndianBankParser(),
         FederalBankParser(),
-        JuspayParser()
+        JuspayParser(),
+        ICICIBankParser()
         // Add more bank parsers here as we implement them
-        // ICICIBankParser(),
         // AxisBankParser(),
         // IndusIndBankParser(),
         // etc.
