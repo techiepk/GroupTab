@@ -30,8 +30,9 @@ class ModelRepository @Inject constructor(
         val exists = modelFile.exists()
         val size = if (exists) modelFile.length() else 0
         val expectedSize = Constants.ModelDownload.MODEL_SIZE_BYTES
-        // Check if file exists and has reasonable size (at least 1GB for a 1.5GB model)
-        val minSize = 1024L * 1024L * 1024L // 1GB
+        // Allow 5% variance in file size as download sizes can vary
+        // But also accept any file over 2GB as models can vary in size
+        val minSize = minOf((expectedSize * 0.95).toLong(), 2L * 1024L * 1024L * 1024L) // 95% of expected or 2GB minimum
         val isDownloaded = exists && size >= minSize
         
         Log.d("ModelRepository", "Checking model: exists=$exists, size=$size bytes (${size/1024/1024}MB), expectedSize=$expectedSize, minSize=$minSize, isDownloaded=$isDownloaded")

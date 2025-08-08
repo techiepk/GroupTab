@@ -68,33 +68,94 @@ fun ChatScreen(
     ) {
         when (modelState) {
             ModelState.NOT_DOWNLOADED, ModelState.ERROR -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                // Show existing messages if any, but disable input
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    // If no messages, show the download prompt centered
+                    if (messages.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                            ) {
+                                Icon(
+                                    Icons.Default.CloudDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Gemma Model Required",
+                                    style = MaterialTheme.typography.headlineSmall
+                                )
+                                Text(
+                                    text = "Download the AI model from Settings to start chatting",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Button(onClick = onNavigateToSettings) {
+                                    Text("Go to Settings")
+                                }
+                            }
+                        }
+                    } else {
+                        // Show existing messages (read-only)
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(
+                                start = Dimensions.Padding.content,
+                                end = Dimensions.Padding.content,
+                                top = Dimensions.Padding.content,
+                                bottom = Spacing.lg
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        ) {
+                            items(messages) { message ->
+                                ChatMessageItem(message = message)
+                            }
+                        }
+                    }
+                    
+                    // Show model required banner at bottom
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        tonalElevation = 3.dp
                     ) {
-                        Icon(
-                            Icons.Default.CloudDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Gemma Model Required",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Text(
-                            text = "Download the AI model from Settings to start chatting",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Button(onClick = onNavigateToSettings) {
-                            Text("Go to Settings")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Dimensions.Padding.content),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Model Required",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Download to continue chatting",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Button(
+                                onClick = onNavigateToSettings,
+                                modifier = Modifier.padding(start = Spacing.sm)
+                            ) {
+                                Text("Download")
+                            }
                         }
                     }
                 }

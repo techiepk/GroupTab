@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] Check user video on model download problem
+- [X] Check user video on model download problem
 
 ## Delete Transactions Feature
 - [ ] Add deleted_transaction_hashes table to database

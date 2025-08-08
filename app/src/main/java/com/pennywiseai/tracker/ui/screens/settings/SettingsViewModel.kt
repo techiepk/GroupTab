@@ -127,13 +127,25 @@ class SettingsViewModel @Inject constructor(
         Log.d("SettingsViewModel", "Model file exists: ${modelFile.exists()}, size: ${modelFile.length()}, expected: ${Constants.ModelDownload.MODEL_SIZE_BYTES}")
         
         // Check against expected size to ensure it's complete
-        if (modelFile.exists() && modelFile.length() == Constants.ModelDownload.MODEL_SIZE_BYTES) {
+        // Allow 5% variance in file size as download sizes can vary slightly
+        val minSize = (Constants.ModelDownload.MODEL_SIZE_BYTES * 0.95).toLong()
+        val maxSize = (Constants.ModelDownload.MODEL_SIZE_BYTES * 1.05).toLong()
+        
+        if (modelFile.exists() && modelFile.length() in minSize..maxSize) {
             _downloadState.value = DownloadState.COMPLETED
             _totalMB.value = modelFile.length() / (1024 * 1024)
             _downloadedMB.value = _totalMB.value
             _downloadProgress.value = 100
             // Update model repository state
-            Log.d("SettingsViewModel", "Model complete, updating repository state to READY")
+            Log.d("SettingsViewModel", "Model complete (${modelFile.length()} bytes), updating repository state to READY")
+            modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
+        } else if (modelFile.exists() && modelFile.length() > maxSize) {
+            // File is too large, but might still be valid - mark as complete
+            _downloadState.value = DownloadState.COMPLETED
+            _totalMB.value = modelFile.length() / (1024 * 1024)
+            _downloadedMB.value = _totalMB.value
+            _downloadProgress.value = 100
+            Log.d("SettingsViewModel", "Model file larger than expected (${modelFile.length()} bytes), but marking as complete")
             modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
         } else if (modelFile.exists()) {
             // Partial file exists, delete it

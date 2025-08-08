@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.presentation.home
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
@@ -8,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
+import com.pennywiseai.tracker.data.manager.InAppUpdateManager
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -27,6 +29,7 @@ class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
     private val llmRepository: LlmRepository,
+    private val inAppUpdateManager: InAppUpdateManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
@@ -123,6 +126,19 @@ class HomeViewModel @Inject constructor(
                 // Handle error silently or add error state if needed
             }
         }
+    }
+    
+    /**
+     * Checks for app updates using Google Play In-App Updates.
+     * Should be called with the current activity context.
+     */
+    fun checkForAppUpdate(activity: ComponentActivity) {
+        inAppUpdateManager.checkForUpdate(activity)
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        inAppUpdateManager.cleanup()
     }
 }
 

@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.presentation.home
 
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,6 +49,14 @@ fun HomeScreen(
     onFabPositioned: (Rect) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val activity = LocalContext.current as? ComponentActivity
+    
+    // Check for app updates when the screen is first displayed
+    LaunchedEffect(Unit) {
+        activity?.let {
+            viewModel.checkForAppUpdate(it)
+        }
+    }
     
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(

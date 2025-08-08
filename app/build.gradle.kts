@@ -141,6 +141,10 @@ dependencies {
     // MediaPipe for LLM inference
     implementation("com.google.mediapipe:tasks-genai:0.10.24")
     
+    // Google Play In-App Updates
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
+    
     testImplementation(libs.junit)
     testImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:$workVersion")
