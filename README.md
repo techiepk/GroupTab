@@ -38,6 +38,20 @@ PennyWise automatically reads transaction SMS messages and transforms them into 
 - **🏷️ Auto-Categorization** - Intelligent grouping by merchant and transaction type
 - **📤 Data Export** - Export as CSV or PDF for taxes or personal records
 
+## Supported Banks
+
+Currently supporting major Indian banks:
+
+- **HDFC Bank**
+- **State Bank of India (SBI)**
+- **ICICI Bank**
+- **Indian Bank**
+- **Federal Bank**
+- **Karnataka Bank**
+- **Amazon Pay (Juspay)**
+
+More banks being added regularly! [Request your bank →](https://github.com/sarim2000/pennywiseai-tracker/issues/new?template=bank_support_request.md)
+
 ## Privacy First
 
 All processing happens on your device using MediaPipe's LLM. Your financial data never leaves your phone. No servers, no uploads, no tracking.
