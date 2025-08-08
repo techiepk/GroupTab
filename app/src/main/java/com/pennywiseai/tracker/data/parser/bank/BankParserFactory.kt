@@ -13,9 +13,11 @@ object BankParserFactory {
         JuspayParser(),
         ICICIBankParser(),
         KarnatakaBankParser(),
-        IDBIBankParser()
+        IDBIBankParser(),
+        JupiterBankParser(),
+        AxisBankParser(),
+        PNBBankParser()
         // Add more bank parsers here as we implement them
-        // AxisBankParser(),
         // IndusIndBankParser(),
         // etc.
     )

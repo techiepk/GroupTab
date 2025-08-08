@@ -7,8 +7,8 @@ import java.math.BigDecimal
  * Parser for Karnataka Bank SMS messages
  * 
  * Supported formats:
- * - Debit: "Your Account x005111x has been DEBITED for Rs.6368/-"
- * - Credit: "Your a/c XX5111 is credited by Rs.6600.00"
+ * - Debit: "Your Account x001234x has been DEBITED for Rs.6368/-"
+ * - Credit: "Your a/c XX1234 is credited by Rs.6600.00"
  * - ACH, UPI, and other transaction types
  * 
  * Common senders: Karnataka Bank, KTKBNK, variations with DLT patterns
@@ -102,7 +102,7 @@ class KarnatakaBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: "Account x005111x" or "Account XX5111X"
+        // Pattern 1: "Account x001234x" or "Account XX1234X"
         val accountPattern1 = Regex(
             """Account\s+[xX]*([0-9]{4,6})[xX]*""",
             RegexOption.IGNORE_CASE
@@ -117,7 +117,7 @@ class KarnatakaBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "a/c XX5111"
+        // Pattern 2: "a/c XX1234"
         val accountPattern2 = Regex(
             """a/c\s+[xX]{0,2}([0-9]{4,6})""",
             RegexOption.IGNORE_CASE

@@ -8,7 +8,7 @@ import java.math.BigDecimal
  * 
  * Supported formats:
  * - Debit: "Your account has been successfully debited with Rs 59.00"
- * - UPI: "IDBI Bank Acct XX530 debited for Rs 1040.00"
+ * - UPI: "IDBI Bank Acct XX1234 debited for Rs 1040.00"
  * - AutoPay/Mandate transactions
  * - Balance information
  * 
@@ -124,7 +124,7 @@ class IDBIBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: "Acct XX530"
+        // Pattern 1: "Acct XX1234"
         val acctPattern = Regex(
             """Acct\s+(?:XX|X\*+)?(\d{3,4})""",
             RegexOption.IGNORE_CASE
@@ -133,7 +133,7 @@ class IDBIBankParser : BankParser() {
             return match.groupValues[1]
         }
         
-        // Pattern 2: "IDBI Bank Acct XX530"
+        // Pattern 2: "IDBI Bank Acct XX1234"
         val bankAcctPattern = Regex(
             """IDBI\s+Bank\s+Acct\s+(?:XX|X\*+)?(\d{3,4})""",
             RegexOption.IGNORE_CASE

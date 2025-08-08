@@ -45,9 +45,13 @@ Currently supporting major Indian banks:
 - **HDFC Bank**
 - **State Bank of India (SBI)**
 - **ICICI Bank**
+- **Axis Bank**
+- **Punjab National Bank (PNB)**
+- **IDBI Bank**
 - **Indian Bank**
 - **Federal Bank**
 - **Karnataka Bank**
+- **Jupiter (CSB Bank)**
 - **Amazon Pay (Juspay)**
 
 More banks being added regularly! [Request your bank →](https://github.com/sarim2000/pennywiseai-tracker/issues/new?template=bank_support_request.md)

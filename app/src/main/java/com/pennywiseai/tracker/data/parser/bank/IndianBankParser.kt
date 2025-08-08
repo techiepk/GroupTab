@@ -119,19 +119,19 @@ class IndianBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: A/c *3829
+        // Pattern 1: A/c *1234
         val pattern1 = Regex("""A/c\s+\*(\d{4})""", RegexOption.IGNORE_CASE)
         pattern1.find(message)?.let { match ->
             return match.groupValues[1]
         }
         
-        // Pattern 2: Account XX3829 or XXXX3829
+        // Pattern 2: Account XX1234 or XXXX1234
         val pattern2 = Regex("""Account\s+X*(\d{4})""", RegexOption.IGNORE_CASE)
         pattern2.find(message)?.let { match ->
             return match.groupValues[1]
         }
         
-        // Pattern 3: A/c ending 3829
+        // Pattern 3: A/c ending 1234
         val pattern3 = Regex("""A/c\s+ending\s+(\d{4})""", RegexOption.IGNORE_CASE)
         pattern3.find(message)?.let { match ->
             return match.groupValues[1]

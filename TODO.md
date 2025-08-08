@@ -1,6 +1,13 @@
 # TODO
 
 - [X] Check user video on model download problem
+- [ ] Check calculations
+- [ ] show date
+- [ ] data export
+
+## Logo
+- [ ] Meesho
+- [ ] jio smartpoint
 
 ## Delete Transactions Feature
 - [ ] Add deleted_transaction_hashes table to database
@@ -29,3 +36,8 @@
 - [ ] Bulk delete feature
 - [ ] Full rescan option in settings
 - [ ] Cleanup deleted hashes older than 6 months
+
+
+## AI
+
+- [ ] BYOK
