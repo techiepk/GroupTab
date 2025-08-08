@@ -10,6 +10,7 @@ import java.math.BigDecimal
  * - Debit: "Your account has been successfully debited with Rs xxx.00"
  * - Credit: "Acct XXxxx is credited with Rs xxx.00"
  * - UPI: "ICICI Bank Acct XXxxx debited for Rs xxx.00"
+ * - Cash Deposit: "Cash deposit transaction of Rs xxx in ICICI Bank Account 1234XXXX1234 has been completed"
  * - AutoPay transactions
  * 
  * Common senders: XX-ICICIB-S, ICICIB, ICICIBANK
@@ -78,6 +79,23 @@ class ICICIBankParser : BankParser() {
             }
         }
         
+        // Pattern 4: "Cash deposit transaction of Rs xxx" (must have "has been completed")
+        if (message.contains("Cash deposit transaction", ignoreCase = true) && 
+            message.contains("has been completed", ignoreCase = true)) {
+            val cashDepositPattern = Regex(
+                """Cash\s+deposit\s+transaction\s+of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            )
+            cashDepositPattern.find(message)?.let { match ->
+                val amount = match.groupValues[1].replace(",", "")
+                return try {
+                    BigDecimal(amount)
+                } catch (e: NumberFormatException) {
+                    null
+                }
+            }
+        }
+        
         // Fall back to base class patterns
         return super.extractAmount(message)
     }
@@ -119,7 +137,13 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 4: AutoPay specific - extract service name
+        // Pattern 4: Cash deposit (only if completed)
+        if (message.contains("Cash deposit transaction", ignoreCase = true) && 
+            message.contains("has been completed", ignoreCase = true)) {
+            return "Cash Deposit"
+        }
+        
+        // Pattern 5: AutoPay specific - extract service name
         if (message.contains("AutoPay", ignoreCase = true)) {
             // Look for common AutoPay services
             val lowerMessage = message.lowercase()
@@ -157,6 +181,15 @@ class ICICIBankParser : BankParser() {
             return match.groupValues[1]
         }
         
+        // Pattern 3: "ICICI Bank Account 1234XXXX1234" - extract last 4 visible digits
+        val accountFullPattern = Regex(
+            """ICICI\s+Bank\s+Account\s+\d+X+(\d{4})""",
+            RegexOption.IGNORE_CASE
+        )
+        accountFullPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
         // Fall back to base class
         return super.extractAccountLast4(message)
     }
@@ -177,6 +210,15 @@ class ICICIBankParser : BankParser() {
             RegexOption.IGNORE_CASE
         )
         upiPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        // Pattern 3: "transaction reference no.MCDA001746000000"
+        val txnRefPattern = Regex(
+            """transaction\s+reference\s+no\.?([A-Z0-9]+)""",
+            RegexOption.IGNORE_CASE
+        )
+        txnRefPattern.find(message)?.let { match ->
             return match.groupValues[1]
         }
         
@@ -207,6 +249,12 @@ class ICICIBankParser : BankParser() {
             "your account has been"
         )
         
+        // Special check for cash deposit - must be completed
+        if (lowerMessage.contains("cash deposit transaction") && 
+            lowerMessage.contains("has been completed")) {
+            return true
+        }
+        
         // If any ICICI-specific pattern is found, it's likely a transaction
         if (iciciKeywords.any { lowerMessage.contains(it) }) {
             return true
@@ -214,5 +262,18 @@ class ICICIBankParser : BankParser() {
         
         // Fall back to base class for standard checks
         return super.isTransactionMessage(message)
+    }
+    
+    override fun extractTransactionType(message: String): TransactionType? {
+        val lowerMessage = message.lowercase()
+        
+        // Cash deposit is income (only if completed)
+        if (lowerMessage.contains("cash deposit transaction") && 
+            lowerMessage.contains("has been completed")) {
+            return TransactionType.INCOME
+        }
+        
+        // Fall back to base class for standard checks
+        return super.extractTransactionType(message)
     }
 }
