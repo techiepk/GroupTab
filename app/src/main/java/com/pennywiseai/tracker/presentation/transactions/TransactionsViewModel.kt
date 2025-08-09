@@ -59,6 +59,15 @@ class TransactionsViewModel @Inject constructor(
         searchQuery: String,
         period: TimePeriod
     ): Flow<List<TransactionEntity>> {
+        // Handle ALL period separately to avoid date range issues
+        if (period == TimePeriod.ALL) {
+            return if (searchQuery.isBlank()) {
+                transactionRepository.getAllTransactions()
+            } else {
+                transactionRepository.searchTransactions(searchQuery)
+            }
+        }
+        
         val (startDate, endDate) = when (period) {
             TimePeriod.THIS_MONTH -> {
                 val now = YearMonth.now()
@@ -69,6 +78,7 @@ class TransactionsViewModel @Inject constructor(
                 lastMonth.atDay(1).atStartOfDay() to lastMonth.atEndOfMonth().atTime(23, 59, 59)
             }
             TimePeriod.ALL -> {
+                // This case is handled above, but compiler needs it
                 LocalDateTime.MIN to LocalDateTime.MAX
             }
         }
