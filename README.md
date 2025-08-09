@@ -10,12 +10,10 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/eqbPUYSR)
 
-## PennyWise AI — The private SMS‑powered expense tracker for India
+## PennyWise AI — Free & Open‑Source, private SMS‑powered expense tracker for India
 
-Turn raw bank SMS into a clean, searchable money timeline — automatically. Zero setup. Zero cloud. 100% on‑device AI.
+Turn bank SMS into a clean, searchable money timeline. 100% on‑device AI.
 
-**Get started:**
-- [Download APK](https://github.com/sarim2000/pennywiseai-tracker/releases) • [Join the Beta](https://forms.gle/7FTkx7Z6BAwqzWJE9) • [Join Discord](https://discord.gg/eqbPUYSR)
 
 ⭐ **Star us on GitHub — help us reach 100 stars!**
 
@@ -26,7 +24,7 @@ Turn raw bank SMS into a clean, searchable money timeline — automatically. Zer
 
 ## Overview
 
-PennyWise automatically reads transaction SMS messages and transforms them into organized financial data using on-device AI. No manual entry, no cloud processing, complete privacy.
+For Android users in India who want automatic expense tracking from bank SMS — clean categories, subscription detection, and clear insights.
 
 > ### 🚨 **BETA TESTING OPEN** 🚨
 > 
@@ -36,28 +34,20 @@ PennyWise automatically reads transaction SMS messages and transforms them into 
 > 
 > **Get early access** • Test new features first • Shape the future of PennyWise
 
-### Why PennyWise (in 30 seconds)
-
-- **Save time automatically**: New transactions are detected from SMS and categorized instantly.
-- **See where money goes**: Clean merchant names, categories, and charts help you spot patterns fast.
-- **Never miss renewals**: Automatic subscription detection and reminders.
-- **Ask your money anything**: On‑device AI answers questions like “How much did I spend on food last month?”
-- **Privacy built‑in**: Works offline. Your data never leaves your phone.
-
 ### How it works
 
 1. Grant SMS permission (read‑only). No inbox changes, no messages sent.
 2. PennyWise parses transaction SMS, extracts amount, merchant, category, and date.
 3. View analytics, subscriptions, and the full transaction timeline — and chat with the on‑device AI.
 
-## Key Features
+## Why PennyWise
 
-- **🤖 Smart SMS Parsing** - Automatically extracts transaction details from any Indian bank SMS
-- **📊 Spending Analytics** - Visual insights into your spending patterns and trends  
-- **🔄 Subscription Tracking** - Detects and monitors recurring payments automatically
-- **💬 AI Assistant** - Chat about your finances with a locally-running AI
-- **🏷️ Auto-Categorization** - Intelligent grouping by merchant and transaction type
-- **📤 Data Export** - Export as CSV or PDF for taxes or personal records
+- **🤖 Smart SMS Parsing** - Automatically extracts transaction details from Indian bank SMS
+- **📊 Clear Insights** - Analytics and charts to instantly see where money goes
+- **🔄 Subscription Tracking** - Detects and monitors recurring payments
+- **💬 On‑device AI Chat** - Ask questions like “What did I spend on food last month?”
+- **🏷️ Auto‑Categorization** - Clean merchant names and sensible categories
+- **📤 Data Export** - Export as CSV or PDF for taxes or records
 
 ## Supported Banks
 
@@ -128,8 +118,6 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 </p>
 
 **Architecture**: MVVM • Jetpack Compose • Room • Coroutines • Hilt • MediaPipe AI • Material Design 3
-
-**Architecture**: MVVM • Room • Coroutines • MediaPipe AI • Material Design 3
 
 ## Community & Support
 
