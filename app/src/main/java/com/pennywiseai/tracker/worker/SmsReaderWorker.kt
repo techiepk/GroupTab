@@ -271,14 +271,20 @@ class SmsReaderWorker @AssistedInject constructor(
                             
                             // Convert to SmsMessage format for processing
                             if (messageText != null && sender != null) {
-                                val rcsMessage = SmsMessage(
-                                    id = messageId,
-                                    sender = sender,
-                                    timestamp = date * 1000, // MMS uses seconds, SMS uses milliseconds
-                                    body = messageText,
-                                    type = Telephony.Sms.MESSAGE_TYPE_INBOX
-                                )
-                                messages.add(rcsMessage)
+                                // Only process RCS messages from PNB to avoid unnecessary processing
+                                if (sender.uppercase().contains("PUNJAB NATIONAL BANK")) {
+                                    Log.d(TAG, "RCS message from PNB (sender: $sender)")
+                                    val rcsMessage = SmsMessage(
+                                        id = messageId,
+                                        sender = sender,
+                                        timestamp = date * 1000, // MMS uses seconds, SMS uses milliseconds
+                                        body = messageText,
+                                        type = Telephony.Sms.MESSAGE_TYPE_INBOX
+                                    )
+                                    messages.add(rcsMessage)
+                                } else {
+                                    Log.d(TAG, "Skipping RCS message from non-PNB sender: $sender")
+                                }
                             }
                         }
                     }
