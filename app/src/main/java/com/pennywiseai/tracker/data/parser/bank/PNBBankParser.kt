@@ -12,8 +12,8 @@ class PNBBankParser : BankParser() {
     
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
-        return normalizedSender.contains("PNBBNK") ||
-               normalizedSender.contains("PNB") ||
+        return normalizedSender.contains("PUNJAB NATIONAL BANK") || // RCS sender (any case)
+               normalizedSender.contains("PNBBNK") ||
                normalizedSender.contains("PUNBN") ||
                normalizedSender.matches(Regex("^[A-Z]{2}-PNBBNK-S$")) ||
                normalizedSender.matches(Regex("^[A-Z]{2}-PNB-S$")) ||

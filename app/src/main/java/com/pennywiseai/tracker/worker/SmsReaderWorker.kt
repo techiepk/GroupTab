@@ -1,8 +1,11 @@
 package com.pennywiseai.tracker.worker
 
 import android.content.Context
+import android.net.Uri
 import android.provider.Telephony
 import android.util.Log
+import org.json.JSONArray
+import org.json.JSONObject
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -190,20 +193,28 @@ class SmsReaderWorker @AssistedInject constructor(
     
     /**
      * Reads SMS messages from the device's SMS content provider.
+     * Also attempts to read RCS messages from MMS provider.
      */
     private fun readSmsMessages(): List<SmsMessage> {
         val messages = mutableListOf<SmsMessage>()
         
         try {
-            // Calculate date 3 months ago
-            val threeMonthsAgo = System.currentTimeMillis() - (Constants.SmsProcessing.INITIAL_SCAN_MONTHS * 30L * 24 * 60 * 60 * 1000)
+            // Calculate start of yesterday (for testing - scanning last 2 days)
+            val calendar = java.util.Calendar.getInstance().apply {
+                add(java.util.Calendar.DAY_OF_YEAR, -1) // Go back 1 day
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            val yesterdayStart = calendar.timeInMillis
             
-            // Query SMS inbox for last 3 months
+            // Query SMS inbox since yesterday
             val cursor = applicationContext.contentResolver.query(
                 Telephony.Sms.CONTENT_URI,
                 SMS_PROJECTION,
                 "${Telephony.Sms.TYPE} = ? AND ${Telephony.Sms.DATE} >= ?",
-                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString(), threeMonthsAgo.toString()),
+                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString(), yesterdayStart.toString()),
                 "${Telephony.Sms.DATE} DESC"
             )
             
@@ -225,11 +236,242 @@ class SmsReaderWorker @AssistedInject constructor(
                     messages.add(message)
                 }
             }
+            
+            // Try to read RCS messages from MMS provider
+            try {
+                // MMS/RCS uses seconds since epoch, not milliseconds
+                val yesterdayStartSeconds = yesterdayStart / 1000
+                
+                val mmsCursor = applicationContext.contentResolver.query(
+                    Uri.parse("content://mms"),
+                    arrayOf("_id", "thread_id", "date", "tr_id", "m_id"),
+                    "date >= ?",
+                    arrayOf(yesterdayStartSeconds.toString()),
+                    "date DESC"
+                )
+                
+                mmsCursor?.use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val messageId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"))
+                        val date = cursor.getLong(cursor.getColumnIndexOrThrow("date"))
+                        val trId = cursor.getString(cursor.getColumnIndex("tr_id")) ?: ""
+                        
+                        // Check if this is an RCS message (has proto: in tr_id)
+                        if (trId.startsWith("proto:")) {
+                            // Extract sender from tr_id (it's base64 encoded protobuf)
+                            val sender = extractRcsSender(trId)
+                            
+                            // Get message text from parts
+                            var messageText = getRcsMessageText(messageId)
+                            
+                            // If it's JSON (RCS Rich Card), extract the actual text
+                            if (messageText != null && messageText.trim().startsWith("{")) {
+                                messageText = extractTextFromRcsJson(messageText)
+                            }
+                            
+                            // Convert to SmsMessage format for processing
+                            if (messageText != null && sender != null) {
+                                val rcsMessage = SmsMessage(
+                                    id = messageId,
+                                    sender = sender,
+                                    timestamp = date * 1000, // MMS uses seconds, SMS uses milliseconds
+                                    body = messageText,
+                                    type = Telephony.Sms.MESSAGE_TYPE_INBOX
+                                )
+                                messages.add(rcsMessage)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error reading RCS messages: ${e.message}")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error querying SMS content provider", e)
         }
         
         return messages
+    }
+    
+    /**
+     * Extracts sender name from RCS tr_id field
+     * The tr_id contains base64 encoded protobuf data with sender info
+     */
+    private fun extractRcsSender(trId: String): String? {
+        return try {
+            // Remove "proto:" prefix and decode base64
+            val base64Data = trId.removePrefix("proto:")
+            val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            val decodedString = String(decodedBytes)
+            
+            // Look for sender patterns in the decoded data
+            // Pattern 1: Agent ID like "ask_apollo_9xdchzx9_agent@rbm.goog"
+            val agentPattern = Regex("""([a-z_]+)_[a-z0-9]+_agent@rbm\.goog""")
+            agentPattern.find(decodedString)?.let { match ->
+                // Convert agent ID to readable name (e.g., "ask_apollo" -> "Ask Apollo")
+                return match.groupValues[1].split("_").joinToString(" ") { 
+                    it.replaceFirstChar { char -> char.uppercase() }
+                }
+            }
+            
+            // Pattern 2: Look for actual sender name in the data
+            // RCS messages often have the business name directly in the protobuf
+            val namePattern = Regex("""[\x12\x1a][\x00-\x20]([A-Za-z][A-Za-z\s]+)""")
+            namePattern.find(decodedString)?.let { match ->
+                val name = match.groupValues[1].trim()
+                if (name.length > 3 && name.length < 50) {
+                    return name
+                }
+            }
+            
+            // If no pattern matches, return null
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting RCS sender: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Gets the text content of an RCS/MMS message from its parts
+     */
+    private fun getRcsMessageText(messageId: Long): String? {
+        return try {
+            // First, let's see what parts exist for this message
+            val partsCursor = applicationContext.contentResolver.query(
+                Uri.parse("content://mms/part"),
+                null, // Get all columns to debug
+                "mid = ?",
+                arrayOf(messageId.toString()),
+                null
+            )
+            
+            partsCursor?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val partId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"))
+                    val contentType = cursor.getString(cursor.getColumnIndex("ct")) ?: ""
+                    
+                    // Look for text content
+                    if (contentType.startsWith("text/") || contentType == "application/smil") {
+                        // Try to get text directly from the text column
+                        val textIndex = cursor.getColumnIndex("text")
+                        if (textIndex >= 0) {
+                            val text = cursor.getString(textIndex)
+                            if (!text.isNullOrEmpty()) {
+                                return text
+                            }
+                        }
+                        
+                        // Try to read from _data path (file storage)
+                        val dataIndex = cursor.getColumnIndex("_data")
+                        if (dataIndex >= 0) {
+                            val dataPath = cursor.getString(dataIndex)
+                            if (!dataPath.isNullOrEmpty()) {
+                                // Try to read the file
+                                try {
+                                    val partUri = Uri.parse("content://mms/part/$partId")
+                                    val inputStream = applicationContext.contentResolver.openInputStream(partUri)
+                                    val text = inputStream?.bufferedReader()?.use { it.readText() }
+                                    if (!text.isNullOrEmpty()) {
+                                        return text
+                                    }
+                                } catch (e: Exception) {
+                                    // Ignore read errors
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting RCS message text: ${e.message}", e)
+            null
+        }
+    }
+    
+    /**
+     * Extracts text content from RCS JSON (Rich Cards)
+     */
+    private fun extractTextFromRcsJson(json: String): String? {
+        return try {
+            val jsonObject = org.json.JSONObject(json)
+            val texts = mutableListOf<String>()
+            
+            // Navigate through the JSON structure to find text
+            fun extractTexts(obj: Any?, depth: Int = 0) {
+                if (depth > 10) return // Prevent infinite recursion
+                
+                when (obj) {
+                    is org.json.JSONObject -> {
+                        // Priority order for text fields
+                        val textFields = listOf(
+                            "text",           // Plain text message
+                            "message",        // Message body
+                            "body",           // Body content
+                            "title",          // Card title
+                            "description",    // Card description
+                            "content",        // Content field
+                            "caption"         // Media caption
+                        )
+                        
+                        for (field in textFields) {
+                            if (obj.has(field)) {
+                                val value = obj.getString(field)
+                                if (value.isNotEmpty() && !value.startsWith("{")) {
+                                    texts.add(value)
+                                }
+                            }
+                        }
+                        
+                        // Recursively search nested objects
+                        obj.keys().forEach { key ->
+                            if (key !in listOf("media", "suggestions", "postback", "urlAction")) {
+                                try {
+                                    extractTexts(obj.get(key), depth + 1)
+                                } catch (e: Exception) {
+                                    // Skip problematic fields
+                                }
+                            }
+                        }
+                    }
+                    is org.json.JSONArray -> {
+                        for (i in 0 until obj.length()) {
+                            extractTexts(obj.get(i), depth + 1)
+                        }
+                    }
+                }
+            }
+            
+            // Check if it's a simple text message (not a rich card)
+            if (jsonObject.has("text")) {
+                return jsonObject.getString("text")
+            }
+            
+            // Check for message.text structure
+            if (jsonObject.has("message")) {
+                val message = jsonObject.getJSONObject("message")
+                if (message.has("text")) {
+                    return message.getString("text")
+                }
+            }
+            
+            // Extract from complex structures
+            extractTexts(jsonObject)
+            
+            // Combine all found texts
+            if (texts.isNotEmpty()) {
+                return texts.distinct().joinToString(" | ")
+            }
+            
+            // If no text found, it might be a media-only message
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing RCS JSON: ${e.message}")
+            // Not JSON, return as plain text
+            json
+        }
     }
     
     /**
