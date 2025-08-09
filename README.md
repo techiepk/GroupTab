@@ -120,23 +120,14 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - Android Studio Ladybug or newer
 - JDK 11
 
-### Optional: Firebase Setup
-
-<details>
-<summary>Enable crash reporting</summary>
-
-1. Create project at [Firebase Console](https://console.firebase.google.com)
-2. Add app with package: `com.pennywiseai.tracker`
-3. Download `google-services.json` to `/app`
-4. Enable Crashlytics
-
-</details>
-
 ## Tech Stack
 
 <p align="center">
-<img src="https://skillicons.dev/icons?i=kotlin,firebase" height="32" />
+  <img src="https://skillicons.dev/icons?i=kotlin,jetpackcompose,androidstudio,materialui" /><br>
+  <img src="https://skillicons.dev/icons?i=hilt,room,coroutines" />
 </p>
+
+**Architecture**: MVVM • Jetpack Compose • Room • Coroutines • Hilt • MediaPipe AI • Material Design 3
 
 **Architecture**: MVVM • Room • Coroutines • MediaPipe AI • Material Design 3
 
