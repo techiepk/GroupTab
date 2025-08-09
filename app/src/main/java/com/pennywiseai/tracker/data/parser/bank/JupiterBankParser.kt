@@ -13,7 +13,7 @@ import java.math.BigDecimal
  * - UPI transactions
  * - Account debits/credits
  * 
- * Common senders: JUPBNK, JUPITER, variations with DLT patterns
+ * Common senders: JTEDGE, JUPITER, variations with DLT patterns
  */
 class JupiterBankParser : BankParser() {
     
@@ -21,18 +21,10 @@ class JupiterBankParser : BankParser() {
     
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
-        return normalizedSender.contains("JUPBNK") ||
-               normalizedSender.contains("JUPITER") ||
-               normalizedSender.contains("JUPTER") || // Common typo
-               // DLT patterns for transactions (-S suffix)
-               normalizedSender.matches(Regex("^[A-Z]{2}-JUPBNK-S$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-JUPITER-S$")) ||
+        return normalizedSender.matches(Regex("^[A-Z]{2}-JTEDGE-S$")) ||
+               normalizedSender.matches(Regex("^[A-Z]{2}-JTEDGE-T$")) ||
                // Legacy patterns
-               normalizedSender.matches(Regex("^[A-Z]{2}-JUPBNK$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-JUPITER$")) ||
-               // Direct sender IDs
-               normalizedSender == "JUPBNK" ||
-               normalizedSender == "JUPITER"
+               normalizedSender.matches(Regex("^[A-Z]{2}-JTEDGE$"))
     }
     
     override fun extractAmount(message: String): BigDecimal? {
