@@ -14,9 +14,6 @@
 .cxx
 local.properties
 
-# Firebase configuration (contains sensitive keys)
-google-services.json
-
 # Testing scripts and logs
 crash_log.txt
 test_results.txt

@@ -47,10 +47,6 @@
 -keep @dagger.Module class * { *; }
 -keep @dagger.hilt.android.EntryPoint class * { *; }
 
-# Firebase
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
-
 # Jetpack Compose
 -keep class androidx.compose.** { *; }
 -dontwarn androidx.compose.**
