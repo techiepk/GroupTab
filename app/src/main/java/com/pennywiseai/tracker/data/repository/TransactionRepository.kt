@@ -11,6 +11,7 @@ import java.time.LocalDateTime
 import java.time.YearMonth
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.min
 
 @Singleton
 class TransactionRepository @Inject constructor(
@@ -84,9 +85,9 @@ class TransactionRepository @Inject constructor(
     )
     
     fun getCurrentMonthBreakdown(): Flow<MonthlyBreakdown> {
-        val now = YearMonth.now()
-        val startDate = now.atDay(1).atStartOfDay()
-        val endDate = now.atEndOfMonth().atTime(23, 59, 59)
+        val now = LocalDate.now()
+        val startDate = now.withDayOfMonth(1).atStartOfDay()
+        val endDate = now.atTime(23, 59, 59)
         
         return transactionDao.getTransactionsBetweenDates(startDate, endDate)
             .map { transactions ->
@@ -109,9 +110,14 @@ class TransactionRepository @Inject constructor(
     }
     
     fun getLastMonthBreakdown(): Flow<MonthlyBreakdown> {
-        val lastMonth = YearMonth.now().minusMonths(1)
-        val startDate = lastMonth.atDay(1).atStartOfDay()
-        val endDate = lastMonth.atEndOfMonth().atTime(23, 59, 59)
+        val now = LocalDate.now()
+        val dayOfMonth = now.dayOfMonth
+        val lastMonth = now.minusMonths(1)
+        
+        // Compare same period: if today is 10th, compare 1st-10th of last month
+        val startDate = lastMonth.withDayOfMonth(1).atStartOfDay()
+        val lastMonthMaxDay = min(dayOfMonth, lastMonth.lengthOfMonth())
+        val endDate = lastMonth.withDayOfMonth(lastMonthMaxDay).atTime(23, 59, 59)
         
         return transactionDao.getTransactionsBetweenDates(startDate, endDate)
             .map { transactions ->

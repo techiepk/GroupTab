@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.presentation.home
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +38,7 @@ import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
@@ -51,12 +52,12 @@ fun HomeScreen(
     onFabPositioned: (Rect) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val activity = LocalContext.current as? ComponentActivity
+    val activity = LocalActivity.current
     
     // Check for app updates when the screen is first displayed
     LaunchedEffect(Unit) {
         activity?.let {
-            viewModel.checkForAppUpdate(it)
+            viewModel.checkForAppUpdate(it as ComponentActivity)
         }
     }
     
@@ -77,6 +78,8 @@ fun HomeScreen(
                     monthTotal = uiState.currentMonthTotal,
                     monthlyChange = uiState.monthlyChange,
                     monthlyChangePercent = uiState.monthlyChangePercent,
+                    currentExpenses = uiState.currentMonthExpenses,
+                    lastExpenses = uiState.lastMonthExpenses,
                     onShowBreakdown = { viewModel.showBreakdownDialog() }
                 )
             }
@@ -232,6 +235,8 @@ private fun MonthSummaryCard(
     monthTotal: BigDecimal,
     monthlyChange: BigDecimal,
     monthlyChangePercent: Int,
+    currentExpenses: BigDecimal = BigDecimal.ZERO,
+    lastExpenses: BigDecimal = BigDecimal.ZERO,
     onShowBreakdown: () -> Unit = {}
 ) {
     val isPositive = monthTotal >= BigDecimal.ZERO
@@ -246,28 +251,39 @@ private fun MonthSummaryCard(
         if (!isSystemInDarkTheme()) expense_light else expense_dark
     }
     
+    val expenseChange = currentExpenses - lastExpenses
+    val now = LocalDate.now()
+    val lastMonth = now.minusMonths(1)
+    val periodLabel = "vs ${lastMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }} 1-${now.dayOfMonth}"
+    
     val subtitle = when {
-        // Handle sign change case
-        monthlyChangePercent == Int.MAX_VALUE -> {
-            val changeStr = CurrencyFormatter.formatCurrency(monthlyChange.abs())
-            if (monthlyChange > BigDecimal.ZERO) {
-                "↑ $changeStr improvement from last month"
-            } else {
-                "↓ $changeStr worse than last month"
-            }
+        // No transactions yet
+        currentExpenses == BigDecimal.ZERO && lastExpenses == BigDecimal.ZERO -> {
+            "No transactions yet"
         }
-        // Normal percentage case
-        monthlyChange != BigDecimal.ZERO -> {
-            val isIncrease = monthlyChange > BigDecimal.ZERO
-            val arrow = if (isIncrease) "↑" else "↓"
-            "$arrow ${Math.abs(monthlyChangePercent)}% from last month"
+        // Spent more than last period
+        expenseChange > BigDecimal.ZERO -> {
+            "😟 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs())} more $periodLabel"
+        }
+        // Spent less than last period  
+        expenseChange < BigDecimal.ZERO -> {
+            "😊 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs())} less $periodLabel"
+        }
+        // Saved more (higher positive balance)
+        monthlyChange > BigDecimal.ZERO && monthTotal > BigDecimal.ZERO -> {
+            "🎉 Saved ${CurrencyFormatter.formatCurrency(monthlyChange.abs())} more $periodLabel"
         }
         // No change
-        else -> null
+        else -> {
+            "Same as last period"
+        }
     }
     
+    val currentMonth = now.month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val titleText = "Net Balance • $currentMonth 1-${now.dayOfMonth}"
+    
     SummaryCard(
-        title = "Net Balance • ${YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() }}",
+        title = titleText,
         amount = displayAmount,
         subtitle = subtitle,
         amountColor = amountColor,
@@ -312,8 +328,10 @@ private fun BreakdownDialog(
     lastMonthTotal: BigDecimal,
     onDismiss: () -> Unit
 ) {
-    val currentMonth = YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() }
-    val lastMonth = YearMonth.now().minusMonths(1).month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val now = LocalDate.now()
+    val currentPeriod = "${now.month.name.lowercase().replaceFirstChar { it.uppercase() }} 1-${now.dayOfMonth}"
+    val lastMonth = now.minusMonths(1)
+    val lastPeriod = "${lastMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }} 1-${now.dayOfMonth}"
     
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -337,9 +355,9 @@ private fun BreakdownDialog(
                     fontWeight = FontWeight.Bold
                 )
                 
-                // Current Month Section
+                // Current Period Section
                 Text(
-                    text = currentMonth,
+                    text = currentPeriod,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -368,9 +386,9 @@ private fun BreakdownDialog(
                 
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 
-                // Last Month Section
+                // Last Period Section
                 Text(
-                    text = lastMonth,
+                    text = lastPeriod,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary

@@ -88,44 +88,18 @@ class HomeViewModel @Inject constructor(
     }
     
     private fun calculateMonthlyChange() {
-        val current = _uiState.value.currentMonthTotal
-        val last = _uiState.value.lastMonthTotal
+        val currentExpenses = _uiState.value.currentMonthExpenses
+        val lastExpenses = _uiState.value.lastMonthExpenses
+        val currentTotal = _uiState.value.currentMonthTotal
+        val lastTotal = _uiState.value.lastMonthTotal
         
-        val change = current - last
-        
-        val percentChange = when {
-            // Both are zero - no change
-            last == BigDecimal.ZERO && current == BigDecimal.ZERO -> 0
-            
-            // Last month was zero - new activity
-            last == BigDecimal.ZERO -> {
-                if (current > BigDecimal.ZERO) 100 else -100
-            }
-            
-            // Sign change (deficit to surplus or vice versa)
-            (last < BigDecimal.ZERO && current > BigDecimal.ZERO) ||
-            (last > BigDecimal.ZERO && current < BigDecimal.ZERO) -> {
-                // Use special value to indicate sign change in UI
-                Int.MAX_VALUE
-            }
-            
-            // Both negative (both deficits) - use absolute values
-            last < BigDecimal.ZERO && current < BigDecimal.ZERO -> {
-                val lastAbs = last.abs()
-                val currentAbs = current.abs()
-                val changeAbs = currentAbs - lastAbs
-                ((changeAbs.toDouble() / lastAbs.toDouble()) * 100).toInt()
-            }
-            
-            // Normal case (both positive)
-            else -> {
-                ((change.toDouble() / last.toDouble()) * 100).toInt()
-            }
-        }
+        // Calculate expense change for simple comparison
+        val expenseChange = currentExpenses - lastExpenses
+        val totalChange = currentTotal - lastTotal
         
         _uiState.value = _uiState.value.copy(
-            monthlyChange = change,
-            monthlyChangePercent = percentChange
+            monthlyChange = totalChange,
+            monthlyChangePercent = 0 // We're not using percentage anymore
         )
     }
     
