@@ -130,6 +130,10 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 ./gradlew ktlintCheck   # Check style
 ```
 
+## Security
+
+Please review our [Security Policy](SECURITY.md) for how to report vulnerabilities.
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
