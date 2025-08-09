@@ -10,6 +10,13 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/eqbPUYSR)
 
+## PennyWise AI — The private SMS‑powered expense tracker for India
+
+Turn raw bank SMS into a clean, searchable money timeline — automatically. Zero setup. Zero cloud. 100% on‑device AI.
+
+**Get started:**
+- [Download APK](https://github.com/sarim2000/pennywiseai-tracker/releases) • [Join the Beta](https://forms.gle/7FTkx7Z6BAwqzWJE9) • [Join Discord](https://discord.gg/eqbPUYSR)
+
 ⭐ **Star us on GitHub — help us reach 100 stars!**
 
 [![Share](https://img.shields.io/badge/share-000000?logo=x&logoColor=white)](https://x.com/intent/tweet?text=Check%20out%20PennyWise%20AI%20-%20Privacy-first%20expense%20tracker%20with%20on-device%20AI:%20https://github.com/sarim2000/pennywiseai-tracker%20%23Android%20%23PrivacyFirst%20%23OnDeviceAI)
@@ -28,6 +35,20 @@ PennyWise automatically reads transaction SMS messages and transforms them into 
 > </a>
 > 
 > **Get early access** • Test new features first • Shape the future of PennyWise
+
+### Why PennyWise (in 30 seconds)
+
+- **Save time automatically**: New transactions are detected from SMS and categorized instantly.
+- **See where money goes**: Clean merchant names, categories, and charts help you spot patterns fast.
+- **Never miss renewals**: Automatic subscription detection and reminders.
+- **Ask your money anything**: On‑device AI answers questions like “How much did I spend on food last month?”
+- **Privacy built‑in**: Works offline. Your data never leaves your phone.
+
+### How it works
+
+1. Grant SMS permission (read‑only). No inbox changes, no messages sent.
+2. PennyWise parses transaction SMS, extracts amount, merchant, category, and date.
+3. View analytics, subscriptions, and the full transaction timeline — and chat with the on‑device AI.
 
 ## Key Features
 
@@ -118,6 +139,11 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 </p>
 
 **Architecture**: MVVM • Room • Coroutines • MediaPipe AI • Material Design 3
+
+## Community & Support
+
+- **Discord**: Join the community, share feedback, and get help — [Join Discord](https://discord.gg/eqbPUYSR)
+- **Issues**: Report bugs or request features — [Open an issue](https://github.com/sarim2000/pennywiseai-tracker/issues)
 
 ## Contributing
 
