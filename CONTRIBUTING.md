@@ -116,10 +116,11 @@ app/
 
 ## Code of Conduct
 
-- Be respectful and inclusive
-- Welcome newcomers and help them get started
-- Focus on constructive feedback
-- No spam or self-promotion
+By participating, you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Reporting concerns:
+- Prefer a private report via Discord DM to a maintainer/moderator
+- Or open a GitHub issue labeled `conduct` (maintainers will move details to a private channel)
 
 ## Recognition
 

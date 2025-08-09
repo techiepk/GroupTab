@@ -123,6 +123,8 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
 ```bash
 ./gradlew test          # Run tests
 ./gradlew ktlintCheck   # Check style
