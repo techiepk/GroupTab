@@ -161,9 +161,24 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
+          # Check if secret exists
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "❌ GOOGLE_SERVICES_JSON secret is not set"
+            exit 1
+          fi
+          
+          # Decode base64 and write to file
           echo "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
-          echo "✅ Created google-services.json at: $(pwd)/app/google-services.json"
-          ls -la app/google-services.json
+          
+          # Verify file was created and has content
+          if [ -f "app/google-services.json" ] && [ -s "app/google-services.json" ]; then
+            echo "✅ google-services.json created successfully"
+            echo "File size: $(wc -c < app/google-services.json) bytes"
+            echo "File location: $(pwd)/app/google-services.json"
+          else
+            echo "❌ Failed to create google-services.json or file is empty"
+            exit 1
+          fi
       
       - name: Decode Keystore
         if: ${{ !inputs.dry_run }}
@@ -171,6 +186,7 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
+          echo "✅ Release keystore created"
       
       - name: Build Release APK
         if: ${{ !inputs.dry_run }}
