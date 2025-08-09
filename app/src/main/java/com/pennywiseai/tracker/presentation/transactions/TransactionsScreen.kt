@@ -184,12 +184,10 @@ private fun TransactionItem(
     
     val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     val dateFormatter = DateTimeFormatter.ofPattern("MMM d")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("MMM d • h:mm a")
     
-    val dateTimeText = if (showDate) {
-        transaction.dateTime.format(dateFormatter)
-    } else {
-        transaction.dateTime.format(timeFormatter)
-    }
+    // Always show both date and time
+    val dateTimeText = transaction.dateTime.format(dateTimeFormatter)
     
     val subtitleParts = buildList {
         add(dateTimeText)
