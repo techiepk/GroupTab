@@ -64,7 +64,7 @@ class SmsReaderWorker @AssistedInject constructor(
             var savedCount = 0
             var subscriptionCount = 0
             
-            // Process all messages from last 3 months
+            // Process all messages from the scan period
             for (sms in messages) {
                 // Skip promotional (-P) and government (-G) messages
                 val senderUpper = sms.sender.uppercase()
@@ -199,22 +199,22 @@ class SmsReaderWorker @AssistedInject constructor(
         val messages = mutableListOf<SmsMessage>()
         
         try {
-            // Calculate start of yesterday (for testing - scanning last 2 days)
+            // Calculate start date - scan last 3 months of messages
             val calendar = java.util.Calendar.getInstance().apply {
-                add(java.util.Calendar.DAY_OF_YEAR, -1) // Go back 1 day
+                add(java.util.Calendar.MONTH, -Constants.SmsProcessing.INITIAL_SCAN_MONTHS) // Go back 3 months
                 set(java.util.Calendar.HOUR_OF_DAY, 0)
                 set(java.util.Calendar.MINUTE, 0)
                 set(java.util.Calendar.SECOND, 0)
                 set(java.util.Calendar.MILLISECOND, 0)
             }
-            val yesterdayStart = calendar.timeInMillis
+            val scanStartTime = calendar.timeInMillis
             
-            // Query SMS inbox since yesterday
+            // Query SMS inbox from the scan start time
             val cursor = applicationContext.contentResolver.query(
                 Telephony.Sms.CONTENT_URI,
                 SMS_PROJECTION,
                 "${Telephony.Sms.TYPE} = ? AND ${Telephony.Sms.DATE} >= ?",
-                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString(), yesterdayStart.toString()),
+                arrayOf(Telephony.Sms.MESSAGE_TYPE_INBOX.toString(), scanStartTime.toString()),
                 "${Telephony.Sms.DATE} DESC"
             )
             
@@ -240,13 +240,13 @@ class SmsReaderWorker @AssistedInject constructor(
             // Try to read RCS messages from MMS provider
             try {
                 // MMS/RCS uses seconds since epoch, not milliseconds
-                val yesterdayStartSeconds = yesterdayStart / 1000
+                val scanStartTimeSeconds = scanStartTime / 1000
                 
                 val mmsCursor = applicationContext.contentResolver.query(
                     Uri.parse("content://mms"),
                     arrayOf("_id", "thread_id", "date", "tr_id", "m_id"),
                     "date >= ?",
-                    arrayOf(yesterdayStartSeconds.toString()),
+                    arrayOf(scanStartTimeSeconds.toString()),
                     "date DESC"
                 )
                 
