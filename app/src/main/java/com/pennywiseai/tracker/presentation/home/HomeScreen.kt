@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -37,6 +38,7 @@ import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -74,7 +76,8 @@ fun HomeScreen(
                 MonthSummaryCard(
                     monthTotal = uiState.currentMonthTotal,
                     monthlyChange = uiState.monthlyChange,
-                    monthlyChangePercent = uiState.monthlyChangePercent
+                    monthlyChangePercent = uiState.monthlyChangePercent,
+                    onShowBreakdown = { viewModel.showBreakdownDialog() }
                 )
             }
             
@@ -208,6 +211,19 @@ fun HomeScreen(
                 }
             }
         }
+        
+        // Breakdown Dialog
+        if (uiState.showBreakdownDialog) {
+            BreakdownDialog(
+                currentMonthIncome = uiState.currentMonthIncome,
+                currentMonthExpenses = uiState.currentMonthExpenses,
+                currentMonthTotal = uiState.currentMonthTotal,
+                lastMonthIncome = uiState.lastMonthIncome,
+                lastMonthExpenses = uiState.lastMonthExpenses,
+                lastMonthTotal = uiState.lastMonthTotal,
+                onDismiss = { viewModel.hideBreakdownDialog() }
+            )
+        }
     }
 }
 
@@ -215,7 +231,8 @@ fun HomeScreen(
 private fun MonthSummaryCard(
     monthTotal: BigDecimal,
     monthlyChange: BigDecimal,
-    monthlyChangePercent: Int
+    monthlyChangePercent: Int,
+    onShowBreakdown: () -> Unit = {}
 ) {
     val isPositive = monthTotal >= BigDecimal.ZERO
     val displayAmount = if (isPositive) {
@@ -229,17 +246,32 @@ private fun MonthSummaryCard(
         if (!isSystemInDarkTheme()) expense_light else expense_dark
     }
     
-    val subtitle = if (monthlyChange != BigDecimal.ZERO) {
-        val isIncrease = monthlyChange > BigDecimal.ZERO
-        val arrow = if (isIncrease) "↑" else "↓"
-        "$arrow ${Math.abs(monthlyChangePercent)}% from last month"
-    } else null
+    val subtitle = when {
+        // Handle sign change case
+        monthlyChangePercent == Int.MAX_VALUE -> {
+            val changeStr = CurrencyFormatter.formatCurrency(monthlyChange.abs())
+            if (monthlyChange > BigDecimal.ZERO) {
+                "↑ $changeStr improvement from last month"
+            } else {
+                "↓ $changeStr worse than last month"
+            }
+        }
+        // Normal percentage case
+        monthlyChange != BigDecimal.ZERO -> {
+            val isIncrease = monthlyChange > BigDecimal.ZERO
+            val arrow = if (isIncrease) "↑" else "↓"
+            "$arrow ${Math.abs(monthlyChangePercent)}% from last month"
+        }
+        // No change
+        else -> null
+    }
     
     SummaryCard(
-        title = "This Month",
+        title = "Net Balance • ${YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() }}",
         amount = displayAmount,
         subtitle = subtitle,
-        amountColor = amountColor
+        amountColor = amountColor,
+        onClick = onShowBreakdown
     )
 }
 
@@ -270,6 +302,160 @@ private fun TransactionItem(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BreakdownDialog(
+    currentMonthIncome: BigDecimal,
+    currentMonthExpenses: BigDecimal,
+    currentMonthTotal: BigDecimal,
+    lastMonthIncome: BigDecimal,
+    lastMonthExpenses: BigDecimal,
+    lastMonthTotal: BigDecimal,
+    onDismiss: () -> Unit
+) {
+    val currentMonth = YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val lastMonth = YearMonth.now().minusMonths(1).month.name.lowercase().replaceFirstChar { it.uppercase() }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md), // Reduced horizontal padding for wider modal
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.card),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                // Title
+                Text(
+                    text = "Calculation Breakdown",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                // Current Month Section
+                Text(
+                    text = currentMonth,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                BreakdownRow(
+                    label = "Income",
+                    amount = currentMonthIncome,
+                    isIncome = true
+                )
+                
+                BreakdownRow(
+                    label = "Expenses",
+                    amount = currentMonthExpenses,
+                    isIncome = false
+                )
+                
+                HorizontalDivider()
+                
+                BreakdownRow(
+                    label = "Net Balance",
+                    amount = currentMonthTotal,
+                    isIncome = currentMonthTotal >= BigDecimal.ZERO,
+                    isBold = true
+                )
+                
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                
+                // Last Month Section
+                Text(
+                    text = lastMonth,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                BreakdownRow(
+                    label = "Income",
+                    amount = lastMonthIncome,
+                    isIncome = true
+                )
+                
+                BreakdownRow(
+                    label = "Expenses",
+                    amount = lastMonthExpenses,
+                    isIncome = false
+                )
+                
+                HorizontalDivider()
+                
+                BreakdownRow(
+                    label = "Net Balance",
+                    amount = lastMonthTotal,
+                    isIncome = lastMonthTotal >= BigDecimal.ZERO,
+                    isBold = true
+                )
+                
+                // Formula explanation
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Formula: Income - Expenses = Net Balance\n" +
+                               "Green (+) = Savings | Red (-) = Overspending",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(Spacing.sm),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                
+                // Close button
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Close")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BreakdownRow(
+    label: String,
+    amount: BigDecimal,
+    isIncome: Boolean,
+    isBold: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal
+        )
+        Text(
+            text = "${if (isIncome) "+" else "-"}${CurrencyFormatter.formatCurrency(amount.abs())}",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            color = if (isIncome) {
+                if (!isSystemInDarkTheme()) income_light else income_dark
+            } else {
+                if (!isSystemInDarkTheme()) expense_light else expense_dark
+            }
+        )
+    }
+}
+
 @Composable
 private fun UpcomingSubscriptionsCard(
     subscriptions: List<SubscriptionEntity>,

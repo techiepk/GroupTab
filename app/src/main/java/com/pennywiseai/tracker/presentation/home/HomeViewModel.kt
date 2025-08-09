@@ -42,17 +42,25 @@ class HomeViewModel @Inject constructor(
     
     private fun loadHomeData() {
         viewModelScope.launch {
-            // Load current month total
-            transactionRepository.getCurrentMonthTotal().collect { currentTotal ->
-                _uiState.value = _uiState.value.copy(currentMonthTotal = currentTotal)
+            // Load current month breakdown
+            transactionRepository.getCurrentMonthBreakdown().collect { breakdown ->
+                _uiState.value = _uiState.value.copy(
+                    currentMonthTotal = breakdown.total,
+                    currentMonthIncome = breakdown.income,
+                    currentMonthExpenses = breakdown.expenses
+                )
                 calculateMonthlyChange()
             }
         }
         
         viewModelScope.launch {
-            // Load last month total
-            transactionRepository.getLastMonthTotal().collect { lastTotal ->
-                _uiState.value = _uiState.value.copy(lastMonthTotal = lastTotal)
+            // Load last month breakdown
+            transactionRepository.getLastMonthBreakdown().collect { breakdown ->
+                _uiState.value = _uiState.value.copy(
+                    lastMonthTotal = breakdown.total,
+                    lastMonthIncome = breakdown.income,
+                    lastMonthExpenses = breakdown.expenses
+                )
                 calculateMonthlyChange()
             }
         }
@@ -84,12 +92,35 @@ class HomeViewModel @Inject constructor(
         val last = _uiState.value.lastMonthTotal
         
         val change = current - last
-        val percentChange = if (last > BigDecimal.ZERO) {
-            ((change.toDouble() / last.toDouble()) * 100).toInt()
-        } else if (current > BigDecimal.ZERO) {
-            100 // If last month was 0 but current month has expenses
-        } else {
-            0
+        
+        val percentChange = when {
+            // Both are zero - no change
+            last == BigDecimal.ZERO && current == BigDecimal.ZERO -> 0
+            
+            // Last month was zero - new activity
+            last == BigDecimal.ZERO -> {
+                if (current > BigDecimal.ZERO) 100 else -100
+            }
+            
+            // Sign change (deficit to surplus or vice versa)
+            (last < BigDecimal.ZERO && current > BigDecimal.ZERO) ||
+            (last > BigDecimal.ZERO && current < BigDecimal.ZERO) -> {
+                // Use special value to indicate sign change in UI
+                Int.MAX_VALUE
+            }
+            
+            // Both negative (both deficits) - use absolute values
+            last < BigDecimal.ZERO && current < BigDecimal.ZERO -> {
+                val lastAbs = last.abs()
+                val currentAbs = current.abs()
+                val changeAbs = currentAbs - lastAbs
+                ((changeAbs.toDouble() / lastAbs.toDouble()) * 100).toInt()
+            }
+            
+            // Normal case (both positive)
+            else -> {
+                ((change.toDouble() / last.toDouble()) * 100).toInt()
+            }
         }
         
         _uiState.value = _uiState.value.copy(
@@ -128,6 +159,14 @@ class HomeViewModel @Inject constructor(
         }
     }
     
+    fun showBreakdownDialog() {
+        _uiState.value = _uiState.value.copy(showBreakdownDialog = true)
+    }
+    
+    fun hideBreakdownDialog() {
+        _uiState.value = _uiState.value.copy(showBreakdownDialog = false)
+    }
+    
     /**
      * Checks for app updates using Google Play In-App Updates.
      * Should be called with the current activity context.
@@ -144,12 +183,17 @@ class HomeViewModel @Inject constructor(
 
 data class HomeUiState(
     val currentMonthTotal: BigDecimal = BigDecimal.ZERO,
+    val currentMonthIncome: BigDecimal = BigDecimal.ZERO,
+    val currentMonthExpenses: BigDecimal = BigDecimal.ZERO,
     val lastMonthTotal: BigDecimal = BigDecimal.ZERO,
+    val lastMonthIncome: BigDecimal = BigDecimal.ZERO,
+    val lastMonthExpenses: BigDecimal = BigDecimal.ZERO,
     val monthlyChange: BigDecimal = BigDecimal.ZERO,
     val monthlyChangePercent: Int = 0,
     val recentTransactions: List<TransactionEntity> = emptyList(),
     val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
     val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
-    val isScanning: Boolean = false
+    val isScanning: Boolean = false,
+    val showBreakdownDialog: Boolean = false
 )

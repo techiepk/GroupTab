@@ -77,7 +77,13 @@ class TransactionRepository @Inject constructor(
         transactionDao.deleteAllTransactions()
     
     // Additional methods for Home screen
-    fun getCurrentMonthTotal(): Flow<BigDecimal> {
+    data class MonthlyBreakdown(
+        val total: BigDecimal,
+        val income: BigDecimal,
+        val expenses: BigDecimal
+    )
+    
+    fun getCurrentMonthBreakdown(): Flow<MonthlyBreakdown> {
         val now = YearMonth.now()
         val startDate = now.atDay(1).atStartOfDay()
         val endDate = now.atEndOfMonth().atTime(23, 59, 59)
@@ -86,15 +92,23 @@ class TransactionRepository @Inject constructor(
             .map { transactions ->
                 val income = transactions
                     .filter { it.transactionType == TransactionType.INCOME }
-                    .sumOf { it.amount }
+                    .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
                 val expenses = transactions
                     .filter { it.transactionType == TransactionType.EXPENSE }
-                    .sumOf { it.amount }
-                income - expenses // Net amount (positive if saved, negative if spent)
+                    .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                MonthlyBreakdown(
+                    total = income - expenses,
+                    income = income,
+                    expenses = expenses
+                )
             }
     }
     
-    fun getLastMonthTotal(): Flow<BigDecimal> {
+    fun getCurrentMonthTotal(): Flow<BigDecimal> {
+        return getCurrentMonthBreakdown().map { it.total }
+    }
+    
+    fun getLastMonthBreakdown(): Flow<MonthlyBreakdown> {
         val lastMonth = YearMonth.now().minusMonths(1)
         val startDate = lastMonth.atDay(1).atStartOfDay()
         val endDate = lastMonth.atEndOfMonth().atTime(23, 59, 59)
@@ -103,12 +117,20 @@ class TransactionRepository @Inject constructor(
             .map { transactions ->
                 val income = transactions
                     .filter { it.transactionType == TransactionType.INCOME }
-                    .sumOf { it.amount }
+                    .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
                 val expenses = transactions
                     .filter { it.transactionType == TransactionType.EXPENSE }
-                    .sumOf { it.amount }
-                income - expenses // Net amount
+                    .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                MonthlyBreakdown(
+                    total = income - expenses,
+                    income = income,
+                    expenses = expenses
+                )
             }
+    }
+    
+    fun getLastMonthTotal(): Flow<BigDecimal> {
+        return getLastMonthBreakdown().map { it.total }
     }
     
     fun getRecentTransactions(limit: Int = 5): Flow<List<TransactionEntity>> {
