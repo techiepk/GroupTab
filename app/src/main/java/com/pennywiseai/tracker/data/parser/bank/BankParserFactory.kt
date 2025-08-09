@@ -1,5 +1,7 @@
 package com.pennywiseai.tracker.data.parser.bank
 
+import com.pennywiseai.tracker.data.parser.banks.CanaraBankParser
+
 /**
  * Factory for creating bank-specific parsers based on SMS sender.
  */
@@ -16,7 +18,8 @@ object BankParserFactory {
         IDBIBankParser(),
         JupiterBankParser(),
         AxisBankParser(),
-        PNBBankParser()
+        PNBBankParser(),
+        CanaraBankParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
