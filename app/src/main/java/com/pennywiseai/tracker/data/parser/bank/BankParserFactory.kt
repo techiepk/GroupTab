@@ -1,7 +1,5 @@
 package com.pennywiseai.tracker.data.parser.bank
 
-import com.pennywiseai.tracker.data.parser.banks.CanaraBankParser
-
 /**
  * Factory for creating bank-specific parsers based on SMS sender.
  */
