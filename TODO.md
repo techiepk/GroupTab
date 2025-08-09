@@ -2,10 +2,10 @@
 
 
 - [X] Check user video on model download problem
-- [ ] Check calculations
-- [ ] show date
+- [X] Check calculations
+- [X] show date
 - [ ] data export
-- [ ] all chip view is broken
+- [X] all chip view is broken
 
 - [ ] add chart for existing bank supports and templates
 
