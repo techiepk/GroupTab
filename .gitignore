@@ -29,3 +29,15 @@ scripts/.env
 
 reddit.md
 .claude
+
+# Release artifacts
+*.apk
+*.aab
+app/release/
+app/build/outputs/
+RELEASE_NOTES.md
+
+# Keystore files (never commit these!)
+*.jks
+*.keystore
+release.properties
