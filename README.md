@@ -113,7 +113,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ## Tech Stack
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=kotlin,jetpackcompose,androidstudio,materialui" /><br>
+  <img src="https://skillicons.dev/icons?i=kotlin,androidstudio,materialui" /><br>
   <img src="https://skillicons.dev/icons?i=hilt,room,coroutines" />
 </p>
 
