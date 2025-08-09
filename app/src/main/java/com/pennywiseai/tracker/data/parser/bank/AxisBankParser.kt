@@ -147,9 +147,17 @@ class AxisBankParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
         
+        // Skip credit card payment confirmation messages
         if (lowerMessage.contains("payment") && 
             lowerMessage.contains("has been received") && 
             lowerMessage.contains("towards your axis bank credit card")) {
+            return false
+        }
+        
+        // Skip UPI payment request messages (not actual transactions)
+        if (lowerMessage.contains("has requested money") ||
+            lowerMessage.contains("will be debited") ||
+            lowerMessage.contains("on approval")) {
             return false
         }
         
