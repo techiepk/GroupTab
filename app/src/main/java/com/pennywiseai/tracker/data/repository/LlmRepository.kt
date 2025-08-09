@@ -107,11 +107,17 @@ class LlmRepository @Inject constructor(
         chatDao.insertMessage(userChatMessage)
         Log.d("LlmRepository", "User message saved")
         
+        // Check if model is downloading
+        val currentModelState = modelRepository.modelState.first()
+        if (currentModelState == ModelState.DOWNLOADING) {
+            throw Exception("Model is currently downloading. Please wait for download to complete.")
+        }
+        
         // Initialize LLM if needed
         if (!llmService.isInitialized()) {
             val modelFile = modelRepository.getModelFile()
             if (!modelFile.exists()) {
-                throw Exception("Model not downloaded")
+                throw Exception("Model not downloaded. Please download from Settings.")
             }
             
             val initResult = llmService.initialize(modelFile.absolutePath)

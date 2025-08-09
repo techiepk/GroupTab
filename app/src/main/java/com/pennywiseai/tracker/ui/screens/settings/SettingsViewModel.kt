@@ -17,6 +17,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.repository.ModelRepository
+import com.pennywiseai.tracker.data.repository.ModelState
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import java.io.File
 import javax.inject.Inject
@@ -77,6 +78,8 @@ class SettingsViewModel @Inject constructor(
                             DownloadManager.STATUS_PENDING -> {
                                 _downloadState.value = DownloadState.DOWNLOADING
                                 currentDownloadId = savedDownloadId
+                                // Sync ModelRepository state
+                                modelRepository.updateModelState(ModelState.DOWNLOADING)
                                 // Get current progress
                                 val bytesIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
                                 val totalIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
@@ -95,15 +98,19 @@ class SettingsViewModel @Inject constructor(
                                 _downloadState.value = DownloadState.COMPLETED
                                 _downloadProgress.value = 100
                                 userPreferencesRepository.clearActiveDownloadId()
-                                modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
+                                modelRepository.updateModelState(ModelState.READY)
                             }
                             DownloadManager.STATUS_FAILED -> {
                                 _downloadState.value = DownloadState.FAILED
                                 userPreferencesRepository.clearActiveDownloadId()
+                                // Sync ModelRepository state
+                                modelRepository.updateModelState(ModelState.NOT_DOWNLOADED)
                             }
                             DownloadManager.STATUS_PAUSED -> {
                                 _downloadState.value = DownloadState.PAUSED
                                 currentDownloadId = savedDownloadId
+                                // Sync ModelRepository state - still downloading but paused
+                                modelRepository.updateModelState(ModelState.DOWNLOADING)
                             }
                         }
                     }
@@ -138,7 +145,7 @@ class SettingsViewModel @Inject constructor(
             _downloadProgress.value = 100
             // Update model repository state
             Log.d("SettingsViewModel", "Model complete (${modelFile.length()} bytes), updating repository state to READY")
-            modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
+            modelRepository.updateModelState(ModelState.READY)
         } else if (modelFile.exists() && modelFile.length() > maxSize) {
             // File is too large, but might still be valid - mark as complete
             _downloadState.value = DownloadState.COMPLETED
@@ -146,7 +153,7 @@ class SettingsViewModel @Inject constructor(
             _downloadedMB.value = _totalMB.value
             _downloadProgress.value = 100
             Log.d("SettingsViewModel", "Model file larger than expected (${modelFile.length()} bytes), but marking as complete")
-            modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
+            modelRepository.updateModelState(ModelState.READY)
         } else if (modelFile.exists()) {
             // Partial file exists, delete it
             Log.d("SettingsViewModel", "Partial model file found (${modelFile.length()} bytes), deleting")
@@ -160,6 +167,34 @@ class SettingsViewModel @Inject constructor(
     
     fun startModelDownload() {
         viewModelScope.launch {
+            // Check if download is already active
+            val existingDownloadId = userPreferencesRepository.getActiveDownloadId()
+            if (existingDownloadId != null) {
+                // Check if this download is still active
+                val query = DownloadManager.Query().setFilterById(existingDownloadId)
+                val cursor = downloadManager.query(query)
+                
+                if (cursor != null && cursor.moveToFirst()) {
+                    val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    if (statusIndex != -1) {
+                        val status = cursor.getInt(statusIndex)
+                        if (status == DownloadManager.STATUS_RUNNING || 
+                            status == DownloadManager.STATUS_PENDING ||
+                            status == DownloadManager.STATUS_PAUSED) {
+                            // Download is already active, just monitor it
+                            Log.d("SettingsViewModel", "Download already active with ID: $existingDownloadId")
+                            cursor.close()
+                            _downloadState.value = DownloadState.DOWNLOADING
+                            currentDownloadId = existingDownloadId
+                            modelRepository.updateModelState(ModelState.DOWNLOADING)
+                            monitorDownload(existingDownloadId)
+                            return@launch
+                        }
+                    }
+                    cursor.close()
+                }
+            }
+            
             // Check storage space
             val availableSpace = context.filesDir.usableSpace
             if (availableSpace < Constants.ModelDownload.REQUIRED_SPACE_BYTES) {
@@ -178,6 +213,9 @@ class SettingsViewModel @Inject constructor(
             
             currentDownloadId = downloadManager.enqueue(request)
             _downloadState.value = DownloadState.DOWNLOADING
+            
+            // Sync ModelRepository state
+            modelRepository.updateModelState(ModelState.DOWNLOADING)
             
             // Save download ID
             userPreferencesRepository.saveActiveDownloadId(currentDownloadId!!)
@@ -222,13 +260,15 @@ class SettingsViewModel @Inject constructor(
                                 // Clear saved download ID
                                 userPreferencesRepository.clearActiveDownloadId()
                                 // Update model repository state
-                                modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.READY)
+                                modelRepository.updateModelState(ModelState.READY)
                                 Log.d("SettingsViewModel", "Download completed successfully")
                             }
                             DownloadManager.STATUS_FAILED -> {
                                 _downloadState.value = DownloadState.FAILED
                                 // Clear saved download ID
                                 userPreferencesRepository.clearActiveDownloadId()
+                                // Sync ModelRepository state
+                                modelRepository.updateModelState(ModelState.NOT_DOWNLOADED)
                                 Log.d("SettingsViewModel", "Download failed")
                             }
                             DownloadManager.STATUS_PAUSED -> {
@@ -240,15 +280,6 @@ class SettingsViewModel @Inject constructor(
                 cursor?.close()
                 delay(1000) // Update every second
             }
-        }
-    }
-    
-    fun pauseDownload() {
-        // Note: DownloadManager doesn't support pause/resume directly
-        // We'll cancel and allow re-download from where it left off
-        currentDownloadId?.let {
-            downloadManager.remove(it)
-            _downloadState.value = DownloadState.PAUSED
         }
     }
     
@@ -286,7 +317,7 @@ class SettingsViewModel @Inject constructor(
                 // Clear any saved download ID
                 userPreferencesRepository.clearActiveDownloadId()
                 // Update model repository state
-                modelRepository.updateModelState(com.pennywiseai.tracker.data.repository.ModelState.NOT_DOWNLOADED)
+                modelRepository.updateModelState(ModelState.NOT_DOWNLOADED)
                 Log.d("SettingsViewModel", "Model deleted")
             }
         }

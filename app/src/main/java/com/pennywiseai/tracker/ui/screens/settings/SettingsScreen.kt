@@ -118,7 +118,7 @@ fun SettingsScreen(
                             text = when (downloadState) {
                                 DownloadState.NOT_DOWNLOADED -> "Download Gemma 2B model (${Constants.ModelDownload.MODEL_SIZE_MB} MB)"
                                 DownloadState.DOWNLOADING -> "Downloading Gemma model..."
-                                DownloadState.PAUSED -> "Download paused"
+                                DownloadState.PAUSED -> "Download interrupted"
                                 DownloadState.COMPLETED -> "Gemma ready for chat"
                                 DownloadState.FAILED -> "Download failed"
                                 DownloadState.ERROR_INSUFFICIENT_SPACE -> "Not enough storage space"
@@ -151,9 +151,9 @@ fun SettingsScreen(
                             Button(
                                 onClick = { settingsViewModel.startModelDownload() }
                             ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                Icon(Icons.Default.Download, contentDescription = null)
                                 Spacer(modifier = Modifier.width(Spacing.xs))
-                                Text("Resume")
+                                Text("Retry")
                             }
                         }
                         DownloadState.COMPLETED -> {
@@ -223,29 +223,16 @@ fun SettingsScreen(
                             )
                         }
                         
-                        Row(
+                        Button(
+                            onClick = { settingsViewModel.cancelDownload() },
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
                         ) {
-                            OutlinedButton(
-                                onClick = { settingsViewModel.pauseDownload() },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Pause, contentDescription = null)
-                                Spacer(modifier = Modifier.width(Spacing.xs))
-                                Text("Pause")
-                            }
-                            Button(
-                                onClick = { settingsViewModel.cancelDownload() },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                )
-                            ) {
-                                Icon(Icons.Default.Cancel, contentDescription = null)
-                                Spacer(modifier = Modifier.width(Spacing.xs))
-                                Text("Cancel")
-                            }
+                            Icon(Icons.Default.Cancel, contentDescription = null)
+                            Spacer(modifier = Modifier.width(Spacing.xs))
+                            Text("Cancel Download")
                         }
                     }
                 }
