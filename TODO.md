@@ -1,6 +1,6 @@
 # TODO
 
-
+- [ ] Credit card transactions handling
 - [X] Check user video on model download problem
 - [X] Check calculations
 - [X] show date
