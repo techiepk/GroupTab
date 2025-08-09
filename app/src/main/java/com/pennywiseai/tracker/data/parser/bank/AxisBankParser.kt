@@ -161,6 +161,13 @@ class AxisBankParser : BankParser() {
             return false
         }
         
+        // Skip credit card bill due/overdue reminder messages
+        if ((lowerMessage.contains(" due ") || lowerMessage.contains(" overdue")) &&
+            (lowerMessage.contains("bill") || lowerMessage.contains("payment")) &&
+            (lowerMessage.contains("credit card") || lowerMessage.contains(" cc "))) {
+            return false
+        }
+        
         return super.isTransactionMessage(message)
     }
 }
