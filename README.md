@@ -10,7 +10,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/eqbPUYSR)
 
-## PennyWise AI — Free & Open‑Source, private SMS‑powered expense tracker for India
+## PennyWise AI — Free & Open‑Source, private SMS‑powered expense tracker
 
 Turn bank SMS into a clean, searchable money timeline. 100% on‑device AI.
 

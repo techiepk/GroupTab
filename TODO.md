@@ -10,8 +10,8 @@
 - [ ] add chart for existing bank supports and templates
 
 ## Logo
-- [ ] Meesho
-- [ ] jio smartpoint
+- [X] Meesho
+- [X] jio smartpoint
 
 ## Delete Transactions Feature
 - [ ] Add deleted_transaction_hashes table to database
