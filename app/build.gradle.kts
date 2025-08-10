@@ -116,7 +116,6 @@ dependencies {
     // Lifecycle and ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
-    implementation(libs.vision.internal.vkp)
 
     // Navigation
     val navVersion = "2.9.3"
@@ -150,9 +149,9 @@ dependencies {
     // MediaPipe for LLM inference
     implementation("com.google.mediapipe:tasks-genai:0.10.24")
     
-    // Google Play In-App Updates
-    implementation("com.google.android.play:app-update:2.1.0")
-    implementation("com.google.android.play:app-update-ktx:2.1.0")
+    // Google Play In-App Updates (only for standard flavor)
+    "standardImplementation"("com.google.android.play:app-update:2.1.0")
+    "standardImplementation"("com.google.android.play:app-update-ktx:2.1.0")
     
     testImplementation(libs.junit)
     testImplementation("androidx.room:room-testing:$roomVersion")

@@ -29,6 +29,11 @@
 -dontwarn com.google.mediapipe.framework.image.MPImageProperties
 -dontwarn com.google.mediapipe.framework.image.MediaImageExtractor
 
+# AutoValue (used by MediaPipe)
+-dontwarn com.google.auto.value.AutoValue
+-dontwarn com.google.auto.value.AutoValue$Builder
+-keep class com.google.auto.value.** { *; }
+
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
