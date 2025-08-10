@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.data.repository
 import android.util.Log
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
+import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.model.ChatContext
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import com.pennywiseai.tracker.domain.service.LlmService
@@ -231,7 +232,13 @@ class LlmRepository @Inject constructor(
         Active subscriptions: ${activeSubs.size} services (${CurrencyUtils.formatCurrency(totalSubAmount)}/month)
         ${if (upcomingPayments.isNotEmpty()) "⚠️ ${upcomingPayments.size} payments due in next 7 days" else ""}
         
-        Recent activity: ${context.recentTransactions.size} transactions in last 14 days
+        Recent Transactions (Last 14 days):
+        ${context.recentTransactions.take(10).joinToString("\n") { transaction ->
+            val dateStr = transaction.dateTime.format(java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a"))
+            val typeStr = if (transaction.transactionType == TransactionType.INCOME) "+" else "-"
+            "- $dateStr: ${transaction.merchantName} ${typeStr}${CurrencyUtils.formatCurrency(transaction.amount)} (${transaction.category})"
+        }}
+        
         ${if (stats.mostFrequentMerchant != null) "Most visited: ${stats.mostFrequentMerchant} (${stats.mostFrequentMerchantCount} times)" else ""}
         
         Guidelines:
@@ -253,5 +260,28 @@ class LlmRepository @Inject constructor(
         val newPrompt = buildSystemPrompt(chatContext)
         userPreferencesRepository.updateSystemPrompt(newPrompt)
         Log.d("LlmRepository", "System prompt updated with latest financial data")
+    }
+    
+    suspend fun getFormattedContextForDisplay(): String {
+        val chatContext = aiContextRepository.getChatContext()
+        val monthSummary = chatContext.monthSummary
+        val recentCount = minOf(chatContext.recentTransactions.size, 10)
+        val activeSubs = chatContext.activeSubscriptions
+        
+        return """
+        Hi! I'm PennyWise AI, your financial assistant.
+        
+        I have access to:
+        • Your last 2 weeks of transactions ($recentCount recent ones)
+        • This month's summary (${monthSummary.transactionCount} total transactions)
+        • Monthly income and expenses
+        • Top spending categories
+        • Active subscriptions (${activeSubs.size} services)
+        • Daily spending averages
+        
+        I can help you understand your spending, find savings, and answer questions about your recent finances.
+        
+        What would you like to know?
+        """.trimIndent()
     }
 }

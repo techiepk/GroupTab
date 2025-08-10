@@ -1,7 +1,9 @@
 package com.pennywiseai.tracker.data.model
 
+import com.pennywiseai.tracker.data.database.entity.TransactionType
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * Data models for AI chat context
@@ -27,7 +29,9 @@ data class TransactionSummary(
     val merchantName: String,
     val amount: BigDecimal,
     val category: String,
-    val daysAgo: Int
+    val daysAgo: Int,
+    val dateTime: LocalDateTime = LocalDateTime.now(),
+    val transactionType: TransactionType = TransactionType.EXPENSE
 )
 
 data class SubscriptionSummary(

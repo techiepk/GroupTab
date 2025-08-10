@@ -88,8 +88,8 @@ class AiContextRepository @Inject constructor(
         )
         
         return transactions
-            .filter { it.transactionType == TransactionType.EXPENSE }
-            .take(15) // Limit to 15 most recent
+            .sortedByDescending { it.dateTime } // Most recent first
+            .take(20) // Limit to 20 most recent
             .map { transaction ->
                 val daysAgo = ChronoUnit.DAYS.between(
                     transaction.dateTime.toLocalDate(),
@@ -100,7 +100,9 @@ class AiContextRepository @Inject constructor(
                     merchantName = transaction.merchantName,
                     amount = transaction.amount,
                     category = transaction.category ?: "Others",
-                    daysAgo = daysAgo
+                    daysAgo = daysAgo,
+                    dateTime = transaction.dateTime,
+                    transactionType = transaction.transactionType
                 )
             }
     }

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,12 +29,24 @@ class ChatViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
     
-    val messages: StateFlow<List<ChatMessage>> = llmRepository.getAllMessages()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val _contextMessage = MutableStateFlow<ChatMessage?>(null)
+    
+    val messages: StateFlow<List<ChatMessage>> = combine(
+        llmRepository.getAllMessages(),
+        _contextMessage
+    ) { dbMessages, contextMsg ->
+        if (dbMessages.isEmpty() && contextMsg != null) {
+            // Show context message only when chat is empty
+            listOf(contextMsg)
+        } else {
+            // Show actual chat messages
+            dbMessages
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
     
     val modelState: StateFlow<ModelState> = modelRepository.modelState
         .stateIn(
@@ -110,6 +123,20 @@ class ChatViewModel @Inject constructor(
                 Log.d("ChatViewModel", "Model state changed to: $state")
             }
         }
+        
+        // Load initial context message for display
+        viewModelScope.launch {
+            loadContextMessage()
+        }
+    }
+    
+    private suspend fun loadContextMessage() {
+        val contextMessage = llmRepository.getFormattedContextForDisplay()
+        _contextMessage.value = ChatMessage(
+            message = contextMessage,
+            isUser = false,
+            isSystemPrompt = false
+        )
     }
     
     fun sendMessage(message: String) {
@@ -157,6 +184,8 @@ class ChatViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 error = null
             )
+            // Reload context message after clearing chat
+            loadContextMessage()
         }
     }
     
