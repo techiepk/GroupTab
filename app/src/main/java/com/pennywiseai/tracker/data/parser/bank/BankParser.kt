@@ -80,6 +80,16 @@ abstract class BankParser {
             return false
         }
         
+        // Skip payment request messages (common across banks)
+        if (lowerMessage.contains("has requested") || 
+            lowerMessage.contains("payment request") ||
+            lowerMessage.contains("collect request") ||
+            lowerMessage.contains("requesting payment") ||
+            lowerMessage.contains("requests rs") ||
+            lowerMessage.contains("ignore if already paid")) {
+            return false
+        }
+        
         // Must contain transaction keywords
         val transactionKeywords = listOf(
             "debited", "credited", "withdrawn", "deposited",
