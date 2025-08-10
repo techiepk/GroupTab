@@ -41,6 +41,18 @@ android {
         }
     }
     
+    flavorDimensions += "version"
+    productFlavors {
+        create("fdroid") {
+            dimension = "version"
+            // F-Droid builds will use their own signing
+        }
+        create("standard") {
+            dimension = "version"
+            isDefault = true
+        }
+    }
+    
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -50,10 +62,15 @@ android {
                 "proguard-rules.pro"
             )
             
-            val releaseSigningConfig = signingConfigs.getByName("release")
-            // Only use release signing if keystore is configured
-            if (releaseSigningConfig.storeFile != null) {
-                signingConfig = releaseSigningConfig
+            // Only apply signing config to standard flavor
+            productFlavors.forEach { flavor ->
+                if (flavor.name == "standard") {
+                    val releaseSigningConfig = signingConfigs.getByName("release")
+                    // Only use release signing if keystore is configured
+                    if (releaseSigningConfig.storeFile != null) {
+                        signingConfig = releaseSigningConfig
+                    }
+                }
             }
             
             // Include debug symbols for native crashes

@@ -1,0 +1,1 @@
+Privacy-first SMS expense tracker with on-device AI
