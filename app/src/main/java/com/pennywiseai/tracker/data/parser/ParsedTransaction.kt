@@ -47,10 +47,13 @@ data class ParsedTransaction(
             ZoneId.systemDefault()
         )
         
+        // Normalize merchant name to proper case
+        val normalizedMerchant = merchant?.let { normalizeMerchantName(it) }
+        
         return TransactionEntity(
             id = 0, // Auto-generated
             amount = amount,
-            merchantName = merchant ?: "Unknown Merchant",
+            merchantName = normalizedMerchant ?: "Unknown Merchant",
             category = determineCategory(),
             transactionType = type,
             dateTime = dateTime,
@@ -64,6 +67,24 @@ data class ParsedTransaction(
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now()
         )
+    }
+    
+    /**
+     * Normalizes merchant name to consistent format.
+     * Converts all-caps to proper case, preserves already mixed case.
+     */
+    private fun normalizeMerchantName(name: String): String {
+        val trimmed = name.trim()
+        
+        // If it's all uppercase, convert to proper case
+        return if (trimmed == trimmed.uppercase()) {
+            trimmed.lowercase().split(" ").joinToString(" ") { word ->
+                word.replaceFirstChar { it.uppercase() }
+            }
+        } else {
+            // Already has mixed case, keep as is
+            trimmed
+        }
     }
     
     /**

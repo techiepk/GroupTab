@@ -254,7 +254,8 @@ class SmsReaderWorker @AssistedInject constructor(
                     while (cursor.moveToNext()) {
                         val messageId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"))
                         val date = cursor.getLong(cursor.getColumnIndexOrThrow("date"))
-                        val trId = cursor.getString(cursor.getColumnIndex("tr_id")) ?: ""
+                        val trIdIndex = cursor.getColumnIndex("tr_id")
+                        val trId = if (trIdIndex >= 0) cursor.getString(trIdIndex) ?: "" else ""
                         
                         // Check if this is an RCS message (has proto: in tr_id)
                         if (trId.startsWith("proto:")) {
@@ -355,7 +356,8 @@ class SmsReaderWorker @AssistedInject constructor(
             partsCursor?.use { cursor ->
                 while (cursor.moveToNext()) {
                     val partId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"))
-                    val contentType = cursor.getString(cursor.getColumnIndex("ct")) ?: ""
+                    val ctIndex = cursor.getColumnIndex("ct")
+                    val contentType = if (ctIndex >= 0) cursor.getString(ctIndex) ?: "" else ""
                     
                     // Look for text content
                     if (contentType.startsWith("text/") || contentType == "application/smil") {

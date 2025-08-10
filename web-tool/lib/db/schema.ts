@@ -30,7 +30,7 @@ export const supportLevelEnum = pgEnum('support_level', [
   'full', 'partial', 'experimental', 'none'
 ])
 
-// Banks table
+// Banks table with RLS enabled
 export const banks = pgTable('banks', {
   id: uuid('id').defaultRandom().primaryKey(),
   code: varchar('code', { length: 20 }).unique().notNull(),
@@ -59,7 +59,7 @@ export const banks = pgTable('banks', {
     codeIdx: uniqueIndex('banks_code_idx').on(table.code),
     activeIdx: index('banks_active_idx').on(table.isActive)
   }
-})
+}).enableRLS()
 
 // Message templates table
 export const messageTemplates = pgTable('message_templates', {
@@ -109,7 +109,7 @@ export const messageTemplates = pgTable('message_templates', {
     categoryIdx: index('template_category_idx').on(table.templateCategory),
     uniqueTemplateCode: uniqueIndex('unique_template_code').on(table.bankId, table.templateCode)
   }
-})
+}).enableRLS()
 
 // Categories table
 export const categories = pgTable('categories', {
@@ -140,7 +140,7 @@ export const categories = pgTable('categories', {
     codeIdx: uniqueIndex('categories_code_idx').on(table.code),
     activeIdx: index('categories_active_idx').on(table.isActive)
   }
-})
+}).enableRLS()
 
 // Submissions table
 export const submissions = pgTable('submissions', {
@@ -213,7 +213,7 @@ export const submissions = pgTable('submissions', {
     createdIdx: index('submissions_created_idx').on(table.createdAt.desc()),
     sessionIdx: index('submissions_session_idx').on(table.sessionId)
   }
-})
+}).enableRLS()
 
 // Feedback table
 export const feedback = pgTable('feedback', {
@@ -237,7 +237,7 @@ export const feedback = pgTable('feedback', {
   return {
     submissionIdx: index('feedback_submission_idx').on(table.submissionId)
   }
-})
+}).enableRLS()
 
 // Parser patterns table (for version control)
 export const parserPatterns = pgTable('parser_patterns', {
@@ -268,7 +268,7 @@ export const parserPatterns = pgTable('parser_patterns', {
 }, (table) => {
   return {
     bankVersionIdx: uniqueIndex('bank_version_idx').on(table.bankId, table.version),
-    currentIdx: index('current_patterns_idx').on(table.bankId).where(table, table.isCurrent)
+    currentIdx: index('current_patterns_idx').on(table.bankId)
   }
 })
 

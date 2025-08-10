@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:generate": "drizzle-kit generate:pg",
-    "db:push": "drizzle-kit push:pg",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:introspect": "drizzle-kit introspect:pg"
+    "db:introspect": "drizzle-kit introspect",
+    "db:reset": "node scripts/reset-db.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.54.0",

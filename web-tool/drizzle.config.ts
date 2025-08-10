@@ -1,4 +1,4 @@
-import type { Config } from 'drizzle-kit'
+import { defineConfig } from 'drizzle-kit'
 import * as dotenv from 'dotenv'
 
 // Load environment variables
@@ -8,13 +8,13 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in environment variables')
 }
 
-export default {
+export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './drizzle',
-  driver: 'pg',
+  dialect: 'postgresql',
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL,
   },
   verbose: true,
   strict: true,
-} satisfies Config
+})
