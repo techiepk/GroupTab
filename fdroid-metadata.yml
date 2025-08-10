@@ -18,6 +18,8 @@ Builds:
     subdir: app
     gradle:
       - fdroid
+    gradleprops:
+      - android.buildFeatures.buildConfig=false
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

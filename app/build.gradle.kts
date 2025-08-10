@@ -24,18 +24,21 @@ android {
     }
 
     signingConfigs {
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            create("release") {
-                val localProperties = Properties()
-                localProperties.load(localPropertiesFile.inputStream())
-                
-                val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
-                if (keystorePath.isNotEmpty()) {
-                    storeFile = file(keystorePath)
-                    storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
-                    keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS", "")
-                    keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
+        // Only create signing config for non-F-Droid builds
+        if (!gradle.startParameter.taskNames.any { it.contains("fdroid", ignoreCase = true) }) {
+            val localPropertiesFile = rootProject.file("local.properties")
+            if (localPropertiesFile.exists()) {
+                create("release") {
+                    val localProperties = Properties()
+                    localProperties.load(localPropertiesFile.inputStream())
+                    
+                    val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
+                    if (keystorePath.isNotEmpty()) {
+                        storeFile = file(keystorePath)
+                        storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
+                        keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS", "")
+                        keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
+                    }
                 }
             }
         }
