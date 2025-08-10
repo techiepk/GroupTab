@@ -165,46 +165,69 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
           echo "✅ Release keystore created"
       
-      - name: Build Release APK
+      - name: Build Release APKs
         if: ${{ !inputs.dry_run }}
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          # Build standard flavor (for Play Store)
           if [ -f "app/release.keystore" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
-            echo "Building signed release APK..."
-            ./gradlew assembleRelease \
+            echo "Building signed standard release APK..."
+            ./gradlew assembleStandardRelease \
               -Pandroid.injected.signing.store.file=${{ github.workspace }}/app/release.keystore \
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
               -Pandroid.injected.signing.key.password=$KEY_PASSWORD
           else
-            echo "Building unsigned release APK..."
-            ./gradlew assembleRelease
-          fi
-      
-      - name: Rename APK
-        if: ${{ !inputs.dry_run }}
-        run: |
-          APK_PATH="app/build/outputs/apk/release"
-          if [ -f "$APK_PATH/app-release-unsigned.apk" ]; then
-            mv "$APK_PATH/app-release-unsigned.apk" \
-               "$APK_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
-          elif [ -f "$APK_PATH/app-release.apk" ]; then
-            mv "$APK_PATH/app-release.apk" \
-               "$APK_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
+            echo "Building unsigned standard release APK..."
+            ./gradlew assembleStandardRelease
           fi
           
-          ls -la "$APK_PATH/"
+          # Build F-Droid flavor (unsigned for IzzyOnDroid)
+          echo "Building F-Droid release APK..."
+          ./gradlew assembleFdroidRelease
+      
+      - name: Rename APKs
+        if: ${{ !inputs.dry_run }}
+        run: |
+          # Rename standard APK
+          STANDARD_PATH="app/build/outputs/apk/standard/release"
+          if [ -f "$STANDARD_PATH/app-standard-release-unsigned.apk" ]; then
+            mv "$STANDARD_PATH/app-standard-release-unsigned.apk" \
+               "$STANDARD_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
+          elif [ -f "$STANDARD_PATH/app-standard-release.apk" ]; then
+            mv "$STANDARD_PATH/app-standard-release.apk" \
+               "$STANDARD_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
+          fi
+          
+          # Rename F-Droid APK
+          FDROID_PATH="app/build/outputs/apk/fdroid/release"
+          if [ -f "$FDROID_PATH/app-fdroid-release-unsigned.apk" ]; then
+            mv "$FDROID_PATH/app-fdroid-release-unsigned.apk" \
+               "$FDROID_PATH/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk"
+          fi
+          
+          echo "Standard APKs:"
+          ls -la "$STANDARD_PATH/"
+          echo "F-Droid APKs:"
+          ls -la "$FDROID_PATH/"
       
       - name: Calculate SHA256
         if: ${{ !inputs.dry_run }}
         run: |
-          cd app/build/outputs/apk/release/
+          # SHA256 for standard APK
+          cd app/build/outputs/apk/standard/release/
           sha256sum PennyWise-v${{ steps.next_version.outputs.version }}.apk > PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
-          echo "SHA256:"
+          echo "Standard APK SHA256:"
           cat PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
+          
+          # SHA256 for F-Droid APK
+          cd ../../fdroid/release/
+          sha256sum PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk > PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
+          echo "F-Droid APK SHA256:"
+          cat PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
       
       - name: Commit version bump
         if: ${{ !inputs.dry_run }}
@@ -229,8 +252,10 @@ jobs:
           name: Release v${{ steps.next_version.outputs.version }}
           body_path: RELEASE_NOTES.md
           files: |
-            app/build/outputs/apk/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk
-            app/build/outputs/apk/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
+            app/build/outputs/apk/fdroid/release/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk
+            app/build/outputs/apk/fdroid/release/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
           draft: false
           prerelease: false
       
