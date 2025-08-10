@@ -38,8 +38,25 @@ fun TransactionsScreen(
     val categoryFilter by viewModel.categoryFilter.collectAsState()
     
     // Initialize ViewModel with navigation arguments
-    LaunchedEffect(initialCategory, initialMerchant) {
-        // The ViewModel handles initialization through SavedStateHandle
+    LaunchedEffect(Unit) {
+        initialCategory?.let { 
+            println("DEBUG: initialCategory = '$it'")
+            val decoded = if (it.contains("+") || it.contains("%")) {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } else {
+                it
+            }
+            println("DEBUG: decoded category = '$decoded'")
+            viewModel.setCategoryFilter(decoded) 
+        }
+        initialMerchant?.let { 
+            val decoded = if (it.contains("+") || it.contains("%")) {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } else {
+                it
+            }
+            viewModel.updateSearchQuery(decoded) 
+        }
     }
     
     Column(

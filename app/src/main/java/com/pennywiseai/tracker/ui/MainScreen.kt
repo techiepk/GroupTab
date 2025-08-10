@@ -164,8 +164,14 @@ fun MainScreen(
                         val route = buildString {
                             append("transactions")
                             val params = mutableListOf<String>()
-                            category?.let { params.add("category=$it") }
-                            merchant?.let { params.add("merchant=$it") }
+                            category?.let { 
+                                val encoded = java.net.URLEncoder.encode(it, "UTF-8")
+                                params.add("category=$encoded") 
+                            }
+                            merchant?.let { 
+                                val encoded = java.net.URLEncoder.encode(it, "UTF-8")
+                                params.add("merchant=$encoded") 
+                            }
                             if (params.isNotEmpty()) {
                                 append("?")
                                 append(params.joinToString("&"))

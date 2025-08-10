@@ -1,6 +1,5 @@
 package com.pennywiseai.tracker.presentation.transactions
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
@@ -18,8 +17,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    savedStateHandle: SavedStateHandle
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
@@ -35,14 +33,6 @@ class TransactionsViewModel @Inject constructor(
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
     init {
-        // Initialize from navigation arguments
-        savedStateHandle.get<String>("category")?.let { category ->
-            _categoryFilter.value = category
-        }
-        savedStateHandle.get<String>("merchant")?.let { merchant ->
-            _searchQuery.value = merchant
-        }
-        
         // Combine all filters: search query, period, and category
         combine(
             searchQuery.debounce(300), // Debounce search for performance
@@ -69,6 +59,11 @@ class TransactionsViewModel @Inject constructor(
         _selectedPeriod.value = period
     }
     
+    fun setCategoryFilter(category: String) {
+        println("DEBUG: Setting category filter to: '$category'")
+        _categoryFilter.value = category
+    }
+    
     fun clearCategoryFilter() {
         _categoryFilter.value = null
     }
@@ -80,6 +75,7 @@ class TransactionsViewModel @Inject constructor(
     ): Flow<List<TransactionEntity>> {
         // Start with the base flow based on category filter
         val baseFlow = if (category != null) {
+            println("DEBUG: Filtering by category: '$category'")
             transactionRepository.getTransactionsByCategory(category)
         } else {
             transactionRepository.getAllTransactions()

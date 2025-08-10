@@ -8,7 +8,7 @@
 - [X] all chip view is broken
 - [X] Jio Payments Bank
 - [X] sbi/bobs nerd discord
-- [ ] View Transactions
+- [X] View Transactions
 
 - [ ] add chart for existing bank supports and templates
 

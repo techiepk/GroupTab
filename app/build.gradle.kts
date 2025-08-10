@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
 }
 
 android {
@@ -128,7 +128,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     
     // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
     
     // Hilt
     implementation("com.google.dagger:hilt-android:2.57")
@@ -150,7 +150,7 @@ dependencies {
     ksp("androidx.hilt:hilt-compiler:1.2.0")
     
     // MediaPipe for LLM inference
-    implementation("com.google.mediapipe:tasks-genai:0.10.24")
+    implementation("com.google.mediapipe:tasks-genai:0.10.25")
     
     // Google Play In-App Updates (only for standard flavor)
     "standardImplementation"("com.google.android.play:app-update:2.1.0")
