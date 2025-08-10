@@ -240,14 +240,11 @@ class LlmRepository @Inject constructor(
         - Use ₹ symbol for amounts
         - Reference actual data when answering
         - Keep responses concise and relevant
-        - Format all responses using proper markdown syntax:
-          • Use **bold** for emphasis and important points
-          • Use *italics* for subtle emphasis
-          • Use bullet points (- or •) for lists
-          • Use numbered lists (1. 2. 3.) when order matters
-          • Use `inline code` for numbers, dates, or special terms
-          • Use ### for section headers when needed
-          • Use line breaks between paragraphs for readability
+        - Use plain text formatting only - no markdown, no special characters
+        - Do not use asterisks, underscores, backticks or other markdown syntax
+        - For emphasis, use CAPS or simple quotes
+        - For lists, use simple dashes or numbers
+        - Keep responses clean and readable without formatting
         """.trimIndent()
     }
     
