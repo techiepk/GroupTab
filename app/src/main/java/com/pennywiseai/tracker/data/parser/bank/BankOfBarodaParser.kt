@@ -82,6 +82,20 @@ class BankOfBarodaParser : BankParser() {
             }
         }
         
+        // Pattern 5: Rs.xxxxx deposited in cash
+        val cashDepositPattern = Regex(
+            """Rs\.?\s*([\d,]+(?:\.\d{2})?)\s+deposited\s+in\s+cash""",
+            RegexOption.IGNORE_CASE
+        )
+        cashDepositPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
         // Fall back to base class patterns
         return super.extractAmount(message)
     }
@@ -127,6 +141,11 @@ class BankOfBarodaParser : BankParser() {
         // Pattern 4: For IMPS without clear merchant
         if (message.contains("IMPS", ignoreCase = true)) {
             return "IMPS Transfer"
+        }
+        
+        // Pattern 5: Cash deposit
+        if (message.contains("deposited in cash", ignoreCase = true)) {
+            return "Cash Deposit"
         }
         
         // Fall back to base class patterns
@@ -240,6 +259,7 @@ class BankOfBarodaParser : BankParser() {
         return when {
             lowerMessage.contains("dr.") || lowerMessage.contains("debited") -> TransactionType.EXPENSE
             lowerMessage.contains("cr.") || lowerMessage.contains("credited") -> TransactionType.INCOME
+            lowerMessage.contains("deposited") -> TransactionType.INCOME
             else -> super.extractTransactionType(message)
         }
     }
@@ -251,7 +271,8 @@ class BankOfBarodaParser : BankParser() {
         if (lowerMessage.contains("dr. from") || 
             lowerMessage.contains("cr. to") ||
             lowerMessage.contains("credited to a/c") ||
-            lowerMessage.contains("credited with inr")) {
+            lowerMessage.contains("credited with inr") ||
+            lowerMessage.contains("deposited in cash")) {
             return true
         }
         
