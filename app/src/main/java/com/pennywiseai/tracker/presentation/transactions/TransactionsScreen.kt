@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.presentation.transactions
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter
 fun TransactionsScreen(
     initialCategory: String? = null,
     initialMerchant: String? = null,
+    initialPeriod: String? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {}
@@ -57,6 +59,16 @@ fun TransactionsScreen(
             }
             viewModel.updateSearchQuery(decoded) 
         }
+        initialPeriod?.let { periodName ->
+            // Convert period name string to TimePeriod enum
+            val period = when (periodName) {
+                "THIS_MONTH" -> TimePeriod.THIS_MONTH
+                "LAST_MONTH" -> TimePeriod.LAST_MONTH
+                "LAST_3_MONTHS" -> TimePeriod.ALL // Map LAST_3_MONTHS to ALL for now
+                else -> null
+            }
+            period?.let { viewModel.selectPeriod(it) }
+        }
     }
     
     Column(
@@ -73,41 +85,43 @@ fun TransactionsScreen(
                 .padding(top = Dimensions.Padding.content)
         )
         
-        // Filter Chips
-        Row(
+        // Filter Chips (Horizontally scrollable)
+        LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Dimensions.Padding.content)
                 .padding(vertical = Spacing.sm),
+            contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             // Category filter chip (if active)
             categoryFilter?.let { category ->
-                FilterChip(
-                    selected = true,
-                    onClick = { /* No action on click, use trailing icon to clear */ },
-                    label = { Text(category) },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { viewModel.clearCategoryFilter() },
-                            modifier = Modifier.size(18.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear category filter",
+                item {
+                    FilterChip(
+                        selected = true,
+                        onClick = { /* No action on click, use trailing icon to clear */ },
+                        label = { Text(category) },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { viewModel.clearCategoryFilter() },
                                 modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear category filter",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     )
-                )
+                }
             }
             
             // Period filter chips
-            TimePeriod.values().forEach { period ->
+            items(TimePeriod.values().toList()) { period ->
                 FilterChip(
                     selected = selectedPeriod == period,
                     onClick = { viewModel.selectPeriod(period) },

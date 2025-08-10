@@ -118,7 +118,7 @@ fun MainScreen(
             }
             
             composable(
-                route = "transactions?category={category}&merchant={merchant}",
+                route = "transactions?category={category}&merchant={merchant}&period={period}",
                 arguments = listOf(
                     navArgument("category") { 
                         type = NavType.StringType
@@ -129,15 +129,22 @@ fun MainScreen(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument("period") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) { backStackEntry ->
                 val category = backStackEntry.arguments?.getString("category")
                 val merchant = backStackEntry.arguments?.getString("merchant")
+                val period = backStackEntry.arguments?.getString("period")
                 
                 TransactionsScreen(
                     initialCategory = category,
                     initialMerchant = merchant,
+                    initialPeriod = period,
                     onNavigateBack = {
                         navController.popBackStack()
                     },
@@ -160,7 +167,7 @@ fun MainScreen(
             composable("analytics") {
                 com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen(
                     onNavigateToChat = { navController.navigate("chat") },
-                    onNavigateToTransactions = { category, merchant ->
+                    onNavigateToTransactions = { category, merchant, period ->
                         val route = buildString {
                             append("transactions")
                             val params = mutableListOf<String>()
@@ -171,6 +178,9 @@ fun MainScreen(
                             merchant?.let { 
                                 val encoded = java.net.URLEncoder.encode(it, "UTF-8")
                                 params.add("merchant=$encoded") 
+                            }
+                            period?.let { 
+                                params.add("period=$it") 
                             }
                             if (params.isNotEmpty()) {
                                 append("?")
