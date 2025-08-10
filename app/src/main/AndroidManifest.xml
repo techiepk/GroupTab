@@ -7,6 +7,9 @@
     
     <!-- Internet permission for downloading AI model -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Explicitly remove AD_ID permission to ensure privacy -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
 
     <application
         android:name=".PennyWiseApplication"
