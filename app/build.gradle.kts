@@ -49,10 +49,15 @@ android {
         create("fdroid") {
             dimension = "version"
             // F-Droid builds will use their own signing
+            // Only include ARM architectures for F-Droid (no x86 emulator support)
+            ndk {
+                abiFilters += setOf("arm64-v8a", "armeabi-v7a")
+            }
         }
         create("standard") {
             dimension = "version"
             isDefault = true
+            // Standard flavor includes all architectures (including x86 for emulators)
         }
     }
     
