@@ -24,10 +24,10 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val localProperties = Properties()
-            val localPropertiesFile = rootProject.file("local.properties")
-            if (localPropertiesFile.exists()) {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            create("release") {
+                val localProperties = Properties()
                 localProperties.load(localPropertiesFile.inputStream())
                 
                 val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE", "")
@@ -65,9 +65,10 @@ android {
             // Only apply signing config to standard flavor
             productFlavors.forEach { flavor ->
                 if (flavor.name == "standard") {
-                    val releaseSigningConfig = signingConfigs.getByName("release")
+                    // Check if release signing config exists
+                    val releaseSigningConfig = signingConfigs.findByName("release")
                     // Only use release signing if keystore is configured
-                    if (releaseSigningConfig.storeFile != null) {
+                    if (releaseSigningConfig != null && releaseSigningConfig.storeFile != null) {
                         signingConfig = releaseSigningConfig
                     }
                 }

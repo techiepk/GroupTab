@@ -18,7 +18,6 @@ Builds:
     subdir: app
     gradle:
       - fdroid
-    output: build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
