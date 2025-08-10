@@ -26,7 +26,8 @@ import java.math.BigDecimal
 @Composable
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel = hiltViewModel(),
-    onNavigateToChat: () -> Unit = {}
+    onNavigateToChat: () -> Unit = {},
+    onNavigateToTransactions: (category: String?, merchant: String?) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
@@ -72,7 +73,10 @@ fun AnalyticsScreen(
         if (uiState.categoryBreakdown.isNotEmpty()) {
             item {
                 CategoryBreakdownCard(
-                    categories = uiState.categoryBreakdown
+                    categories = uiState.categoryBreakdown,
+                    onCategoryClick = { category ->
+                        onNavigateToTransactions(category.name, null)
+                    }
                 )
             }
         }
@@ -92,7 +96,12 @@ fun AnalyticsScreen(
                     visibleItemCount = 3,
                     modifier = Modifier.fillMaxWidth()
                 ) { merchant ->
-                    MerchantListItem(merchant = merchant)
+                    MerchantListItem(
+                        merchant = merchant,
+                        onClick = {
+                            onNavigateToTransactions(null, merchant.name)
+                        }
+                    )
                 }
             }
         }
@@ -161,7 +170,8 @@ private fun CategoryListItem(
 
 @Composable
 private fun MerchantListItem(
-    merchant: MerchantData
+    merchant: MerchantData,
+    onClick: () -> Unit = {}
 ) {
     val subtitle = buildString {
         append("${merchant.transactionCount} ")
@@ -181,7 +191,8 @@ private fun MerchantListItem(
         },
         title = merchant.name,
         subtitle = subtitle,
-        amount = CurrencyFormatter.formatCurrency(merchant.amount)
+        amount = CurrencyFormatter.formatCurrency(merchant.amount),
+        onClick = onClick
     )
 }
 

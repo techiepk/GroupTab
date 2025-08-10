@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.presentation.transactions
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
@@ -26,18 +28,30 @@ class TransactionsViewModel @Inject constructor(
     private val _selectedPeriod = MutableStateFlow(TimePeriod.THIS_MONTH)
     val selectedPeriod: StateFlow<TimePeriod> = _selectedPeriod.asStateFlow()
     
+    private val _categoryFilter = MutableStateFlow<String?>(null)
+    val categoryFilter: StateFlow<String?> = _categoryFilter.asStateFlow()
+    
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
     init {
-        // Combine search query and period filter
+        // Initialize from navigation arguments
+        savedStateHandle.get<String>("category")?.let { category ->
+            _categoryFilter.value = category
+        }
+        savedStateHandle.get<String>("merchant")?.let { merchant ->
+            _searchQuery.value = merchant
+        }
+        
+        // Combine all filters: search query, period, and category
         combine(
             searchQuery.debounce(300), // Debounce search for performance
-            selectedPeriod
-        ) { query, period ->
-            Pair(query, period)
-        }.flatMapLatest { (query, period) ->
-            getFilteredTransactions(query, period)
+            selectedPeriod,
+            categoryFilter
+        ) { query, period, category ->
+            Triple(query, period, category)
+        }.flatMapLatest { (query, period, category) ->
+            getFilteredTransactions(query, period, category)
         }.onEach { transactions ->
             _uiState.value = _uiState.value.copy(
                 transactions = transactions,
@@ -55,42 +69,57 @@ class TransactionsViewModel @Inject constructor(
         _selectedPeriod.value = period
     }
     
+    fun clearCategoryFilter() {
+        _categoryFilter.value = null
+    }
+    
     private fun getFilteredTransactions(
         searchQuery: String,
-        period: TimePeriod
+        period: TimePeriod,
+        category: String?
     ): Flow<List<TransactionEntity>> {
-        // Handle ALL period separately to avoid date range issues
-        if (period == TimePeriod.ALL) {
-            return if (searchQuery.isBlank()) {
-                transactionRepository.getAllTransactions()
-            } else {
-                transactionRepository.searchTransactions(searchQuery)
-            }
-        }
-        
-        val (startDate, endDate) = when (period) {
-            TimePeriod.THIS_MONTH -> {
-                val now = YearMonth.now()
-                now.atDay(1).atStartOfDay() to now.atEndOfMonth().atTime(23, 59, 59)
-            }
-            TimePeriod.LAST_MONTH -> {
-                val lastMonth = YearMonth.now().minusMonths(1)
-                lastMonth.atDay(1).atStartOfDay() to lastMonth.atEndOfMonth().atTime(23, 59, 59)
-            }
-            TimePeriod.ALL -> {
-                // This case is handled above, but compiler needs it
-                LocalDateTime.MIN to LocalDateTime.MAX
-            }
-        }
-        
-        return if (searchQuery.isBlank()) {
-            transactionRepository.getTransactionsBetweenDates(startDate, endDate)
+        // Start with the base flow based on category filter
+        val baseFlow = if (category != null) {
+            transactionRepository.getTransactionsByCategory(category)
         } else {
-            // Search within the date range
-            transactionRepository.searchTransactions(searchQuery)
-                .map { transactions ->
+            transactionRepository.getAllTransactions()
+        }
+        
+        // Apply period filter
+        val periodFilteredFlow = when (period) {
+            TimePeriod.ALL -> baseFlow
+            else -> {
+                val (startDate, endDate) = when (period) {
+                    TimePeriod.THIS_MONTH -> {
+                        val now = YearMonth.now()
+                        now.atDay(1).atStartOfDay() to now.atEndOfMonth().atTime(23, 59, 59)
+                    }
+                    TimePeriod.LAST_MONTH -> {
+                        val lastMonth = YearMonth.now().minusMonths(1)
+                        lastMonth.atDay(1).atStartOfDay() to lastMonth.atEndOfMonth().atTime(23, 59, 59)
+                    }
+                    TimePeriod.ALL -> {
+                        // This case is handled above, but compiler needs it
+                        LocalDateTime.MIN to LocalDateTime.MAX
+                    }
+                }
+                
+                baseFlow.map { transactions ->
                     transactions.filter { it.dateTime in startDate..endDate }
                 }
+            }
+        }
+        
+        // Apply search filter
+        return if (searchQuery.isBlank()) {
+            periodFilteredFlow
+        } else {
+            periodFilteredFlow.map { transactions ->
+                transactions.filter { transaction ->
+                    transaction.merchantName.contains(searchQuery, ignoreCase = true) ||
+                    transaction.description?.contains(searchQuery, ignoreCase = true) == true
+                }
+            }
         }
     }
     

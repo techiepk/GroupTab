@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +20,8 @@ import com.pennywiseai.tracker.utils.CurrencyFormatter
 @Composable
 fun CategoryBreakdownCard(
     categories: List<CategoryData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCategoryClick: (CategoryData) -> Unit = {}
 ) {
     val maxAmount = categories.maxOfOrNull { it.amount } ?: java.math.BigDecimal.ZERO
     
@@ -42,7 +44,8 @@ fun CategoryBreakdownCard(
             ) { category ->
                 CategoryBar(
                     category = category,
-                    maxAmount = maxAmount
+                    maxAmount = maxAmount,
+                    onClick = { onCategoryClick(category) }
                 )
             }
         }
@@ -52,13 +55,19 @@ fun CategoryBreakdownCard(
 @Composable
 private fun CategoryBar(
     category: CategoryData,
-    maxAmount: java.math.BigDecimal
+    maxAmount: java.math.BigDecimal,
+    onClick: () -> Unit = {}
 ) {
     val percentage = if (maxAmount > java.math.BigDecimal.ZERO) {
         (category.amount.toFloat() / maxAmount.toFloat()).coerceIn(0f, 1f)
     } else 0f
     
     Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
         Row(

@@ -23,10 +23,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.pennywiseai.tracker.presentation.home.HomeScreen
 import com.pennywiseai.tracker.presentation.subscriptions.SubscriptionsScreen
 import com.pennywiseai.tracker.presentation.transactions.TransactionsScreen
@@ -115,8 +117,27 @@ fun MainScreen(
                 )
             }
             
-            composable("transactions") {
+            composable(
+                route = "transactions?category={category}&merchant={merchant}",
+                arguments = listOf(
+                    navArgument("category") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("merchant") { 
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val category = backStackEntry.arguments?.getString("category")
+                val merchant = backStackEntry.arguments?.getString("merchant")
+                
                 TransactionsScreen(
+                    initialCategory = category,
+                    initialMerchant = merchant,
                     onNavigateBack = {
                         navController.popBackStack()
                     },
@@ -138,7 +159,20 @@ fun MainScreen(
             
             composable("analytics") {
                 com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen(
-                    onNavigateToChat = { navController.navigate("chat") }
+                    onNavigateToChat = { navController.navigate("chat") },
+                    onNavigateToTransactions = { category, merchant ->
+                        val route = buildString {
+                            append("transactions")
+                            val params = mutableListOf<String>()
+                            category?.let { params.add("category=$it") }
+                            merchant?.let { params.add("merchant=$it") }
+                            if (params.isNotEmpty()) {
+                                append("?")
+                                append(params.joinToString("&"))
+                            }
+                        }
+                        navController.navigate(route)
+                    }
                 )
             }
             

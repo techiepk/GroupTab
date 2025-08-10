@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,8 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
+    initialCategory: String? = null,
+    initialMerchant: String? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {}
@@ -32,6 +35,12 @@ fun TransactionsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+    val categoryFilter by viewModel.categoryFilter.collectAsState()
+    
+    // Initialize ViewModel with navigation arguments
+    LaunchedEffect(initialCategory, initialMerchant) {
+        // The ViewModel handles initialization through SavedStateHandle
+    }
     
     Column(
         modifier = Modifier.fillMaxSize()
@@ -40,6 +49,7 @@ fun TransactionsScreen(
         SearchBar(
             query = searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
+            categoryFilter = categoryFilter,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimensions.Padding.content)
@@ -54,6 +64,32 @@ fun TransactionsScreen(
                 .padding(vertical = Spacing.sm),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
+            // Category filter chip (if active)
+            categoryFilter?.let { category ->
+                FilterChip(
+                    selected = true,
+                    onClick = { /* No action on click, use trailing icon to clear */ },
+                    label = { Text(category) },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { viewModel.clearCategoryFilter() },
+                            modifier = Modifier.size(18.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear category filter",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+            }
+            
+            // Period filter chips
             TimePeriod.values().forEach { period ->
                 FilterChip(
                     selected = selectedPeriod == period,
@@ -140,12 +176,18 @@ fun TransactionsScreen(
 private fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    categoryFilter: String? = null,
     modifier: Modifier = Modifier
 ) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search transactions...") },
+        placeholder = { 
+            Text(
+                if (categoryFilter != null) "Search in $categoryFilter..." 
+                else "Search transactions..."
+            ) 
+        },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
