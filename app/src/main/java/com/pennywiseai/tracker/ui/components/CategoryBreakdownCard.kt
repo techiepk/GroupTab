@@ -36,18 +36,13 @@ fun CategoryBreakdownCard(
                 fontWeight = FontWeight.Medium
             )
             
-            categories.take(5).forEach { category ->
+            ExpandableList(
+                items = categories,
+                visibleItemCount = 5
+            ) { category ->
                 CategoryBar(
                     category = category,
                     maxAmount = maxAmount
-                )
-            }
-            
-            if (categories.size > 5) {
-                Text(
-                    text = "+${categories.size - 5} more categories",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

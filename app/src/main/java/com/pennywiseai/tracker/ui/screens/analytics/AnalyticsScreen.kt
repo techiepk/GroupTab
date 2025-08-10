@@ -85,9 +85,15 @@ fun AnalyticsScreen(
                 )
             }
             
-            // Top 3 Merchants
-            items(uiState.topMerchants.take(3)) { merchant ->
-                MerchantListItem(merchant = merchant)
+            // All Merchants with expandable list
+            item {
+                ExpandableList(
+                    items = uiState.topMerchants,
+                    visibleItemCount = 3,
+                    modifier = Modifier.fillMaxWidth()
+                ) { merchant ->
+                    MerchantListItem(merchant = merchant)
+                }
             }
         }
         
