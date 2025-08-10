@@ -18,6 +18,11 @@ Builds:
     subdir: app
     gradle:
       - fdroid
+    scandelete:
+      - gradle/wrapper/gradle-wrapper.jar
+    scanignore:
+      - build.gradle.kts
+      - app/build.gradle.kts
     gradleprops:
       - android.buildFeatures.buildConfig=false
 
