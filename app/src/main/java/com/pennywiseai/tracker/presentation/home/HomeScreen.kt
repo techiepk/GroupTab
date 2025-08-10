@@ -49,6 +49,7 @@ fun HomeScreen(
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
+    onTransactionClick: (Long) -> Unit = {},
     onFabPositioned: (Rect) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -139,7 +140,10 @@ fun HomeScreen(
                 }
             } else {
                 items(uiState.recentTransactions) { transaction ->
-                    TransactionItem(transaction = transaction)
+                    TransactionItem(
+                        transaction = transaction,
+                        onClick = { onTransactionClick(transaction.id) }
+                    )
                 }
             }
         }
@@ -293,7 +297,8 @@ private fun MonthSummaryCard(
 
 @Composable
 private fun TransactionItem(
-    transaction: TransactionEntity
+    transaction: TransactionEntity,
+    onClick: () -> Unit = {}
 ) {
     val amountText = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${CurrencyFormatter.formatCurrency(transaction.amount)}"
     val amountColor = if (transaction.transactionType == TransactionType.EXPENSE) {
@@ -307,6 +312,7 @@ private fun TransactionItem(
         subtitle = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
         amount = amountText,
         amountColor = amountColor,
+        onClick = onClick,
         leadingContent = {
             BrandIcon(
                 merchantName = transaction.merchantName,

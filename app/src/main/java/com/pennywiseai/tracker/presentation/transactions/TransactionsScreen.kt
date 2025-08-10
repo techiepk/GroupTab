@@ -26,7 +26,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TransactionsScreen(
     viewModel: TransactionsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onTransactionClick: (Long) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -116,7 +117,8 @@ fun TransactionsScreen(
                             ) { transaction ->
                                 TransactionItem(
                                     transaction = transaction,
-                                    showDate = dateGroup == DateGroup.EARLIER
+                                    showDate = dateGroup == DateGroup.EARLIER,
+                                    onClick = { onTransactionClick(transaction.id) }
                                 )
                                 if (transaction != transactions.last()) {
                                     HorizontalDivider(
@@ -175,7 +177,8 @@ private fun SearchBar(
 @Composable
 private fun TransactionItem(
     transaction: TransactionEntity,
-    showDate: Boolean
+    showDate: Boolean,
+    onClick: () -> Unit = {}
 ) {
     val amountColor = when (transaction.transactionType) {
         TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
@@ -200,6 +203,7 @@ private fun TransactionItem(
         subtitle = subtitleParts.joinToString(" • "),
         amount = CurrencyFormatter.formatCurrency(transaction.amount),
         amountColor = amountColor,
+        onClick = onClick,
         leadingContent = {
             BrandIcon(
                 merchantName = transaction.merchantName,

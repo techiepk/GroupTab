@@ -9,6 +9,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen
 import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
 import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
@@ -53,7 +55,9 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            MainScreen()
+            MainScreen(
+                rootNavController = navController
+            )
         }
         
         composable<Settings>(
@@ -64,6 +68,21 @@ fun PennyWiseNavHost(
         ) {
             SettingsScreen(
                 themeViewModel = themeViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable<TransactionDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) { backStackEntry ->
+            val transactionDetail = backStackEntry.toRoute<TransactionDetail>()
+            TransactionDetailScreen(
+                transactionId = transactionDetail.transactionId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

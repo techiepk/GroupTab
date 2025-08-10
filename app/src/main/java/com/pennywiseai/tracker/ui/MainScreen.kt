@@ -39,6 +39,7 @@ import com.pennywiseai.tracker.ui.viewmodel.SpotlightViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    rootNavController: NavHostController? = null,
     navController: NavHostController = rememberNavController(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
     spotlightViewModel: SpotlightViewModel = hiltViewModel()
@@ -103,6 +104,11 @@ fun MainScreen(
                     onNavigateToChat = {
                         navController.navigate("chat")
                     },
+                    onTransactionClick = { transactionId ->
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.TransactionDetail(transactionId)
+                        )
+                    },
                     onFabPositioned = { position ->
                         spotlightViewModel.updateFabPosition(position)
                     }
@@ -113,6 +119,11 @@ fun MainScreen(
                 TransactionsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onTransactionClick = { transactionId ->
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.TransactionDetail(transactionId)
+                        )
                     }
                 )
             }

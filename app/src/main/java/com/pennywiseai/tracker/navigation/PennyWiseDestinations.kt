@@ -20,3 +20,6 @@ object Analytics
 
 @Serializable
 object Chat
+
+@Serializable
+data class TransactionDetail(val transactionId: Long)
