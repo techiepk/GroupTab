@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -220,6 +221,18 @@ fun ChatScreen(
                         ) {
                             DeveloperInfoCard(chatStats = chatStats)
                         }
+                        
+                        // Token limit warning
+                        AnimatedVisibility(
+                            visible = chatStats.contextUsagePercent >= 80,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            TokenLimitWarning(
+                                usagePercent = chatStats.contextUsagePercent,
+                                onClearChat = { viewModel.clearChat() }
+                            )
+                        }
 
                         // Clear chat button when there are messages
                         AnimatedVisibility(
@@ -394,6 +407,78 @@ fun ChatScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TokenLimitWarning(
+    usagePercent: Int,
+    onClearChat: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = when {
+        usagePercent >= 95 -> MaterialTheme.colorScheme.errorContainer
+        usagePercent >= 90 -> Color(0xFFFFF3E0) // Orange container
+        else -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    
+    val contentColor = when {
+        usagePercent >= 95 -> MaterialTheme.colorScheme.onErrorContainer
+        usagePercent >= 90 -> Color(0xFF5D4037) // Dark orange
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+    
+    val icon = when {
+        usagePercent >= 95 -> Icons.Default.Error
+        else -> Icons.Default.Warning
+    }
+    
+    val message = when {
+        usagePercent >= 95 -> "Chat memory almost full! Clear chat to continue."
+        usagePercent >= 90 -> "Chat memory is ${usagePercent}% full. Consider clearing soon."
+        else -> "Chat memory is ${usagePercent}% full."
+    }
+    
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = backgroundColor,
+        tonalElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.Padding.content),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor
+                )
+            }
+            if (usagePercent >= 90) {
+                TextButton(
+                    onClick = onClearChat,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = contentColor
+                    )
+                ) {
+                    Text("Clear", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun DeveloperInfoCard(
     chatStats: ChatStats,

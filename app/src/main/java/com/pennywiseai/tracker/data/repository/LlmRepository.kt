@@ -99,6 +99,16 @@ class LlmRepository @Inject constructor(
             Log.d("LlmRepository", "System prompt added to new chat")
         }
         
+        // Check token limit before processing
+        val currentMessages = chatDao.getAllMessagesForContext()
+        val conversationText = buildConversationContext(currentMessages, userMessage)
+        val estimatedTokens = conversationText.length / 4 // Rough estimation
+        
+        if (estimatedTokens > 1200) { // Leave some buffer (1200 out of 1280)
+            // Don't process, throw error to inform user
+            throw Exception("Chat memory is full. Please clear the chat to continue.")
+        }
+        
         // Save user message
         val userChatMessage = ChatMessage(
             message = userMessage,

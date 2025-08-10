@@ -154,9 +154,18 @@ class ChatViewModel @Inject constructor(
                 llmRepository.sendMessageStream(message)
                     .catch { error ->
                         Log.e("ChatViewModel", "Error in stream", error)
+                        val errorMessage = when {
+                            error.message?.contains("memory is full") == true -> 
+                                "Chat memory is full. Please clear the chat to continue."
+                            error.message?.contains("downloading") == true ->
+                                "Model is downloading. Please wait."
+                            error.message?.contains("not downloaded") == true ->
+                                "AI model not downloaded. Go to Settings to download."
+                            else -> error.message ?: "Failed to generate response"
+                        }
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = error.message
+                            error = errorMessage
                         )
                     }
                     .collect { partialResponse ->
@@ -169,9 +178,18 @@ class ChatViewModel @Inject constructor(
                 _currentResponse.value = ""
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Exception in sendMessage", e)
+                val errorMessage = when {
+                    e.message?.contains("memory is full") == true -> 
+                        "Chat memory is full. Please clear the chat to continue."
+                    e.message?.contains("downloading") == true ->
+                        "Model is downloading. Please wait."
+                    e.message?.contains("not downloaded") == true ->
+                        "AI model not downloaded. Go to Settings to download."
+                    else -> e.message ?: "Failed to send message"
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message
+                    error = errorMessage
                 )
                 _currentResponse.value = ""
             }
