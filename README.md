@@ -63,6 +63,7 @@ Currently supporting major Indian banks:
 - **Federal Bank**
 - **Karnataka Bank**
 - **Canara Bank**
+- **Bank of Baroda**
 - **Jupiter (CSB Bank)**
 - **Amazon Pay (Juspay)**
 

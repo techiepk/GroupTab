@@ -17,7 +17,8 @@ object BankParserFactory {
         JupiterBankParser(),
         AxisBankParser(),
         PNBBankParser(),
-        CanaraBankParser()
+        CanaraBankParser(),
+        BankOfBarodaParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.

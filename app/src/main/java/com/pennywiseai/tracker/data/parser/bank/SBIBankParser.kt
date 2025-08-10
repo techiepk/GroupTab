@@ -16,6 +16,7 @@ class SBIBankParser : BankParser() {
                normalizedSender.contains("SBIINB") ||
                normalizedSender.contains("SBIUPI") ||
                normalizedSender.contains("SBICRD") ||
+               normalizedSender.contains("ATMSBI") ||
                // Direct sender IDs
                normalizedSender == "SBIBK" ||
                normalizedSender == "SBIBNK" ||
@@ -128,6 +129,17 @@ class SBIBankParser : BankParser() {
             }
         }
         
+        // Pattern 9: YONO Cash withdrawal - "Yono Cash Rs 3000 w/d@SBI ATM"
+        val yonoCashPattern = Regex("""Yono\s+Cash\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        yonoCashPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
         // Fall back to base class patterns
         return super.extractAmount(message)
     }
@@ -166,7 +178,14 @@ class SBIBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: ATM location
+        // Pattern 2: YONO Cash ATM - "w/d@SBI ATM S1NW000093009"
+        val yonoAtmPattern = Regex("""w/d@SBI\s+ATM\s+([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
+        yonoAtmPattern.find(message)?.let { match ->
+            val atmId = match.groupValues[1]
+            return "YONO Cash ATM - $atmId"
+        }
+        
+        // Pattern 2a: Regular ATM location
         val atmPattern = Regex("""ATM\s+(?:withdrawal\s+)?(?:at\s+)?([^.\n]+?)(?:\s+on|\s+Avl)""", RegexOption.IGNORE_CASE)
         atmPattern.find(message)?.let { match ->
             val location = cleanMerchantName(match.groupValues[1])
