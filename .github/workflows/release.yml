@@ -215,21 +215,34 @@ jobs:
       - name: Rename APKs
         if: ${{ !inputs.dry_run }}
         run: |
-          # Rename standard APK
+          VERSION="${{ steps.next_version.outputs.version }}"
           STANDARD_PATH="app/build/outputs/apk/standard/release"
-          if [ -f "$STANDARD_PATH/app-standard-release-unsigned.apk" ]; then
-            mv "$STANDARD_PATH/app-standard-release-unsigned.apk" \
-               "$STANDARD_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
-          elif [ -f "$STANDARD_PATH/app-standard-release.apk" ]; then
-            mv "$STANDARD_PATH/app-standard-release.apk" \
-               "$STANDARD_PATH/PennyWise-v${{ steps.next_version.outputs.version }}.apk"
+          FDROID_PATH="app/build/outputs/apk/fdroid/release"
+          
+          # Rename universal APK (contains all architectures)
+          if [ -f "$STANDARD_PATH/app-standard-universal-release.apk" ]; then
+            mv "$STANDARD_PATH/app-standard-universal-release.apk" \
+               "$STANDARD_PATH/PennyWise-v${VERSION}-universal.apk"
+          elif [ -f "$STANDARD_PATH/app-standard-universal-release-unsigned.apk" ]; then
+            mv "$STANDARD_PATH/app-standard-universal-release-unsigned.apk" \
+               "$STANDARD_PATH/PennyWise-v${VERSION}-universal.apk"
           fi
           
+          # Rename architecture-specific APKs
+          for arch in armeabi-v7a arm64-v8a x86 x86_64; do
+            if [ -f "$STANDARD_PATH/app-standard-${arch}-release.apk" ]; then
+              mv "$STANDARD_PATH/app-standard-${arch}-release.apk" \
+                 "$STANDARD_PATH/PennyWise-v${VERSION}-${arch}.apk"
+            elif [ -f "$STANDARD_PATH/app-standard-${arch}-release-unsigned.apk" ]; then
+              mv "$STANDARD_PATH/app-standard-${arch}-release-unsigned.apk" \
+                 "$STANDARD_PATH/PennyWise-v${VERSION}-${arch}.apk"
+            fi
+          done
+          
           # Rename F-Droid APK
-          FDROID_PATH="app/build/outputs/apk/fdroid/release"
           if [ -f "$FDROID_PATH/app-fdroid-release-unsigned.apk" ]; then
             mv "$FDROID_PATH/app-fdroid-release-unsigned.apk" \
-               "$FDROID_PATH/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk"
+               "$FDROID_PATH/PennyWise-fdroid-v${VERSION}.apk"
           fi
           
           echo "Standard APKs:"
@@ -240,17 +253,25 @@ jobs:
       - name: Calculate SHA256
         if: ${{ !inputs.dry_run }}
         run: |
-          # SHA256 for standard APK
+          VERSION="${{ steps.next_version.outputs.version }}"
+          
+          # SHA256 for all standard APKs
           cd app/build/outputs/apk/standard/release/
-          sha256sum PennyWise-v${{ steps.next_version.outputs.version }}.apk > PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
-          echo "Standard APK SHA256:"
-          cat PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
+          for apk in PennyWise-v${VERSION}*.apk; do
+            if [ -f "$apk" ]; then
+              sha256sum "$apk" > "${apk}.sha256"
+              echo "SHA256 for $apk:"
+              cat "${apk}.sha256"
+            fi
+          done
           
           # SHA256 for F-Droid APK
           cd ../../fdroid/release/
-          sha256sum PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk > PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
-          echo "F-Droid APK SHA256:"
-          cat PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
+          if [ -f "PennyWise-fdroid-v${VERSION}.apk" ]; then
+            sha256sum "PennyWise-fdroid-v${VERSION}.apk" > "PennyWise-fdroid-v${VERSION}.apk.sha256"
+            echo "F-Droid APK SHA256:"
+            cat "PennyWise-fdroid-v${VERSION}.apk.sha256"
+          fi
       
       - name: Commit version bump
         if: ${{ !inputs.dry_run }}
@@ -275,8 +296,12 @@ jobs:
           name: Release v${{ steps.next_version.outputs.version }}
           body_path: RELEASE_NOTES.md
           files: |
-            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk
-            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}.apk.sha256
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-universal.apk
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-universal.apk.sha256
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-arm64-v8a.apk
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-arm64-v8a.apk.sha256
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-armeabi-v7a.apk
+            app/build/outputs/apk/standard/release/PennyWise-v${{ steps.next_version.outputs.version }}-armeabi-v7a.apk.sha256
             app/build/outputs/apk/fdroid/release/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk
             app/build/outputs/apk/fdroid/release/PennyWise-fdroid-v${{ steps.next_version.outputs.version }}.apk.sha256
           draft: false
