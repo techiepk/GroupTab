@@ -1,45 +1,39 @@
-PennyWise AI is a free and open-source expense tracker that automatically extracts transaction data from your bank SMS messages using 100% on-device AI processing. No internet required, no data leaves your device.
+PennyWise AI — Free & Open-Source, private SMS-powered expense tracker
 
-Turn bank SMS into a clean, searchable money timeline with 100% on-device AI.
+Turn bank SMS into a clean, searchable money timeline. 100% on-device AI.
 
-Features:
+For Android users in India who want automatic expense tracking from bank SMS — clean categories, subscription detection, and clear insights.
+
+Key Features:
 • Smart SMS Parsing - Automatically extracts transaction details from Indian bank SMS
-• Clear Insights - Analytics and charts to instantly see where money goes
+• On-device AI Processing - Uses MediaPipe for complete offline functionality
+• Clear Analytics - Charts and insights to see spending patterns
 • Subscription Tracking - Detects and monitors recurring payments
-• On-device AI Chat - Ask questions like "What did I spend on food last month?"
-• Auto-Categorization - Clean merchant names and sensible categories
-• Data Export - Export as CSV or PDF for taxes or records
-• Privacy First - 100% offline processing, no cloud dependencies
+• AI Chat Assistant - Ask questions like "What did I spend on food last month?"
+• Auto-Categorization - Clean merchant names and intelligent categories
+• Data Export - Export as CSV or PDF for records and taxes
 • Material You Design - Clean interface with dynamic theming
 
-Supported Banks:
-• HDFC Bank
-• State Bank of India (SBI)
-• ICICI Bank
-• Axis Bank
-• Punjab National Bank (PNB)
-• IDBI Bank
-• Indian Bank
-• Federal Bank
-• Karnataka Bank
-• Canara Bank
-• Bank of Baroda
-• Jio Payments Bank
-• Jupiter (CSB Bank)
-• Amazon Pay (Juspay)
+Supported Banks (10+):
+• HDFC Bank, State Bank of India (SBI), ICICI Bank
+• Axis Bank, Punjab National Bank (PNB), IDBI Bank
+• Indian Bank, Federal Bank, Karnataka Bank
+• Canara Bank, Bank of Baroda, Jio Payments Bank
+• Jupiter (CSB Bank), Amazon Pay (Juspay)
 
 Privacy & Security:
 • No internet permissions required for core functionality
 • All AI processing happens on your device using MediaPipe
 • SMS permission is read-only - we never send messages
-• No user accounts or cloud sync
-• Open source - audit the code yourself
+• No user accounts or cloud sync required
+• Open source - audit the code yourself on GitHub
+• Zero data collection or tracking
 
 Perfect for:
-• Tracking daily expenses automatically
-• Understanding spending patterns
-• Managing subscriptions
-• Budgeting and financial planning
-• Maintaining transaction records
+• Automatic daily expense tracking
+• Understanding spending patterns and budgeting
+• Managing subscription payments
+• Financial planning and analysis
+• Maintaining detailed transaction records
 
-PennyWise respects your privacy while helping you take control of your finances. Join thousands of users who trust PennyWise for secure, automatic expense tracking.
+PennyWise respects your privacy while helping you take control of your finances. Join users who trust PennyWise for secure, automatic expense tracking without compromising their data.

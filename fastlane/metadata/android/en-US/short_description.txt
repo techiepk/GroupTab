@@ -1,1 +1,1 @@
-Privacy-first SMS expense tracker with on-device AI
+Turn bank SMS into expense insights with AI
