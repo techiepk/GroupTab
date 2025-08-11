@@ -24,8 +24,9 @@ class PNBBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
+        // Handle debit patterns - both "Rs." and "INR" formats
         val debitPattern = Regex(
-            """debited\s+INR\s+([0-9,]+(?:\.\d{2})?)""",
+            """debited\s+(?:Rs\.?|INR)\s*([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
         )
         debitPattern.find(message)?.let { match ->
@@ -37,12 +38,15 @@ class PNBBankParser : BankParser() {
             }
         }
         
+        // Handle credit patterns - both "Rs." and "INR" formats
         val creditPattern = Regex(
-            """INR\s+([0-9,]+(?:\.\d{2})?)\s+has\s+been\s+credited""",
+            """(?:(?:Rs\.?|INR)\s*([0-9,]+(?:\.\d{2})?)\s+(?:has\s+been\s+)?credited|credited\s+(?:Rs\.?|INR)\s*([0-9,]+(?:\.\d{2})?))""",
             RegexOption.IGNORE_CASE
         )
         creditPattern.find(message)?.let { match ->
-            val amount = match.groupValues[1].replace(",", "")
+            // Try to get the amount from either capture group (pattern 1 or pattern 2)
+            val amount = (if (match.groupValues[1].isNotEmpty()) match.groupValues[1] else match.groupValues[2])
+                .replace(",", "")
             return try {
                 BigDecimal(amount)
             } catch (e: NumberFormatException) {
@@ -50,18 +54,8 @@ class PNBBankParser : BankParser() {
             }
         }
         
-        val balCreditPattern = Regex(
-            """Bal\s+Rs\.?([0-9,]+(?:\.\d{2})?)\s+CR""",
-            RegexOption.IGNORE_CASE
-        )
-        balCreditPattern.find(message)?.let { match ->
-            val amount = match.groupValues[1].replace(",", "")
-            return try {
-                BigDecimal(amount)
-            } catch (e: NumberFormatException) {
-                null
-            }
-        }
+        // Note: Removed balance pattern - balance should never be used as transaction amount
+        // Balance is extracted separately by extractBalance() method
         
         return super.extractAmount(message)
     }
