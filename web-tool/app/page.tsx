@@ -1,103 +1,276 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { BankParserFactory } from '@/lib/parsers'
+import { CategoryMapper } from '@/lib/categorization'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { SubmissionDialog } from '@/components/submission-dialog'
+import { BankTemplates } from '@/components/bank-templates'
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [smsBody, setSmsBody] = useState('')
+  const [sender, setSender] = useState('')
+  const [parseResult, setParseResult] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showSubmissionDialog, setShowSubmissionDialog] = useState(false)
+  const [submissionMode, setSubmissionMode] = useState<'submit' | 'improve'>('submit')
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleParse = () => {
+    setIsLoading(true)
+    
+    try {
+      const result = BankParserFactory.parse(smsBody, sender, Date.now())
+      setParseResult(result)
+    } catch (error) {
+      setParseResult({
+        success: false,
+        error: 'An error occurred while parsing the SMS'
+      })
+    }
+    
+    setIsLoading(false)
+  }
+
+  const handleClear = () => {
+    setSmsBody('')
+    setSender('')
+    setParseResult(null)
+  }
+
+  const handleOpenSubmission = (mode: 'submit' | 'improve') => {
+    setSubmissionMode(mode)
+    setShowSubmissionDialog(true)
+  }
+
+  const supportedBanks = BankParserFactory.getSupportedBanks()
+
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">PennyWise SMS Parser</h1>
+          <p className="text-muted-foreground mt-2">
+            Test if your bank SMS messages are compatible with PennyWise
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Test Your SMS</CardTitle>
+            <CardDescription>
+              Paste your bank SMS and sender ID to check if it can be parsed
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="sender">Sender ID</Label>
+              <Input
+                id="sender"
+                placeholder="e.g., HDFCBK, SBIBNK"
+                value={sender}
+                onChange={(e) => setSender(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                The sender ID shown in your SMS app (usually 6 characters)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sms">SMS Message</Label>
+              <Textarea
+                id="sms"
+                placeholder="Paste your bank transaction SMS here..."
+                value={smsBody}
+                onChange={(e) => setSmsBody(e.target.value)}
+                rows={6}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleParse} 
+                disabled={!smsBody || !sender || isLoading}
+              >
+                Parse SMS
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleClear}
+              >
+                Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {parseResult && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {parseResult.success ? 'Parsed Successfully' : 'Parsing Failed'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {parseResult.success ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium">Amount</p>
+                      <p className="text-2xl font-bold">
+                        ₹{parseResult.data.amount?.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Type</p>
+                      <Badge variant={parseResult.data.type === 'EXPENSE' ? 'destructive' : 'default'}>
+                        {parseResult.data.type}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    {parseResult.data.merchant && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Merchant</span>
+                        <span className="text-sm">{parseResult.data.merchant}</span>
+                      </div>
+                    )}
+                    
+                    {parseResult.data.category && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Category</span>
+                        <Badge variant="outline">
+                          {parseResult.data.category}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {parseResult.data.bankName && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Bank</span>
+                        <span className="text-sm">{parseResult.data.bankName}</span>
+                      </div>
+                    )}
+
+                    {parseResult.data.accountLast4 && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Account</span>
+                        <span className="text-sm">****{parseResult.data.accountLast4}</span>
+                      </div>
+                    )}
+
+                    {parseResult.data.balance !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Balance</span>
+                        <span className="text-sm">₹{parseResult.data.balance.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+
+                    {parseResult.data.reference && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Reference</span>
+                        <span className="text-sm font-mono text-xs">{parseResult.data.reference}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {parseResult.confidence && (
+                    <>
+                      <Separator />
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Confidence</span>
+                        <span className="text-sm">{(parseResult.confidence * 100).toFixed(0)}%</span>
+                      </div>
+                    </>
+                  )}
+
+                  <Separator />
+                  
+                  <Button 
+                    onClick={() => handleOpenSubmission('improve')}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Improve Results
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Alert>
+                    <AlertDescription>
+                      {parseResult.error || 'Unable to parse this SMS. The bank or format may not be supported yet.'}
+                    </AlertDescription>
+                  </Alert>
+                  <Button 
+                    onClick={() => handleOpenSubmission('submit')}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    Submit Correct Details
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Supported Banks</CardTitle>
+            <CardDescription>
+              Currently supporting {supportedBanks.length} banks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {supportedBanks.map((bank) => (
+                <Badge key={bank.code} variant="secondary">
+                  {bank.name}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <BankTemplates />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Report Unsupported SMS</CardTitle>
+            <CardDescription>
+              If your bank SMS isn't parsing correctly, you can submit it for review
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => handleOpenSubmission('submit')}
+              disabled={!smsBody || !sender}
+            >
+              Submit Unsupported SMS
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <SubmissionDialog
+        open={showSubmissionDialog}
+        onOpenChange={setShowSubmissionDialog}
+        smsBody={smsBody}
+        sender={sender}
+        parseResult={parseResult}
+        mode={submissionMode}
+      />
     </div>
-  );
+  )
 }
