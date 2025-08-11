@@ -32,6 +32,9 @@ class TransactionsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
+    private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
+    val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
+    
     init {
         // Combine all filters: search query, period, and category
         combine(
@@ -66,6 +69,22 @@ class TransactionsViewModel @Inject constructor(
     
     fun clearCategoryFilter() {
         _categoryFilter.value = null
+    }
+    
+    fun deleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            _deletedTransaction.value = transaction
+            transactionRepository.softDeleteTransaction(transaction)
+        }
+    }
+    
+    fun undoDelete() {
+        _deletedTransaction.value?.let { transaction ->
+            viewModelScope.launch {
+                transactionRepository.undoDeleteTransaction(transaction)
+                _deletedTransaction.value = null
+            }
+        }
     }
     
     private fun getFilteredTransactions(

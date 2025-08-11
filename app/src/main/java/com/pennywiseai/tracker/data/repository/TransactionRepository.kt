@@ -77,6 +77,14 @@ class TransactionRepository @Inject constructor(
     suspend fun deleteAllTransactions() = 
         transactionDao.deleteAllTransactions()
     
+    suspend fun softDeleteTransaction(transaction: TransactionEntity) {
+        transactionDao.updateTransaction(transaction.copy(isDeleted = true))
+    }
+    
+    suspend fun undoDeleteTransaction(transaction: TransactionEntity) {
+        transactionDao.updateTransaction(transaction.copy(isDeleted = false))
+    }
+    
     // Additional methods for Home screen
     data class MonthlyBreakdown(
         val total: BigDecimal,

@@ -36,6 +36,9 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     
+    private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
+    val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
+    
     init {
         loadHomeData()
     }
@@ -147,6 +150,22 @@ class HomeViewModel @Inject constructor(
      */
     fun checkForAppUpdate(activity: ComponentActivity) {
         inAppUpdateManager.checkForUpdate(activity)
+    }
+    
+    fun deleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            _deletedTransaction.value = transaction
+            transactionRepository.softDeleteTransaction(transaction)
+        }
+    }
+    
+    fun undoDelete() {
+        _deletedTransaction.value?.let { transaction ->
+            viewModelScope.launch {
+                transactionRepository.undoDeleteTransaction(transaction)
+                _deletedTransaction.value = null
+            }
+        }
     }
     
     override fun onCleared() {

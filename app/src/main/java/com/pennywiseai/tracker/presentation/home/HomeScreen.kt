@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.presentation.home
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -23,8 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.automirrored.filled.Chat
+import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
@@ -42,6 +45,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -53,7 +57,11 @@ fun HomeScreen(
     onFabPositioned: (Rect) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val activity = LocalActivity.current
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     // Check for app updates when the screen is first displayed
     LaunchedEffect(Unit) {
@@ -62,6 +70,25 @@ fun HomeScreen(
         }
     }
     
+    // Handle delete undo snackbar
+    LaunchedEffect(deletedTransaction) {
+        deletedTransaction?.let {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Transaction deleted",
+                    actionLabel = "Undo",
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.undoDelete()
+                }
+            }
+        }
+    }
+    
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -139,9 +166,13 @@ fun HomeScreen(
                     }
                 }
             } else {
-                items(uiState.recentTransactions) { transaction ->
-                    TransactionItem(
+                items(
+                    items = uiState.recentTransactions,
+                    key = { it.id }
+                ) { transaction ->
+                    SwipeableTransactionItem(
                         transaction = transaction,
+                        onDelete = { viewModel.deleteTransaction(transaction) },
                         onClick = { onTransactionClick(transaction.id) }
                     )
                 }
@@ -232,6 +263,61 @@ fun HomeScreen(
             )
         }
     }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableTransactionItem(
+    transaction: TransactionEntity,
+    onDelete: () -> Unit,
+    onClick: () -> Unit = {}
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            when (dismissValue) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true
+                }
+                else -> false
+            }
+        }
+    )
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color by animateColorAsState(
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
+                    else -> Color.Transparent
+                },
+                label = "background color"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = Dimensions.Padding.content),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onError
+                    )
+                }
+            }
+        },
+        content = {
+            TransactionItem(
+                transaction = transaction,
+                onClick = onClick
+            )
+        }
+    )
 }
 
 @Composable

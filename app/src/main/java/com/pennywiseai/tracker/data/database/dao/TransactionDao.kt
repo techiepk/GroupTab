@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 @Dao
 interface TransactionDao {
     
-    @Query("SELECT * FROM transactions ORDER BY date_time DESC")
+    @Query("SELECT * FROM transactions WHERE is_deleted = 0 ORDER BY date_time DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
     
     @Query("SELECT * FROM transactions WHERE id = :transactionId")
@@ -17,7 +17,8 @@ interface TransactionDao {
     
     @Query("""
         SELECT * FROM transactions 
-        WHERE date_time BETWEEN :startDate AND :endDate 
+        WHERE is_deleted = 0 
+        AND date_time BETWEEN :startDate AND :endDate 
         ORDER BY date_time DESC
     """)
     fun getTransactionsBetweenDates(
@@ -27,35 +28,39 @@ interface TransactionDao {
     
     @Query("""
         SELECT * FROM transactions 
-        WHERE transaction_type = :type 
+        WHERE is_deleted = 0 
+        AND transaction_type = :type 
         ORDER BY date_time DESC
     """)
     fun getTransactionsByType(type: TransactionType): Flow<List<TransactionEntity>>
     
     @Query("""
         SELECT * FROM transactions 
-        WHERE category = :category 
+        WHERE is_deleted = 0 
+        AND category = :category 
         ORDER BY date_time DESC
     """)
     fun getTransactionsByCategory(category: String): Flow<List<TransactionEntity>>
     
     @Query("""
         SELECT * FROM transactions 
-        WHERE merchant_name LIKE '%' || :searchQuery || '%' 
-        OR description LIKE '%' || :searchQuery || '%' 
+        WHERE is_deleted = 0 
+        AND (merchant_name LIKE '%' || :searchQuery || '%' 
+        OR description LIKE '%' || :searchQuery || '%') 
         ORDER BY date_time DESC
     """)
     fun searchTransactions(searchQuery: String): Flow<List<TransactionEntity>>
     
-    @Query("SELECT DISTINCT category FROM transactions ORDER BY category ASC")
+    @Query("SELECT DISTINCT category FROM transactions WHERE is_deleted = 0 ORDER BY category ASC")
     fun getAllCategories(): Flow<List<String>>
     
-    @Query("SELECT DISTINCT merchant_name FROM transactions ORDER BY merchant_name ASC")
+    @Query("SELECT DISTINCT merchant_name FROM transactions WHERE is_deleted = 0 ORDER BY merchant_name ASC")
     fun getAllMerchants(): Flow<List<String>>
     
     @Query("""
         SELECT SUM(amount) FROM transactions 
-        WHERE transaction_type = :type 
+        WHERE is_deleted = 0 
+        AND transaction_type = :type 
         AND date_time BETWEEN :startDate AND :endDate
     """)
     suspend fun getTotalAmountByTypeAndPeriod(
@@ -84,7 +89,8 @@ interface TransactionDao {
     
     @Query("""
         SELECT * FROM transactions 
-        WHERE date_time BETWEEN :startDate AND :endDate 
+        WHERE is_deleted = 0 
+        AND date_time BETWEEN :startDate AND :endDate 
         ORDER BY date_time DESC
     """)
     suspend fun getTransactionsBetweenDatesList(

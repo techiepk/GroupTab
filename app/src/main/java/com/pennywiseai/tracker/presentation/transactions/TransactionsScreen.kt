@@ -1,5 +1,7 @@
 package com.pennywiseai.tracker.presentation.transactions
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,9 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.ui.components.*
@@ -38,6 +42,10 @@ fun TransactionsScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
     val categoryFilter by viewModel.categoryFilter.collectAsState()
+    val deletedTransaction by viewModel.deletedTransaction.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     // Initialize ViewModel with navigation arguments
     LaunchedEffect(Unit) {
@@ -71,11 +79,31 @@ fun TransactionsScreen(
         }
     }
     
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    // Handle delete undo snackbar
+    LaunchedEffect(deletedTransaction) {
+        deletedTransaction?.let {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Transaction deleted",
+                    actionLabel = "Undo",
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.undoDelete()
+                }
+            }
+        }
+    }
+    
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
         // Search Bar
-        SearchBar(
+        TransactionSearchBar(
             query = searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
             categoryFilter = categoryFilter,
@@ -182,9 +210,10 @@ fun TransactionsScreen(
                                 items = transactions,
                                 key = { it.id }
                             ) { transaction ->
-                                TransactionItem(
+                                SwipeableTransactionItem(
                                     transaction = transaction,
                                     showDate = dateGroup == DateGroup.EARLIER,
+                                    onDelete = { viewModel.deleteTransaction(transaction) },
                                     onClick = { onTransactionClick(transaction.id) }
                                 )
                                 if (transaction != transactions.last()) {
@@ -199,12 +228,13 @@ fun TransactionsScreen(
                 }
             }
         }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SearchBar(
+private fun TransactionSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     categoryFilter: String? = null,
@@ -244,6 +274,62 @@ private fun SearchBar(
         ),
         shape = MaterialTheme.shapes.medium,
         modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableTransactionItem(
+    transaction: TransactionEntity,
+    showDate: Boolean,
+    onDelete: () -> Unit,
+    onClick: () -> Unit = {}
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            when (dismissValue) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true
+                }
+                else -> false
+            }
+        }
+    )
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color by animateColorAsState(
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
+                    else -> Color.Transparent
+                },
+                label = "background color"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = Dimensions.Padding.content),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onError
+                    )
+                }
+            }
+        },
+        content = {
+            TransactionItem(
+                transaction = transaction,
+                showDate = showDate,
+                onClick = onClick
+            )
+        }
     )
 }
 
