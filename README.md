@@ -12,7 +12,7 @@
 
 ## PennyWise AI — Free & Open‑Source, private SMS‑powered expense tracker
 
-Turn bank SMS into a clean, searchable money timeline. 100% on‑device AI.
+Turn bank SMS into a clean, searchable money timeline with on-device AI assistance. 100% private, no cloud processing.
 
 
 ⭐ **Star us on GitHub — help us reach 100 stars!**
@@ -38,14 +38,14 @@ For Android users in India who want automatic expense tracking from bank SMS —
 
 1. Grant SMS permission (read‑only). No inbox changes, no messages sent.
 2. PennyWise parses transaction SMS, extracts amount, merchant, category, and date.
-3. View analytics, subscriptions, and the full transaction timeline — and chat with the on‑device AI.
+3. View analytics, subscriptions, and the full transaction timeline — with on-device AI assistant for insights.
 
 ## Why PennyWise
 
 - **🤖 Smart SMS Parsing** - Automatically extracts transaction details from Indian bank SMS
 - **📊 Clear Insights** - Analytics and charts to instantly see where money goes
 - **🔄 Subscription Tracking** - Detects and monitors recurring payments
-- **💬 On‑device AI Chat** - Ask questions like “What did I spend on food last month?”
+- **💬 On-device AI Assistant** - Ask questions like "What did I spend on food last month?" locally
 - **🏷️ Auto‑Categorization** - Clean merchant names and sensible categories
 - **📤 Data Export** - Export as CSV or PDF for taxes or records
 
