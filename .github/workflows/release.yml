@@ -142,6 +142,25 @@ jobs:
           echo "code=$NEXT_CODE" >> $GITHUB_OUTPUT
           echo "Next version: $NEXT_VERSION (code: $NEXT_CODE)"
       
+      - name: Check if tag already exists
+        if: ${{ !inputs.dry_run }}
+        run: |
+          TAG_NAME="v${{ steps.next_version.outputs.version }}"
+          
+          # Check if tag exists locally
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ Tag $TAG_NAME already exists locally"
+            exit 1
+          fi
+          
+          # Check if tag exists on remote
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME"; then
+            echo "❌ Tag $TAG_NAME already exists on remote"
+            exit 1
+          fi
+          
+          echo "✅ Tag $TAG_NAME is available"
+      
       - name: Generate changelog
         id: changelog
         run: |
@@ -273,24 +292,27 @@ jobs:
             cat "PennyWise-fdroid-v${VERSION}.apk.sha256"
           fi
       
-      - name: Commit version bump
+      - name: Commit version bump and push
         if: ${{ !inputs.dry_run }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit version bump
           git add app/build.gradle.kts
           git commit -m "chore(release): bump version to ${{ steps.next_version.outputs.version }} [skip ci]"
+          
+          # Pull latest changes and push commit
+          git pull origin main --rebase
+          git push origin main
       
       - name: Create and push tag
         if: ${{ !inputs.dry_run }}
         run: |
-          # Delete tag if it already exists (locally and remotely)
-          git tag -d "v${{ steps.next_version.outputs.version }}" 2>/dev/null || true
-          git push origin --delete "v${{ steps.next_version.outputs.version }}" 2>/dev/null || true
-          
           # Create new tag at current commit
           git tag -a "v${{ steps.next_version.outputs.version }}" -m "Release v${{ steps.next_version.outputs.version }}"
-          git push origin main
+          
+          # Push the tag
           git push origin "v${{ steps.next_version.outputs.version }}"
       
       - name: Create GitHub Release
