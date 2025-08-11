@@ -17,8 +17,8 @@ android {
         applicationId = "com.pennywiseai.tracker"
         minSdk = 31
         targetSdk = 36
-        versionCode = 25
-        versionName = "2.6.0"
+        versionCode = 24
+        versionName = "2.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,11 +61,16 @@ android {
         }
     }
     
-    // Enable APK splits for smaller APKs per architecture (only for standard flavor)
+    // Enable APK splits for smaller APKs per architecture (only for APK builds, not bundles)
     splits {
         abi {
-            // Disable splits for F-Droid builds to avoid multiple APK confusion
-            isEnable = !gradle.startParameter.taskNames.any { it.contains("Fdroid") }
+            // Disable splits for F-Droid builds and Bundle builds
+            // Bundles don't support APK splits, they handle multi-architecture differently
+            isEnable = !gradle.startParameter.taskNames.any { 
+                it.contains("Fdroid") || 
+                it.contains("Bundle") || 
+                it.contains("bundle")
+            }
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true  // Also generate a universal APK containing all ABIs
