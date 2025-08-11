@@ -61,10 +61,11 @@ android {
         }
     }
     
-    // Enable APK splits for smaller APKs per architecture (for direct APK distribution)
+    // Enable APK splits for smaller APKs per architecture (only for standard flavor)
     splits {
         abi {
-            isEnable = true
+            // Disable splits for F-Droid builds to avoid multiple APK confusion
+            isEnable = !gradle.startParameter.taskNames.any { it.contains("Fdroid") }
             reset()
             include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
             isUniversalApk = true  // Also generate a universal APK containing all ABIs

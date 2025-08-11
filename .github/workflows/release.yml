@@ -284,6 +284,11 @@ jobs:
       - name: Create and push tag
         if: ${{ !inputs.dry_run }}
         run: |
+          # Delete tag if it already exists (locally and remotely)
+          git tag -d "v${{ steps.next_version.outputs.version }}" 2>/dev/null || true
+          git push origin --delete "v${{ steps.next_version.outputs.version }}" 2>/dev/null || true
+          
+          # Create new tag at current commit
           git tag -a "v${{ steps.next_version.outputs.version }}" -m "Release v${{ steps.next_version.outputs.version }}"
           git push origin main
           git push origin "v${{ steps.next_version.outputs.version }}"
