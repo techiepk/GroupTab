@@ -1,5 +1,7 @@
 # TODO
 
+- add banks
+
 - [ ] Credit card transactions handling
 - [X] Check user video on model download problem
 - [X] Check calculations
@@ -17,16 +19,8 @@
 - [X] jio smartpoint
 
 ## Delete Transactions Feature
-- [ ] Add deleted_transaction_hashes table to database
-- [ ] Create migration for new table
-- [ ] Add DAO methods for deleted hashes (insert, check, cleanup)
-- [ ] Update TransactionRepository delete method to track hash
-- [ ] Update TransactionRepository insert to skip deleted hashes
-- [ ] Create SwipeableTransactionItem with red delete background
-- [ ] Add delete function to TransactionsViewModel
-- [ ] Add undo functionality with snackbar (5 second window)
-- [ ] Update TransactionsScreen with swipe-to-delete UI
-
+- [X] Add deleted_transaction_hashes table to database
+- [ ] Edit transactions
 ## Smart SMS Scanning
 - [ ] Add last_scan_timestamp to UserPreferences
 - [ ] Update SmsReaderWorker - first scan: 3 months, then: last 2 days
