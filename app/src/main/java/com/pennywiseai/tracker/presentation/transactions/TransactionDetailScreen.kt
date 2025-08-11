@@ -254,7 +254,7 @@ private fun SmsBodyCard(smsBody: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Default.Message,
+                    Icons.AutoMirrored.Filled.Chat,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -335,9 +335,9 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
             // Transaction Type
             InfoRow(
                 label = "Type",
-                value = transaction.transactionType.name.lowercase().capitalize(),
+                value = transaction.transactionType.name.lowercase().replaceFirstChar { it.uppercase() },
                 icon = if (transaction.transactionType == TransactionType.INCOME) 
-                    Icons.Default.TrendingUp else Icons.Default.TrendingDown
+                    Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
             )
             
             // Description
@@ -500,7 +500,7 @@ private fun EditableTransactionHeader(
                     onClick = { viewModel.updateTransactionType(TransactionType.EXPENSE) },
                     label = { Text("Expense") },
                     leadingIcon = if (transaction.transactionType == TransactionType.EXPENSE) {
-                        { Icon(Icons.Default.TrendingDown, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -509,7 +509,7 @@ private fun EditableTransactionHeader(
                     onClick = { viewModel.updateTransactionType(TransactionType.INCOME) },
                     label = { Text("Income") },
                     leadingIcon = if (transaction.transactionType == TransactionType.INCOME) {
-                        { Icon(Icons.Default.TrendingUp, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -663,7 +663,7 @@ private fun CategoryDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(),
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
             readOnly = false
         )
         
