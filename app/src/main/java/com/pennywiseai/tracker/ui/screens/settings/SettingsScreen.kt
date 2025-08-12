@@ -293,40 +293,6 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
-                // Discord Community
-                ListItem(
-                    headlineContent = { 
-                        Text(
-                            text = "Join Discord Community",
-                            fontWeight = FontWeight.Medium
-                        )
-                    },
-                    supportingContent = { 
-                        Text("Get help, request features, report bugs")
-                    },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Group,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    trailingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/eqbPUYSR"))
-                        context.startActivity(intent)
-                    }
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(horizontal = Dimensions.Padding.content))
-                
                 // GitHub Issues
                 ListItem(
                     headlineContent = { 

@@ -16,7 +16,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import android.content.Intent
+import android.net.Uri
+import com.pennywiseai.tracker.R
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -59,6 +65,7 @@ fun MainScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
             topBar = {
+            val context = LocalContext.current
             PennyWiseTopAppBar(
                 title = when (currentRoute) {
                     "home" -> "PennyWise"
@@ -70,8 +77,13 @@ fun MainScreen(
                 },
                 showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions"),
                 showSettingsButton = currentRoute != "settings",
+                showDiscordButton = currentRoute != "settings", // Show Discord on all screens except settings
                 onBackClick = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate("settings") }
+                onSettingsClick = { navController.navigate("settings") },
+                onDiscordClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/pennywiseai"))
+                    context.startActivity(intent)
+                }
             )
         },
         bottomBar = {
@@ -234,6 +246,7 @@ fun MainScreen(
 private fun ChatScreenWrapper(
     navController: NavHostController
 ) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             PennyWiseTopAppBar(
@@ -241,7 +254,11 @@ private fun ChatScreenWrapper(
                 showBackButton = true,
                 showSettingsButton = true,
                 onBackClick = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate("settings") }
+                onSettingsClick = { navController.navigate("settings") },
+                onDiscordClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/pennywiseai"))
+                    context.startActivity(intent)
+                }
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -268,8 +285,10 @@ private fun PennyWiseTopAppBar(
     title: String,
     showBackButton: Boolean = false,
     showSettingsButton: Boolean = true,
+    showDiscordButton: Boolean = true,
     onBackClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onDiscordClick: () -> Unit = {}
 ) {
     Column {
         TopAppBar(
@@ -288,6 +307,15 @@ private fun PennyWiseTopAppBar(
                 }
             },
             actions = {
+                if (showDiscordButton) {
+                    IconButton(onClick = onDiscordClick) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_discord),
+                            contentDescription = "Join Discord Community",
+                            tint = Color(0xFF5865F2) // Discord brand color
+                        )
+                    }
+                }
                 if (showSettingsButton) {
                     IconButton(onClick = onSettingsClick) {
                         Icon(
