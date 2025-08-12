@@ -11,10 +11,10 @@ PennyWise AI is built with privacy as the core principle. We believe your financ
 **All data processing happens locally on your device.** We use MediaPipe's on-device LLM (Gemma 2B) for AI features, ensuring:
 
 - ✅ **No cloud servers** - Your data never leaves your phone
-- ✅ **No internet required** - AI works completely offline
 - ✅ **No data collection** - We don't collect, store, or transmit any user data
 - ✅ **No tracking** - No analytics, no telemetry, no user tracking
 - ✅ **No ads** - No advertising networks or tracking pixels
+- ✅ **Offline AI** - Once downloaded, AI works completely offline
 
 ## Data Storage
 
@@ -41,8 +41,14 @@ PennyWise AI is built with privacy as the core principle. We believe your financ
 - **Processing**: SMS parsing happens entirely on-device
 - **Storage**: Only transaction data is extracted and stored, not full messages
 
+### Internet Permission
+- **Primary Purpose**: To download the AI model (Gemma 2B) on first use
+- **Model Download**: One-time download of ~2.6GB model file from CloudFront CDN
+- **App Updates**: Google Play Store variant uses Play Services for app updates (F-Droid variant does not)
+- **After Model Download**: AI works completely offline, no internet required for core features
+- **Your Data**: Never transmitted over the internet, all processing remains on-device
+
 ### No Other Permissions Required
-- No internet permission needed for core features
 - No location tracking
 - No contact access
 - No camera or microphone access
@@ -50,21 +56,24 @@ PennyWise AI is built with privacy as the core principle. We believe your financ
 ## Third-Party Services
 
 PennyWise AI does **NOT** use:
-- ❌ Cloud services or APIs
+- ❌ Cloud services or APIs (except CDN for model download)
 - ❌ Analytics services (Google Analytics, Firebase, etc.)
 - ❌ Crash reporting services
 - ❌ Advertising networks
 - ❌ Social media SDKs
 - ❌ Payment processors
 
+**Note**: The Google Play Store variant includes Play Services for app updates only. The F-Droid variant has no Google services.
+
 ## AI Features
 
 ### On-Device AI Assistant
-- Uses MediaPipe's Gemma 2B model
-- Model runs entirely on your device
-- No internet connection required
+- Uses MediaPipe's Gemma 2B model (2.6GB download)
+- Model runs entirely on your device using MediaPipe LLM Inference
+- After initial download, no internet connection required
 - Conversations are not stored or transmitted
-- AI insights are generated locally from your local data
+- AI insights are generated locally from your local transaction data
+- Model file stored in app's private storage
 
 ## Data Export
 
