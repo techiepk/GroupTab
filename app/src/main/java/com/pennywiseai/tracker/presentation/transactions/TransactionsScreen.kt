@@ -46,6 +46,7 @@ fun TransactionsScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showExportDialog by remember { mutableStateOf(false) }
     
     // Initialize ViewModel with navigation arguments
     LaunchedEffect(Unit) {
@@ -96,7 +97,21 @@ fun TransactionsScreen(
     }
     
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        floatingActionButton = {
+            if (uiState.transactions.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = { showExportDialog = true },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FileDownload,
+                        contentDescription = "Export to CSV"
+                    )
+                }
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -229,6 +244,14 @@ fun TransactionsScreen(
             }
         }
         }
+    }
+    
+    // Export Dialog
+    if (showExportDialog) {
+        ExportTransactionsDialog(
+            transactions = uiState.transactions,
+            onDismiss = { showExportDialog = false }
+        )
     }
 }
 

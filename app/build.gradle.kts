@@ -189,4 +189,7 @@ dependencies {
     
     // Markdown support
     implementation("org.jetbrains:markdown:0.7.3")
+    
+    // OpenCSV for CSV export
+    implementation("com.opencsv:opencsv:5.12.0")
 }
