@@ -20,7 +20,8 @@ object BankParserFactory {
         CanaraBankParser(),
         BankOfBarodaParser(),
         JioPaymentsBankParser(),
-        KotakBankParser()
+        KotakBankParser(),
+        IDFCFirstBankParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
