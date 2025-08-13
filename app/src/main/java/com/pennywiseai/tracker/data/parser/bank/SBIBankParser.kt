@@ -41,6 +41,17 @@ class SBIBankParser : BankParser() {
             }
         }
         
+        // Pattern 0a: A/c credited by Rs.500 (UPI format)
+        val upiCreditPattern = Regex("""credited\s+by\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)""", RegexOption.IGNORE_CASE)
+        upiCreditPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
         // Pattern 1: Rs 500 debited
         val debitPattern1 = Regex("""Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:has\s+been\s+)?debited""", RegexOption.IGNORE_CASE)
         debitPattern1.find(message)?.let { match ->
@@ -160,9 +171,18 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 0: trf to Mrs Shopkeeper (UPI format)
+        // Pattern 0: trf to Merchant (UPI format)
         val trfPattern = Regex("""trf\s+to\s+([^.\n]+?)(?:\s+Ref|\s+ref|$)""", RegexOption.IGNORE_CASE)
         trfPattern.find(message)?.let { match ->
+            val merchant = cleanMerchantName(match.groupValues[1].trim())
+            if (isValidMerchantName(merchant)) {
+                return merchant
+            }
+        }
+        
+        // Pattern 0a: transfer from Sender (credit format)
+        val transferFromPattern = Regex("""transfer\s+from\s+([^.\n]+?)(?:\s+Ref|\s+ref|$)""", RegexOption.IGNORE_CASE)
+        transferFromPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
             if (isValidMerchantName(merchant)) {
                 return merchant

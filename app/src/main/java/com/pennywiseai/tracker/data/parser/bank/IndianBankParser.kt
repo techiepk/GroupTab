@@ -9,10 +9,10 @@ import java.time.format.DateTimeFormatter
  * Parser for Indian Bank
  * 
  * Common sender patterns:
- * - Service Implicit (transactions): XX-INDBMK-S (e.g., BV-INDBMK-S, AX-INDBMK-S)
- * - OTP: XX-INDBMK-T
- * - Promotional: XX-INDBMK-P
- * - Direct: INDBMK, INDIANBK
+ * - Service Implicit (transactions): XX-INDBNK-S (e.g., AD-INDBNK-S, AX-INDBNK-S)
+ * - OTP: XX-INDBNK-T
+ * - Promotional: XX-INDBNK-P
+ * - Direct: INDBNK, INDIAN
  */
 class IndianBankParser : BankParser() {
     override fun getBankName() = "Indian Bank"
@@ -23,17 +23,13 @@ class IndianBankParser : BankParser() {
                normalized.contains("INDIANBANK") ||
                normalized.contains("INDIANBK") ||
                // Match DLT patterns for transactions (-S suffix)
-               normalized.matches(Regex("^[A-Z]{2}-INDBMK-S$")) ||
-               normalized.matches(Regex("^[A-Z]{2}-INDIANBK-S$")) ||
+               normalized.matches(Regex("^[A-Z]{2}-INDBNK-S$")) ||
                // Also handle other patterns for completeness
-               normalized.matches(Regex("^[A-Z]{2}-INDBMK-[TPG]$")) ||
-               normalized.matches(Regex("^[A-Z]{2}-INDIANBK-[TPG]$")) ||
+               normalized.matches(Regex("^[A-Z]{2}-INDBNK-[TPG]$")) ||
                // Legacy patterns without suffix
-               normalized.matches(Regex("^[A-Z]{2}-INDBMK$")) ||
-               normalized.matches(Regex("^[A-Z]{2}-INDIANBK$")) ||
+               normalized.matches(Regex("^[A-Z]{2}-INDBNK$")) ||
                // Direct sender IDs
-               normalized == "INDBMK" ||
-               normalized == "INDIANBK" ||
+               normalized == "INDBNK" ||
                normalized == "INDIAN"
     }
     
@@ -52,6 +48,17 @@ class IndianBankParser : BankParser() {
         // Pattern 2: credited Rs. 5000.00
         val creditPattern = Regex("""credited\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         creditPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern 2a: Rs.589.00 credited to (amount before credited)
+        val creditPatternReverse = Regex("""Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)\s+credited\s+to""", RegexOption.IGNORE_CASE)
+        creditPatternReverse.find(message)?.let { match ->
             val amount = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(amount)
@@ -87,7 +94,7 @@ class IndianBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: "to Sumit Choudhary"
+        // Pattern 1: "to Merchant Name"
         val toPattern = Regex("""to\s+([^.\n]+?)(?:\.\s*UPI:|UPI:|$)""", RegexOption.IGNORE_CASE)
         toPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
@@ -96,13 +103,22 @@ class IndianBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "from John Doe"
+        // Pattern 2: "from Sender Name"
         val fromPattern = Regex("""from\s+([^.\n]+?)(?:\.\s*UPI:|UPI:|$)""", RegexOption.IGNORE_CASE)
         fromPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
             if (isValidMerchantName(merchant)) {
                 return merchant
             }
+        }
+        
+        // Pattern 2a: "linked to VPA 7970282159-2@axl" - extract VPA
+        val vpaPattern = Regex("""VPA\s+([\w.-]+@[\w]+)""", RegexOption.IGNORE_CASE)
+        vpaPattern.find(message)?.let { match ->
+            val vpa = match.groupValues[1]
+            // Extract the part before @ as merchant name
+            val merchantFromVpa = vpa.substringBefore("@")
+            return cleanMerchantName(merchantFromVpa)
         }
         
         // Pattern 3: ATM withdrawal at location
@@ -145,6 +161,12 @@ class IndianBankParser : BankParser() {
         // Pattern 1: UPI:515314436916
         val upiRefPattern = Regex("""UPI:(\d+)""", RegexOption.IGNORE_CASE)
         upiRefPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        // Pattern 1a: UPI Ref no 917477824021
+        val upiRefNoPattern = Regex("""UPI\s+Ref\s+no\s+(\d+)""", RegexOption.IGNORE_CASE)
+        upiRefNoPattern.find(message)?.let { match ->
             return match.groupValues[1]
         }
         
