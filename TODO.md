@@ -21,16 +21,13 @@
 ## Delete Transactions Feature
 - [X] Add deleted_transaction_hashes table to database
 - [ ] Edit transactions
+
 ## Smart SMS Scanning
 - [ ] Add last_scan_timestamp to UserPreferences
 - [ ] Update SmsReaderWorker - first scan: 3 months, then: last 2 days
 - [ ] Save timestamp after each successful scan
 - [ ] Test with week-old unscanned messages
 
-## Testing
-- [ ] Verify deleted transactions don't reappear on rescan
-- [ ] Test undo works within timeout
-- [ ] Check performance with 1000+ transactions
 
 ## Future Work
 - [ ] Fix transaction hash collision issue (add more unique data)
