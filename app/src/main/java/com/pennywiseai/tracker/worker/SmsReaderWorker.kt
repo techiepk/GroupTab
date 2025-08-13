@@ -15,6 +15,7 @@ import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
 import com.pennywiseai.tracker.data.repository.LlmRepository
+import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import dagger.assisted.Assisted
@@ -35,7 +36,8 @@ class SmsReaderWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
-    private val llmRepository: LlmRepository
+    private val llmRepository: LlmRepository,
+    private val merchantMappingRepository: MerchantMappingRepository
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -138,11 +140,21 @@ class SmsReaderWorker @AssistedInject constructor(
                         
                         // Convert to entity and save
                         val entity = parsedTransaction.toEntity()
+                        
+                        // Check for custom merchant mapping
+                        val customCategory = merchantMappingRepository.getCategoryForMerchant(entity.merchantName)
+                        val entityWithMapping = if (customCategory != null) {
+                            Log.d(TAG, "Found custom category mapping: ${entity.merchantName} -> $customCategory")
+                            entity.copy(category = customCategory)
+                        } else {
+                            entity
+                        }
+                        
                         try {
                             // Check if this transaction matches an active subscription
                             val matchedSubscription = subscriptionRepository.matchTransactionToSubscription(
-                                entity.merchantName,
-                                entity.amount
+                                entityWithMapping.merchantName,
+                                entityWithMapping.amount
                             )
                             
                             // If matched to active subscription, update the entity to mark as recurring
@@ -151,11 +163,11 @@ class SmsReaderWorker @AssistedInject constructor(
                                 // Update next payment date for the subscription
                                 subscriptionRepository.updateNextPaymentDateAfterCharge(
                                     matchedSubscription.id,
-                                    entity.dateTime.toLocalDate()
+                                    entityWithMapping.dateTime.toLocalDate()
                                 )
-                                entity.copy(isRecurring = true)
+                                entityWithMapping.copy(isRecurring = true)
                             } else {
-                                entity
+                                entityWithMapping
                             }
                             
                             val rowId = transactionRepository.insertTransaction(finalEntity)

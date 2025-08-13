@@ -85,6 +85,14 @@ class TransactionRepository @Inject constructor(
         transactionDao.updateTransaction(transaction.copy(isDeleted = false))
     }
     
+    suspend fun updateCategoryForMerchant(merchantName: String, newCategory: String) {
+        transactionDao.updateCategoryForMerchant(merchantName, newCategory)
+    }
+    
+    suspend fun getOtherTransactionCountForMerchant(merchantName: String, excludeId: Long): Int {
+        return transactionDao.getTransactionCountForMerchant(merchantName, excludeId)
+    }
+    
     // Additional methods for Home screen
     data class MonthlyBreakdown(
         val total: BigDecimal,

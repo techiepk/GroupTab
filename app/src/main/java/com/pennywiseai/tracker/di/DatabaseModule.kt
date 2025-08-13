@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
 import com.pennywiseai.tracker.data.database.dao.ChatDao
+import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
 import dagger.Module
@@ -86,5 +87,17 @@ object DatabaseModule {
     @Singleton
     fun provideChatDao(database: PennyWiseDatabase): ChatDao {
         return database.chatDao()
+    }
+    
+    /**
+     * Provides the MerchantMappingDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return MerchantMappingDao for accessing merchant mapping data
+     */
+    @Provides
+    @Singleton
+    fun provideMerchantMappingDao(database: PennyWiseDatabase): MerchantMappingDao {
+        return database.merchantMappingDao()
     }
 }

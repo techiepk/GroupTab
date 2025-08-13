@@ -87,6 +87,12 @@ interface TransactionDao {
     @Query("DELETE FROM transactions")
     suspend fun deleteAllTransactions()
     
+    @Query("UPDATE transactions SET category = :newCategory WHERE merchant_name = :merchantName")
+    suspend fun updateCategoryForMerchant(merchantName: String, newCategory: String)
+    
+    @Query("SELECT COUNT(*) FROM transactions WHERE merchant_name = :merchantName AND id != :excludeId")
+    suspend fun getTransactionCountForMerchant(merchantName: String, excludeId: Long): Int
+    
     @Query("""
         SELECT * FROM transactions 
         WHERE is_deleted = 0 

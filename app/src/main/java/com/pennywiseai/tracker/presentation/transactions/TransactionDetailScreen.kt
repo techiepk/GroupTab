@@ -50,6 +50,9 @@ fun TransactionDetailScreen(
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val saveSuccess by viewModel.saveSuccess.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val applyToAllFromMerchant by viewModel.applyToAllFromMerchant.collectAsStateWithLifecycle()
+    val updateExistingTransactions by viewModel.updateExistingTransactions.collectAsStateWithLifecycle()
+    val existingTransactionCount by viewModel.existingTransactionCount.collectAsStateWithLifecycle()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -128,6 +131,9 @@ fun TransactionDetailScreen(
             TransactionDetailContent(
                 transaction = txn,
                 isEditMode = isEditMode,
+                applyToAllFromMerchant = applyToAllFromMerchant,
+                updateExistingTransactions = updateExistingTransactions,
+                existingTransactionCount = existingTransactionCount,
                 viewModel = viewModel,
                 modifier = Modifier.padding(paddingValues)
             )
@@ -139,6 +145,9 @@ fun TransactionDetailScreen(
 private fun TransactionDetailContent(
     transaction: TransactionEntity,
     isEditMode: Boolean,
+    applyToAllFromMerchant: Boolean,
+    updateExistingTransactions: Boolean,
+    existingTransactionCount: Int,
     viewModel: TransactionDetailViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -172,6 +181,9 @@ private fun TransactionDetailContent(
         if (isEditMode) {
             EditableExtractedInfoCard(
                 transaction = transaction,
+                applyToAllFromMerchant = applyToAllFromMerchant,
+                updateExistingTransactions = updateExistingTransactions,
+                existingTransactionCount = existingTransactionCount,
                 viewModel = viewModel
             )
         } else {
@@ -531,6 +543,9 @@ private fun EditableTransactionHeader(
 @Composable
 private fun EditableExtractedInfoCard(
     transaction: TransactionEntity,
+    applyToAllFromMerchant: Boolean,
+    updateExistingTransactions: Boolean,
+    existingTransactionCount: Int,
     viewModel: TransactionDetailViewModel
 ) {
     PennyWiseCard(
@@ -565,6 +580,45 @@ private fun EditableExtractedInfoCard(
                 selectedCategory = transaction.category,
                 onCategorySelected = { viewModel.updateCategory(it) }
             )
+            
+            Spacer(modifier = Modifier.height(Spacing.sm))
+            
+            // Apply to all from merchant checkbox
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = applyToAllFromMerchant,
+                    onCheckedChange = { viewModel.toggleApplyToAllFromMerchant() }
+                )
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Text(
+                    text = "Apply this category to all future transactions from ${transaction.merchantName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            // Update existing transactions checkbox (only show if there are other transactions)
+            if (existingTransactionCount > 0) {
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = updateExistingTransactions,
+                        onCheckedChange = { viewModel.toggleUpdateExistingTransactions() }
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Text(
+                        text = "Also update $existingTransactionCount existing ${if (existingTransactionCount == 1) "transaction" else "transactions"} from ${transaction.merchantName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(Spacing.sm))
             
