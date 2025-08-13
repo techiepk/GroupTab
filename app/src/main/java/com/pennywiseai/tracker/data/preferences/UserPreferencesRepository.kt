@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,6 +30,7 @@ class UserPreferencesRepository @Inject constructor(
         val SYSTEM_PROMPT = stringPreferencesKey("system_prompt")
         val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
         val ACTIVE_DOWNLOAD_ID = longPreferencesKey("active_download_id")
+        val SMS_SCAN_MONTHS = intPreferencesKey("sms_scan_months")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
@@ -38,7 +40,8 @@ class UserPreferencesRepository @Inject constructor(
                 isDynamicColorEnabled = preferences[PreferencesKeys.DYNAMIC_COLOR_ENABLED] ?: false,
                 hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false,
                 isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false,
-                hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false
+                hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false,
+                smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 // Default to 3 months
             )
         }
     
@@ -109,6 +112,23 @@ class UserPreferencesRepository @Inject constructor(
             preferences.remove(PreferencesKeys.ACTIVE_DOWNLOAD_ID)
         }
     }
+    
+    val smsScanMonths: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 // Default to 3 months
+        }
+    
+    suspend fun updateSmsScanMonths(months: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_MONTHS] = months
+        }
+    }
+    
+    suspend fun getSmsScanMonths(): Int {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 }
+            .first()
+    }
 }
 
 data class UserPreferences(
@@ -116,5 +136,6 @@ data class UserPreferences(
     val isDynamicColorEnabled: Boolean = false, // Default to custom brand colors
     val hasSkippedSmsPermission: Boolean = false,
     val isDeveloperModeEnabled: Boolean = false,
-    val hasShownScanTutorial: Boolean = false
+    val hasShownScanTutorial: Boolean = false,
+    val smsScanMonths: Int = 3 // Default to 3 months
 )

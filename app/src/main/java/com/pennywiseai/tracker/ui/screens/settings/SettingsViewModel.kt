@@ -49,6 +49,9 @@ class SettingsViewModel @Inject constructor(
     // Developer mode state
     val isDeveloperModeEnabled = userPreferencesRepository.isDeveloperModeEnabled
     
+    // SMS scan period state
+    val smsScanMonths = userPreferencesRepository.smsScanMonths
+    
     init {
         checkDownloadStatus()
         // Also sync with model repository
@@ -326,6 +329,12 @@ class SettingsViewModel @Inject constructor(
     fun toggleDeveloperMode(enabled: Boolean) {
         viewModelScope.launch {
             userPreferencesRepository.setDeveloperModeEnabled(enabled)
+        }
+    }
+    
+    fun updateSmsScanMonths(months: Int) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateSmsScanMonths(months)
         }
     }
 }

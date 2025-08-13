@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +42,8 @@ fun SettingsScreen(
     val downloadedMB by settingsViewModel.downloadedMB.collectAsStateWithLifecycle()
     val totalMB by settingsViewModel.totalMB.collectAsStateWithLifecycle()
     val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val smsScanMonths by settingsViewModel.smsScanMonths.collectAsStateWithLifecycle(initialValue = 3)
+    var showSmsScanDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier
@@ -137,6 +140,50 @@ fun SettingsScreen(
                     Icons.Default.ChevronRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        // SMS Scan Period
+        PennyWiseCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showSmsScanDialog = true }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = "SMS Scan Period",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Scan last $smsScanMonths months of messages",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Text(
+                    text = "$smsScanMonths months",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -373,5 +420,56 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+    
+    // SMS Scan Period Dialog
+    if (showSmsScanDialog) {
+        AlertDialog(
+            onDismissRequest = { showSmsScanDialog = false },
+            title = { Text("SMS Scan Period") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    Text(
+                        text = "Choose how many months of SMS history to scan for transactions",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    
+                    // Period options
+                    listOf(1, 2, 3, 6, 12).forEach { months ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    settingsViewModel.updateSmsScanMonths(months)
+                                    showSmsScanDialog = false
+                                }
+                                .padding(vertical = Spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = smsScanMonths == months,
+                                onClick = {
+                                    settingsViewModel.updateSmsScanMonths(months)
+                                    showSmsScanDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.md))
+                            Text(
+                                text = if (months == 1) "1 month" else "$months months",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSmsScanDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

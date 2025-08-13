@@ -18,6 +18,7 @@ import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
+import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +38,8 @@ class SmsReaderWorker @AssistedInject constructor(
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
     private val llmRepository: LlmRepository,
-    private val merchantMappingRepository: MerchantMappingRepository
+    private val merchantMappingRepository: MerchantMappingRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -207,13 +209,16 @@ class SmsReaderWorker @AssistedInject constructor(
      * Reads SMS messages from the device's SMS content provider.
      * Also attempts to read RCS messages from MMS provider.
      */
-    private fun readSmsMessages(): List<SmsMessage> {
+    private suspend fun readSmsMessages(): List<SmsMessage> {
         val messages = mutableListOf<SmsMessage>()
         
         try {
-            // Calculate start date - scan last 3 months of messages
+            // Get the scan period from user preferences
+            val scanMonths = userPreferencesRepository.getSmsScanMonths()
+            
+            // Calculate start date - scan last N months of messages
             val calendar = java.util.Calendar.getInstance().apply {
-                add(java.util.Calendar.MONTH, -Constants.SmsProcessing.INITIAL_SCAN_MONTHS) // Go back 3 months
+                add(java.util.Calendar.MONTH, -scanMonths) // Go back N months
                 set(java.util.Calendar.HOUR_OF_DAY, 0)
                 set(java.util.Calendar.MINUTE, 0)
                 set(java.util.Calendar.SECOND, 0)
