@@ -16,6 +16,9 @@ object Transactions
 object Settings
 
 @Serializable
+object Categories
+
+@Serializable
 object Analytics
 
 @Serializable

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -26,10 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.ui.components.BrandIcon
+import com.pennywiseai.tracker.ui.components.CategoryChip
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
 import com.pennywiseai.tracker.ui.theme.Dimensions
@@ -578,7 +580,8 @@ private fun EditableExtractedInfoCard(
             // Category Dropdown
             CategoryDropdown(
                 selectedCategory = transaction.category,
-                onCategorySelected = { viewModel.updateCategory(it) }
+                onCategorySelected = { viewModel.updateCategory(it) },
+                viewModel = viewModel
             )
             
             Spacer(modifier = Modifier.height(Spacing.sm))
@@ -684,23 +687,14 @@ private fun EditableExtractedInfoCard(
 @Composable
 private fun CategoryDropdown(
     selectedCategory: String,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    viewModel: TransactionDetailViewModel
 ) {
-    val categories = listOf(
-        "Food & Dining",
-        "Shopping",
-        "Transportation",
-        "Bills & Utilities",
-        "Entertainment",
-        "Healthcare",
-        "Education",
-        "Travel",
-        "Personal Care",
-        "Investment",
-        "Others"
-    )
-    
+    val categories by viewModel.categories.collectAsStateWithLifecycle(initialValue = emptyList())
     var expanded by remember { mutableStateOf(false) }
+    
+    // Find the selected category entity for displaying with color
+    val selectedCategoryEntity = categories.find { it.name == selectedCategory }
     
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -708,20 +702,28 @@ private fun CategoryDropdown(
     ) {
         OutlinedTextField(
             value = selectedCategory,
-            onValueChange = onCategorySelected,
+            onValueChange = { },
             label = { Text("Category") },
             leadingIcon = {
-                Icon(
-                    Icons.Default.Category,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (selectedCategoryEntity != null) {
+                    CategoryChip(
+                        category = selectedCategoryEntity,
+                        showText = false,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Category,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-            readOnly = false
+            readOnly = true
         )
         
         ExposedDropdownMenu(
@@ -730,9 +732,11 @@ private fun CategoryDropdown(
         ) {
             categories.forEach { category ->
                 DropdownMenuItem(
-                    text = { Text(category) },
+                    text = { 
+                        CategoryChip(category = category)
+                    },
                     onClick = {
-                        onCategorySelected(category)
+                        onCategorySelected(category.name)
                         expanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding

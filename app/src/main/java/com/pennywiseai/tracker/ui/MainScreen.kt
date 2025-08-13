@@ -73,11 +73,12 @@ fun MainScreen(
                     "subscriptions" -> "Subscriptions"
                     "analytics" -> "Analytics"
                     "settings" -> "Settings"
+                    "categories" -> "Categories"
                     else -> "PennyWise"
                 },
-                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions"),
-                showSettingsButton = currentRoute != "settings",
-                showDiscordButton = currentRoute != "settings", // Show Discord on all screens except settings
+                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories"),
+                showSettingsButton = currentRoute !in listOf("settings", "categories"),
+                showDiscordButton = currentRoute !in listOf("settings", "categories"), // Hide on settings and categories
                 onBackClick = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate("settings") },
                 onDiscordClick = {
@@ -212,6 +213,17 @@ fun MainScreen(
             composable("settings") {
                 SettingsScreen(
                     themeViewModel = themeViewModel,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToCategories = {
+                        navController.navigate("categories")
+                    }
+                )
+            }
+            
+            composable("categories") {
+                com.pennywiseai.tracker.presentation.categories.CategoriesScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

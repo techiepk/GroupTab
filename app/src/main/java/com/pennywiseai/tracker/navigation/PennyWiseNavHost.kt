@@ -70,6 +70,22 @@ fun PennyWiseNavHost(
                 themeViewModel = themeViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToCategories = {
+                    navController.navigate(Categories)
+                }
+            )
+        }
+        
+        composable<Categories>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            com.pennywiseai.tracker.presentation.categories.CategoriesScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

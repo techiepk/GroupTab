@@ -137,6 +137,9 @@ dependencies {
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended")
     
+    // Color Picker for Compose
+    implementation("com.github.skydoves:colorpicker-compose:1.1.2")
+    
     // Lifecycle and ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")

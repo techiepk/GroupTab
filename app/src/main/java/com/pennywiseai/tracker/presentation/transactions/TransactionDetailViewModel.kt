@@ -2,15 +2,14 @@ package com.pennywiseai.tracker.presentation.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.data.repository.CategoryRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -19,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TransactionDetailViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val merchantMappingRepository: MerchantMappingRepository
+    private val merchantMappingRepository: MerchantMappingRepository,
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
     
     private val _transaction = MutableStateFlow<TransactionEntity?>(null)
@@ -48,6 +48,25 @@ class TransactionDetailViewModel @Inject constructor(
     
     private val _existingTransactionCount = MutableStateFlow(0)
     val existingTransactionCount: StateFlow<Int> = _existingTransactionCount.asStateFlow()
+    
+    // Categories should be based on transaction type
+    val categories: StateFlow<List<CategoryEntity>> = combine(
+        _editableTransaction,
+        _transaction
+    ) { editable, original ->
+        val transaction = editable ?: original
+        transaction?.transactionType == TransactionType.INCOME
+    }.flatMapLatest { isIncome ->
+        if (isIncome) {
+            categoryRepository.getIncomeCategories()
+        } else {
+            categoryRepository.getExpenseCategories()
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
     
     fun loadTransaction(transactionId: Long) {
         viewModelScope.launch {

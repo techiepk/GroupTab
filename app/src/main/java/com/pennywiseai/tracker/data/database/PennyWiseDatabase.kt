@@ -9,10 +9,12 @@ import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.converter.Converters
+import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
+import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.database.entity.MerchantMappingEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
@@ -29,8 +31,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class],
-    version = 7,
+    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class],
+    version = 8,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -38,7 +40,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5, spec = Migration4To5::class),
         AutoMigration(from = 5, to = 6),
-        AutoMigration(from = 6, to = 7)
+        AutoMigration(from = 6, to = 7),
+        AutoMigration(from = 7, to = 8, spec = Migration7To8::class)
     ]
 )
 @TypeConverters(Converters::class)
@@ -47,6 +50,7 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao
     abstract fun chatDao(): ChatDao
     abstract fun merchantMappingDao(): MerchantMappingDao
+    abstract fun categoryDao(): CategoryDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -93,3 +97,42 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     )
 )
 class Migration4To5 : AutoMigrationSpec
+
+/**
+ * Migration from version 7 to 8.
+ * - Adds categories table with default categories
+ */
+class Migration7To8 : AutoMigrationSpec {
+    override fun onPostMigrate(db: SupportSQLiteDatabase) {
+        super.onPostMigrate(db)
+        
+        // Insert default categories
+        val categories = listOf(
+            Triple("Food & Dining", "#FC8019", false),
+            Triple("Groceries", "#5AC85A", false),
+            Triple("Transportation", "#000000", false),
+            Triple("Shopping", "#FF9900", false),
+            Triple("Bills & Utilities", "#4CAF50", false),
+            Triple("Entertainment", "#E50914", false),
+            Triple("Healthcare", "#10847E", false),
+            Triple("Investments", "#00D09C", false),
+            Triple("Banking", "#004C8F", false),
+            Triple("Personal Care", "#6A4C93", false),
+            Triple("Education", "#673AB7", false),
+            Triple("Mobile", "#2A3890", false),
+            Triple("Fitness", "#FF3278", false),
+            Triple("Insurance", "#0066CC", false),
+            Triple("Travel", "#00BCD4", false),
+            Triple("Salary", "#4CAF50", true),
+            Triple("Income", "#4CAF50", true),
+            Triple("Others", "#757575", false)
+        )
+        
+        categories.forEachIndexed { index, (name, color, isIncome) ->
+            db.execSQL("""
+                INSERT INTO categories (name, color, is_system, is_income, display_order, created_at, updated_at)
+                VALUES (?, ?, 1, ?, ?, datetime('now'), datetime('now'))
+            """.trimIndent(), arrayOf(name, color, if (isIncome) 1 else 0, index + 1))
+        }
+    }
+}

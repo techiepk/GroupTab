@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.di
 import android.content.Context
 import androidx.room.Room
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
+import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
@@ -99,5 +100,17 @@ object DatabaseModule {
     @Singleton
     fun provideMerchantMappingDao(database: PennyWiseDatabase): MerchantMappingDao {
         return database.merchantMappingDao()
+    }
+    
+    /**
+     * Provides the CategoryDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return CategoryDao for accessing category data
+     */
+    @Provides
+    @Singleton
+    fun provideCategoryDao(database: PennyWiseDatabase): CategoryDao {
+        return database.categoryDao()
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.ui.components.*
@@ -43,6 +44,7 @@ fun TransactionsScreen(
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
     val categoryFilter by viewModel.categoryFilter.collectAsState()
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
+    val categoriesMap by viewModel.categories.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -227,6 +229,7 @@ fun TransactionsScreen(
                             ) { transaction ->
                                 SwipeableTransactionItem(
                                     transaction = transaction,
+                                    categoriesMap = categoriesMap,
                                     showDate = dateGroup == DateGroup.EARLIER,
                                     onDelete = { viewModel.deleteTransaction(transaction) },
                                     onClick = { onTransactionClick(transaction.id) }
@@ -304,6 +307,7 @@ private fun TransactionSearchBar(
 @Composable
 private fun SwipeableTransactionItem(
     transaction: TransactionEntity,
+    categoriesMap: Map<String, CategoryEntity>,
     showDate: Boolean,
     onDelete: () -> Unit,
     onClick: () -> Unit = {}
@@ -349,6 +353,7 @@ private fun SwipeableTransactionItem(
         content = {
             TransactionItem(
                 transaction = transaction,
+                categoriesMap = categoriesMap,
                 showDate = showDate,
                 onClick = onClick
             )
@@ -359,6 +364,7 @@ private fun SwipeableTransactionItem(
 @Composable
 private fun TransactionItem(
     transaction: TransactionEntity,
+    categoriesMap: Map<String, CategoryEntity>,
     showDate: Boolean,
     onClick: () -> Unit = {}
 ) {
@@ -374,10 +380,10 @@ private fun TransactionItem(
     // Always show both date and time
     val dateTimeText = transaction.dateTime.format(dateTimeFormatter)
     
+    // Build subtitle without category (will show category separately)
     val subtitleParts = buildList {
         add(dateTimeText)
         if (transaction.isRecurring) add("Recurring")
-        transaction.category?.let { add(it) }
     }
     
     ListItemCard(
@@ -392,6 +398,31 @@ private fun TransactionItem(
                 size = 40.dp,
                 showBackground = true
             )
+        },
+        trailingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                // Show category with colored dot if available
+                transaction.category?.let { categoryName ->
+                    val categoryEntity = categoriesMap[categoryName]
+                    if (categoryEntity != null) {
+                        CategoryChip(
+                            category = categoryEntity,
+                            showText = false  // Only show dot, not text
+                        )
+                    }
+                }
+                
+                // Always show amount
+                Text(
+                    text = CurrencyFormatter.formatCurrency(transaction.amount),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = amountColor
+                )
+            }
         }
     )
 }
