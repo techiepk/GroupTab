@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { SubmissionDialog } from '@/components/submission-dialog'
 import { BankTemplates } from '@/components/bank-templates'
+import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
 
 export default function Home() {
   const [smsBody, setSmsBody] = useState('')
@@ -54,11 +56,19 @@ export default function Home() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">PennyWise SMS Parser</h1>
-          <p className="text-muted-foreground mt-2">
-            Test if your bank SMS messages are compatible with PennyWise
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">PennyWise SMS Parser</h1>
+            <p className="text-muted-foreground mt-2">
+              Test if your bank SMS messages are compatible with PennyWise
+            </p>
+          </div>
+          <Link href="/bank-support">
+            <Button variant="outline" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Bank Support Docs
+            </Button>
+          </Link>
         </div>
 
         <Card>
