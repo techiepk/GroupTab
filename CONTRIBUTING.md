@@ -111,7 +111,7 @@ app/
 
 ## Community
 
-- Join our [Discord](https://discord.gg/eqbPUYSR) for discussions
+- Join our [Discord](https://discord.gg/H3xWeMWjKQ) for discussions
 - Follow development updates on [GitHub](https://github.com/sarim2000/pennywiseai-tracker)
 
 ## Code of Conduct
@@ -130,7 +130,7 @@ All contributors will be recognized in our README following the [all-contributor
 
 Feel free to:
 - Open an issue for clarification
-- Ask in our [Discord](https://discord.gg/eqbPUYSR)
+- Ask in our [Discord](https://discord.gg/H3xWeMWjKQ)
 - Reach out to maintainers
 
 Thank you for helping make PennyWise AI better! 🚀

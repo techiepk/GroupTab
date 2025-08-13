@@ -5,7 +5,7 @@ We take the security of PennyWise seriously and appreciate responsible disclosur
 ## Reporting a Vulnerability
 
 - Prefer private reports via GitHub Security Advisories: use the “Report a vulnerability” button on this repository’s Security tab.
-- If that option isn’t available, please contact the maintainers privately via Discord and request a private channel: [Join Discord](https://discord.gg/eqbPUYSR). Do not include exploit details in public channels or issues.
+- If that option isn't available, please contact the maintainers privately via Discord and request a private channel: [Join Discord](https://discord.gg/H3xWeMWjKQ). Do not include exploit details in public channels or issues.
 - As a last resort, you may open a GitHub issue titled “Security: Request private contact” without technical details; maintainers will move the discussion to a private channel.
 
 When reporting, include where possible:
