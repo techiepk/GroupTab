@@ -101,7 +101,18 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: "towards <merchant> for"
+        // Pattern 1: ACH/NACH dividend payments - "Info ACH*COMPANY NAME*XXX"
+        val achNachPattern = Regex(
+            """Info\s+(?:ACH|NACH)\*([^*]+)\*""",
+            RegexOption.IGNORE_CASE
+        )
+        achNachPattern.find(message)?.let { match ->
+            val companyName = cleanMerchantName(match.groupValues[1].trim())
+            // Append "Dividend" to make categorization clear
+            return "$companyName Dividend"
+        }
+        
+        // Pattern 2: "towards <merchant> for"
         val towardsPattern = Regex(
             """towards\s+([^.\n]+?)\s+for""",
             RegexOption.IGNORE_CASE
@@ -113,7 +124,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "from <name>. UPI"
+        // Pattern 3: "from <name>. UPI"
         val fromUpiPattern = Regex(
             """from\s+([^.\n]+?)\.\s*UPI""",
             RegexOption.IGNORE_CASE
@@ -125,7 +136,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 3: "; <name> credited. UPI"
+        // Pattern 4: "; <name> credited. UPI"
         val creditedPattern = Regex(
             """;\s*([^.\n]+?)\s+credited\.\s*UPI""",
             RegexOption.IGNORE_CASE
@@ -137,7 +148,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 4: Cash deposit (only if completed)
+        // Pattern 5: Cash deposit (only if completed)
         if (message.contains("Cash deposit transaction", ignoreCase = true) && 
             message.contains("has been completed", ignoreCase = true)) {
             return "Cash Deposit"
