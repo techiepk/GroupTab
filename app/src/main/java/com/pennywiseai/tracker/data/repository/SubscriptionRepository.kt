@@ -74,13 +74,15 @@ class SubscriptionRepository @Inject constructor(
             }
         } ?: LocalDate.now().plusDays(30)
         
-        // First try to find by merchant and amount (ignoring date)
-        val existing = subscriptionDao.getSubscriptionByMerchantAndAmount(
-            eMandateInfo.merchant,
-            eMandateInfo.amount
-        ) ?: eMandateInfo.umn?.let { 
-            // Fallback to UMN if available and no match found
-            subscriptionDao.getSubscriptionByUmn(it) 
+        // For HDFC, UMN is the primary identifier when available
+        val existing = if (bankName == "HDFC Bank" && eMandateInfo.umn != null) {
+            subscriptionDao.getSubscriptionByUmn(eMandateInfo.umn)
+        } else {
+            // For other banks or when no UMN, use merchant and amount matching
+            subscriptionDao.getSubscriptionByMerchantAndAmount(
+                eMandateInfo.merchant,
+                eMandateInfo.amount
+            )
         }
         
         Log.d(TAG, "E-Mandate lookup - Merchant: ${eMandateInfo.merchant}, Amount: ${eMandateInfo.amount}, " +
