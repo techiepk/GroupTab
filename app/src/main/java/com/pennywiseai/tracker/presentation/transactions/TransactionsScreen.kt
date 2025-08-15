@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,6 +45,7 @@ fun TransactionsScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedPeriod by viewModel.selectedPeriod.collectAsState()
     val categoryFilter by viewModel.categoryFilter.collectAsState()
+    val transactionTypeFilter by viewModel.transactionTypeFilter.collectAsState()
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val categoriesMap by viewModel.categories.collectAsState()
     
@@ -130,7 +133,50 @@ fun TransactionsScreen(
                 .padding(top = Dimensions.Padding.content)
         )
         
-        // Filter Chips (Horizontally scrollable)
+        // Transaction Type Filter Chips
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.sm),
+            contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            items(TransactionTypeFilter.values().toList()) { typeFilter ->
+                FilterChip(
+                    selected = transactionTypeFilter == typeFilter,
+                    onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
+                    label = { Text(typeFilter.label) },
+                    leadingIcon = if (transactionTypeFilter == typeFilter) {
+                        {
+                            when (typeFilter) {
+                                TransactionTypeFilter.INCOME -> Icon(
+                                    Icons.AutoMirrored.Filled.TrendingUp,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                TransactionTypeFilter.DEBIT -> Icon(
+                                    Icons.AutoMirrored.Filled.TrendingDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                TransactionTypeFilter.CREDIT -> Icon(
+                                    Icons.Default.CreditCard,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                else -> null
+                            }
+                        }
+                    } else null,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                )
+            }
+        }
+        
+        // Period and Category Filter Chips
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,6 +184,19 @@ fun TransactionsScreen(
             contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
+            // Period filter chips
+            items(TimePeriod.values().toList()) { period ->
+                FilterChip(
+                    selected = selectedPeriod == period,
+                    onClick = { viewModel.selectPeriod(period) },
+                    label = { Text(period.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            }
+            
             // Category filter chip (if active)
             categoryFilter?.let { category ->
                 item {
@@ -145,6 +204,15 @@ fun TransactionsScreen(
                         selected = true,
                         onClick = { /* No action on click, use trailing icon to clear */ },
                         label = { Text(category) },
+                        leadingIcon = {
+                            categoriesMap[category]?.let { categoryEntity ->
+                                CategoryChip(
+                                    category = categoryEntity,
+                                    showText = false,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                            }
+                        },
                         trailingIcon = {
                             IconButton(
                                 onClick = { viewModel.clearCategoryFilter() },
@@ -163,19 +231,6 @@ fun TransactionsScreen(
                         )
                     )
                 }
-            }
-            
-            // Period filter chips
-            items(TimePeriod.values().toList()) { period ->
-                FilterChip(
-                    selected = selectedPeriod == period,
-                    onClick = { viewModel.selectPeriod(period) },
-                    label = { Text(period.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
             }
         }
         
@@ -371,6 +426,7 @@ private fun TransactionItem(
     val amountColor = when (transaction.transactionType) {
         TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
         TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
+        TransactionType.CREDIT -> if (!isSystemInDarkTheme()) credit_light else credit_dark
     }
     
     val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
@@ -382,6 +438,10 @@ private fun TransactionItem(
     
     // Build subtitle without category (will show category separately)
     val subtitleParts = buildList {
+        // Add credit card indicator for CREDIT transactions
+        if (transaction.transactionType == TransactionType.CREDIT) {
+            add("Credit Card")
+        }
         add(dateTimeText)
         if (transaction.isRecurring) add("Recurring")
     }

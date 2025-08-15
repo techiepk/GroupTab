@@ -232,10 +232,12 @@ private fun TransactionHeader(transaction: TransactionEntity) {
             val amountColor = when (transaction.transactionType) {
                 TransactionType.INCOME -> Color(0xFF4CAF50)
                 TransactionType.EXPENSE -> MaterialTheme.colorScheme.error
+                TransactionType.CREDIT -> Color(0xFFFF6B35)  // Orange for credit
             }
             val sign = when (transaction.transactionType) {
                 TransactionType.INCOME -> "+"
                 TransactionType.EXPENSE -> "-"
+                TransactionType.CREDIT -> "💳"
             }
             
             Text(
@@ -353,8 +355,11 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
             InfoRow(
                 label = "Type",
                 value = transaction.transactionType.name.lowercase().replaceFirstChar { it.uppercase() },
-                icon = if (transaction.transactionType == TransactionType.INCOME) 
-                    Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
+                icon = when (transaction.transactionType) {
+                    TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
+                    TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
+                    TransactionType.CREDIT -> Icons.Default.CreditCard
+                }
             )
             
             // Description
@@ -527,6 +532,15 @@ private fun EditableTransactionHeader(
                     label = { Text("Income") },
                     leadingIcon = if (transaction.transactionType == TransactionType.INCOME) {
                         { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = transaction.transactionType == TransactionType.CREDIT,
+                    onClick = { viewModel.updateTransactionType(TransactionType.CREDIT) },
+                    label = { Text("Credit") },
+                    leadingIcon = if (transaction.transactionType == TransactionType.CREDIT) {
+                        { Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )

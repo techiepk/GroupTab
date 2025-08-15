@@ -386,11 +386,15 @@ private fun TransactionItem(
     transaction: TransactionEntity,
     onClick: () -> Unit = {}
 ) {
-    val amountText = "${if (transaction.transactionType == TransactionType.EXPENSE) "-" else "+"}${CurrencyFormatter.formatCurrency(transaction.amount)}"
-    val amountColor = if (transaction.transactionType == TransactionType.EXPENSE) {
-        if (!isSystemInDarkTheme()) expense_light else expense_dark
-    } else {
-        if (!isSystemInDarkTheme()) income_light else income_dark
+    val amountText = when (transaction.transactionType) {
+        TransactionType.INCOME -> "+${CurrencyFormatter.formatCurrency(transaction.amount)}"
+        TransactionType.EXPENSE -> "-${CurrencyFormatter.formatCurrency(transaction.amount)}"
+        TransactionType.CREDIT -> "💳 ${CurrencyFormatter.formatCurrency(transaction.amount)}"
+    }
+    val amountColor = when (transaction.transactionType) {
+        TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
+        TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
+        TransactionType.CREDIT -> if (!isSystemInDarkTheme()) credit_light else credit_dark
     }
     
     ListItemCard(

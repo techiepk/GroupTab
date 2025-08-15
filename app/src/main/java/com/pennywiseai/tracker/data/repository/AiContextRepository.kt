@@ -67,6 +67,7 @@ class AiContextRepository @Inject constructor(
             when (transaction.transactionType) {
                 TransactionType.INCOME -> totalIncome = totalIncome.add(transaction.amount)
                 TransactionType.EXPENSE -> totalExpense = totalExpense.add(transaction.amount)
+                TransactionType.CREDIT -> totalExpense = totalExpense.add(transaction.amount) // Credit counts as expense
             }
         }
         

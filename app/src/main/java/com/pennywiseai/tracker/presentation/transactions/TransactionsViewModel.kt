@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
+import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.repository.CategoryRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,9 @@ class TransactionsViewModel @Inject constructor(
     private val _categoryFilter = MutableStateFlow<String?>(null)
     val categoryFilter: StateFlow<String?> = _categoryFilter.asStateFlow()
     
+    private val _transactionTypeFilter = MutableStateFlow(TransactionTypeFilter.ALL)
+    val transactionTypeFilter: StateFlow<TransactionTypeFilter> = _transactionTypeFilter.asStateFlow()
+    
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
@@ -50,15 +54,16 @@ class TransactionsViewModel @Inject constructor(
         )
     
     init {
-        // Combine all filters: search query, period, and category
+        // Combine all filters: search query, period, category, and transaction type
         combine(
             searchQuery.debounce(300), // Debounce search for performance
             selectedPeriod,
-            categoryFilter
-        ) { query, period, category ->
-            Triple(query, period, category)
-        }.flatMapLatest { (query, period, category) ->
-            getFilteredTransactions(query, period, category)
+            categoryFilter,
+            transactionTypeFilter
+        ) { query, period, category, typeFilter ->
+            FilterParams(query, period, category, typeFilter)
+        }.flatMapLatest { params ->
+            getFilteredTransactions(params.query, params.period, params.category, params.typeFilter)
         }.onEach { transactions ->
             _uiState.value = _uiState.value.copy(
                 transactions = transactions,
@@ -85,6 +90,10 @@ class TransactionsViewModel @Inject constructor(
         _categoryFilter.value = null
     }
     
+    fun setTransactionTypeFilter(filter: TransactionTypeFilter) {
+        _transactionTypeFilter.value = filter
+    }
+    
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             _deletedTransaction.value = transaction
@@ -104,7 +113,8 @@ class TransactionsViewModel @Inject constructor(
     private fun getFilteredTransactions(
         searchQuery: String,
         period: TimePeriod,
-        category: String?
+        category: String?,
+        typeFilter: TransactionTypeFilter
     ): Flow<List<TransactionEntity>> {
         // Start with the base flow based on category filter
         val baseFlow = if (category != null) {
@@ -139,11 +149,21 @@ class TransactionsViewModel @Inject constructor(
             }
         }
         
+        // Apply transaction type filter
+        val typeFilteredFlow = periodFilteredFlow.map { transactions ->
+            when (typeFilter) {
+                TransactionTypeFilter.ALL -> transactions
+                TransactionTypeFilter.INCOME -> transactions.filter { it.transactionType == TransactionType.INCOME }
+                TransactionTypeFilter.DEBIT -> transactions.filter { it.transactionType == TransactionType.EXPENSE }
+                TransactionTypeFilter.CREDIT -> transactions.filter { it.transactionType == TransactionType.CREDIT }
+            }
+        }
+        
         // Apply search filter
         return if (searchQuery.isBlank()) {
-            periodFilteredFlow
+            typeFilteredFlow
         } else {
-            periodFilteredFlow.map { transactions ->
+            typeFilteredFlow.map { transactions ->
                 transactions.filter { transaction ->
                     transaction.merchantName.contains(searchQuery, ignoreCase = true) ||
                     transaction.description?.contains(searchQuery, ignoreCase = true) == true
@@ -182,6 +202,20 @@ enum class TimePeriod(val label: String) {
     LAST_MONTH("Last Month"),
     ALL("All")
 }
+
+enum class TransactionTypeFilter(val label: String) {
+    ALL("All"),
+    INCOME("Income"),
+    DEBIT("Debit"),
+    CREDIT("Credit")
+}
+
+data class FilterParams(
+    val query: String,
+    val period: TimePeriod,
+    val category: String?,
+    val typeFilter: TransactionTypeFilter
+)
 
 enum class DateGroup(val label: String) {
     TODAY("Today"),

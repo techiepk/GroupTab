@@ -108,13 +108,24 @@ class HDFCBankParser : BankParser() {
         val lowerMessage = message.lowercase()
         
         return when {
+            // Credit card transactions
+            lowerMessage.contains("spent on card") -> TransactionType.CREDIT
+            lowerMessage.contains("card xx") && (lowerMessage.contains("at") || lowerMessage.contains("for")) 
+                && !lowerMessage.contains("payment") -> TransactionType.CREDIT
+            // Credit card withdrawals (identified by BLOCK CC instruction)
+            lowerMessage.contains("withdrawn") && lowerMessage.contains("block cc") -> TransactionType.CREDIT
+            
+            // Credit card bill payments (these are regular expenses from bank account)
+            lowerMessage.contains("payment") && lowerMessage.contains("credit card") -> TransactionType.EXPENSE
+            lowerMessage.contains("towards") && lowerMessage.contains("credit card") -> TransactionType.EXPENSE
+            
             // HDFC specific: "Sent Rs.X From HDFC Bank"
             lowerMessage.contains("sent") && lowerMessage.contains("from hdfc") -> TransactionType.EXPENSE
             
             // Standard expense keywords
             lowerMessage.contains("debited") -> TransactionType.EXPENSE
-            lowerMessage.contains("withdrawn") -> TransactionType.EXPENSE
-            lowerMessage.contains("spent") -> TransactionType.EXPENSE
+            lowerMessage.contains("withdrawn") && !lowerMessage.contains("block cc") -> TransactionType.EXPENSE
+            lowerMessage.contains("spent") && !lowerMessage.contains("card") -> TransactionType.EXPENSE
             lowerMessage.contains("charged") -> TransactionType.EXPENSE
             lowerMessage.contains("paid") -> TransactionType.EXPENSE
             lowerMessage.contains("purchase") -> TransactionType.EXPENSE
@@ -233,10 +244,6 @@ class HDFCBankParser : BankParser() {
             return false
         }
         
-        // Skip credit card blocking notifications
-        if (lowerMessage.contains("block cc")) {
-            return false
-        }
         
         // Skip credit card payment confirmations
         if (lowerMessage.contains("received towards your credit card")) {

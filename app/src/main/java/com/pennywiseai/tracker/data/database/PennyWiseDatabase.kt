@@ -32,7 +32,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -41,7 +41,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
         AutoMigration(from = 4, to = 5, spec = Migration4To5::class),
         AutoMigration(from = 5, to = 6),
         AutoMigration(from = 6, to = 7),
-        AutoMigration(from = 7, to = 8, spec = Migration7To8::class)
+        AutoMigration(from = 7, to = 8, spec = Migration7To8::class),
+        AutoMigration(from = 8, to = 9)
     ]
 )
 @TypeConverters(Converters::class)

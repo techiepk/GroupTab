@@ -92,6 +92,7 @@ class CsvExporter @Inject constructor(
                             when (transaction.transactionType) {
                                 TransactionType.INCOME -> "Income"
                                 TransactionType.EXPENSE -> "Expense"
+                                TransactionType.CREDIT -> "Credit Card"
                             },
                             transaction.amount.toString(),
                             transaction.bankName ?: "",
@@ -181,6 +182,7 @@ class CsvExporter @Inject constructor(
                         when (transaction.transactionType) {
                             TransactionType.INCOME -> "Income"
                             TransactionType.EXPENSE -> "Expense"
+                            TransactionType.CREDIT -> "Credit Card"
                         },
                         transaction.amount.toString(),
                         transaction.bankName ?: "",

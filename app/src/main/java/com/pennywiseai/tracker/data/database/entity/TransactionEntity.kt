@@ -64,5 +64,6 @@ data class TransactionEntity(
 
 enum class TransactionType {
     INCOME,
-    EXPENSE
+    EXPENSE,
+    CREDIT  // Credit card purchases
 }
