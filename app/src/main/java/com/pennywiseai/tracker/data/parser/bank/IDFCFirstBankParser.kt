@@ -21,10 +21,10 @@ class IDFCFirstBankParser : BankParser() {
         val normalizedSender = sender.uppercase()
         return normalizedSender.matches(Regex("^[A-Z]{2}-IDFCBK-S$")) ||
                normalizedSender.matches(Regex("^[A-Z]{2}-IDFCBK-T$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCB-S$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCB-T$")) ||
+               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCFB-S$")) ||
+               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCFB-T$")) ||
                normalizedSender.matches(Regex("^[A-Z]{2}-IDFCBK$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCB$")) ||
+               normalizedSender.matches(Regex("^[A-Z]{2}-IDFCFB$")) ||
                normalizedSender == "IDFCBK"
     }
     
