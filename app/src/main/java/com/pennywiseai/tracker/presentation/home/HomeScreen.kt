@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
@@ -387,13 +389,6 @@ private fun TransactionItem(
     transaction: TransactionEntity,
     onClick: () -> Unit = {}
 ) {
-    val amountText = when (transaction.transactionType) {
-        TransactionType.INCOME -> "+${CurrencyFormatter.formatCurrency(transaction.amount)}"
-        TransactionType.EXPENSE -> "-${CurrencyFormatter.formatCurrency(transaction.amount)}"
-        TransactionType.CREDIT -> "💳 ${CurrencyFormatter.formatCurrency(transaction.amount)}"
-        TransactionType.TRANSFER -> "↔ ${CurrencyFormatter.formatCurrency(transaction.amount)}"
-        TransactionType.INVESTMENT -> "📈 ${CurrencyFormatter.formatCurrency(transaction.amount)}"
-    }
     val amountColor = when (transaction.transactionType) {
         TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
         TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
@@ -402,10 +397,19 @@ private fun TransactionItem(
         TransactionType.INVESTMENT -> if (!isSystemInDarkTheme()) investment_light else investment_dark
     }
     
+    // Get subtle background color based on transaction type
+    val cardBackgroundColor = when (transaction.transactionType) {
+        TransactionType.CREDIT -> (if (!isSystemInDarkTheme()) credit_light else credit_dark).copy(alpha = 0.05f)
+        TransactionType.TRANSFER -> (if (!isSystemInDarkTheme()) transfer_light else transfer_dark).copy(alpha = 0.05f)
+        TransactionType.INVESTMENT -> (if (!isSystemInDarkTheme()) investment_light else investment_dark).copy(alpha = 0.05f)
+        TransactionType.INCOME -> (if (!isSystemInDarkTheme()) income_light else income_dark).copy(alpha = 0.03f)
+        else -> Color.Transparent // Default for regular expenses
+    }
+    
     ListItemCard(
         title = transaction.merchantName,
         subtitle = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
-        amount = amountText,
+        amount = CurrencyFormatter.formatCurrency(transaction.amount),
         amountColor = amountColor,
         onClick = onClick,
         leadingContent = {
@@ -414,6 +418,54 @@ private fun TransactionItem(
                 size = 40.dp,
                 showBackground = true
             )
+        },
+        trailingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                // Show icon for transaction types
+                when (transaction.transactionType) {
+                    TransactionType.CREDIT -> Icon(
+                        Icons.Default.CreditCard,
+                        contentDescription = "Credit Card",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) credit_light else credit_dark
+                    )
+                    TransactionType.TRANSFER -> Icon(
+                        Icons.Default.SwapHoriz,
+                        contentDescription = "Transfer",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+                    )
+                    TransactionType.INVESTMENT -> Icon(
+                        Icons.Default.ShowChart,
+                        contentDescription = "Investment",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) investment_light else investment_dark
+                    )
+                    TransactionType.INCOME -> Icon(
+                        Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = "Income",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) income_light else income_dark
+                    )
+                    TransactionType.EXPENSE -> Icon(
+                        Icons.AutoMirrored.Filled.TrendingDown,
+                        contentDescription = "Expense",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
+                    )
+                }
+                
+                // Always show amount
+                Text(
+                    text = CurrencyFormatter.formatCurrency(transaction.amount),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = amountColor
+                )
+            }
         }
     )
 }

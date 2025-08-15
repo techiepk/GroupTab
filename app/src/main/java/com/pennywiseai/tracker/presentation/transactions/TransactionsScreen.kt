@@ -480,15 +480,38 @@ private fun TransactionItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                // Show category with colored dot if available
-                transaction.category?.let { categoryName ->
-                    val categoryEntity = categoriesMap[categoryName]
-                    if (categoryEntity != null) {
-                        CategoryChip(
-                            category = categoryEntity,
-                            showText = false  // Only show dot, not text
-                        )
-                    }
+                // Show icon for special transaction types
+                when (transaction.transactionType) {
+                    TransactionType.CREDIT -> Icon(
+                        Icons.Default.CreditCard,
+                        contentDescription = "Credit Card",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) credit_light else credit_dark
+                    )
+                    TransactionType.TRANSFER -> Icon(
+                        Icons.Default.SwapHoriz,
+                        contentDescription = "Transfer",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+                    )
+                    TransactionType.INVESTMENT -> Icon(
+                        Icons.Default.ShowChart,
+                        contentDescription = "Investment",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) investment_light else investment_dark
+                    )
+                    TransactionType.INCOME -> Icon(
+                        Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = "Income",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) income_light else income_dark
+                    )
+                    TransactionType.EXPENSE -> Icon(
+                        Icons.AutoMirrored.Filled.TrendingDown,
+                        contentDescription = "Expense",
+                        modifier = Modifier.size(Dimensions.Icon.small),
+                        tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
+                    )
                 }
                 
                 // Always show amount
