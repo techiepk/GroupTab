@@ -121,6 +121,7 @@ fun TransactionsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
         ) {
         // Search Bar
         TransactionSearchBar(

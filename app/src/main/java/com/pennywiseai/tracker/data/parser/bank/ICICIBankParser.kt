@@ -240,11 +240,6 @@ class ICICIBankParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
         
-        // Skip credit card related messages
-        if (lowerMessage.contains("icici bank credit card")) {
-            return false
-        }
-        
         // Skip SMS BLOCK instructions (not a transaction)
         if (lowerMessage.contains("sms block") && lowerMessage.contains("to 9215676766")) {
             // This is just instruction text at the end of transaction messages
@@ -277,6 +272,12 @@ class ICICIBankParser : BankParser() {
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
+        
+        // Credit card transactions
+        if (lowerMessage.contains("icici bank credit card") && 
+            (lowerMessage.contains("spent") || lowerMessage.contains("debited"))) {
+            return TransactionType.CREDIT
+        }
         
         // Cash deposit is income (only if completed)
         if (lowerMessage.contains("cash deposit transaction") && 

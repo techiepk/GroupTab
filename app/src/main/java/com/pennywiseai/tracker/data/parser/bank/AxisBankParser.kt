@@ -147,7 +147,7 @@ class AxisBankParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
         
-        // Skip credit card payment confirmation messages
+        // Skip credit card payment confirmation messages (payment TO credit card, not spending)
         if (lowerMessage.contains("payment") && 
             lowerMessage.contains("has been received") && 
             lowerMessage.contains("towards your axis bank credit card")) {
@@ -169,5 +169,18 @@ class AxisBankParser : BankParser() {
         }
         
         return super.isTransactionMessage(message)
+    }
+    
+    override fun extractTransactionType(message: String): TransactionType? {
+        val lowerMessage = message.lowercase()
+        
+        // Credit card spending transactions
+        if ((lowerMessage.contains("credit card") || lowerMessage.contains(" cc ")) &&
+            (lowerMessage.contains("debited") || lowerMessage.contains("spent"))) {
+            return TransactionType.CREDIT
+        }
+        
+        // Fall back to base class for standard checks
+        return super.extractTransactionType(message)
     }
 }

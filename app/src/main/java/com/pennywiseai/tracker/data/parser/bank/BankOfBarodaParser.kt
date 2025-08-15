@@ -257,6 +257,10 @@ class BankOfBarodaParser : BankParser() {
         val lowerMessage = message.lowercase()
         
         return when {
+            // Credit card transactions - BOBCARD
+            lowerMessage.contains("spent on your bobcard") -> TransactionType.CREDIT
+            lowerMessage.contains("bobcard") && lowerMessage.contains("spent") -> TransactionType.CREDIT
+            
             lowerMessage.contains("dr.") || lowerMessage.contains("debited") -> TransactionType.EXPENSE
             lowerMessage.contains("cr.") || lowerMessage.contains("credited") -> TransactionType.INCOME
             lowerMessage.contains("deposited") -> TransactionType.INCOME
