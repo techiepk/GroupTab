@@ -6,11 +6,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
@@ -26,6 +29,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.Chat
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
@@ -89,7 +95,9 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .padding(0.dp)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -100,16 +108,9 @@ fun HomeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            // Month Summary Card
+            // Transaction Summary Cards with HorizontalPager
             item {
-                MonthSummaryCard(
-                    monthTotal = uiState.currentMonthTotal,
-                    monthlyChange = uiState.monthlyChange,
-                    monthlyChangePercent = uiState.monthlyChangePercent,
-                    currentExpenses = uiState.currentMonthExpenses,
-                    lastExpenses = uiState.lastMonthExpenses,
-                    onShowBreakdown = { viewModel.showBreakdownDialog() }
-                )
+                TransactionSummaryCards(uiState = uiState)
             }
             
             // Upcoming Subscriptions Alert
@@ -627,4 +628,129 @@ private fun UpcomingSubscriptionsCard(
             )
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TransactionSummaryCards(uiState: HomeUiState) {
+    val pagerState = rememberPagerState(pageCount = { 4 })
+    
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            pageSpacing = Spacing.md
+        ) { page ->
+            when (page) {
+                0 -> {
+                    // Net Balance Card (existing implementation)
+                    MonthSummaryCard(
+                        monthTotal = uiState.currentMonthTotal,
+                        monthlyChange = uiState.monthlyChange,
+                        monthlyChangePercent = uiState.monthlyChangePercent,
+                        currentExpenses = uiState.currentMonthExpenses,
+                        lastExpenses = uiState.lastMonthExpenses,
+                        onShowBreakdown = { /* TODO */ }
+                    )
+                }
+                1 -> {
+                    // Credit Card Summary
+                    TransactionTypeCard(
+                        title = "Credit Card",
+                        icon = Icons.Default.CreditCard,
+                        amount = uiState.currentMonthCreditCard,
+                        color = if (!isSystemInDarkTheme()) credit_light else credit_dark,
+                        emoji = "💳"
+                    )
+                }
+                2 -> {
+                    // Transfer Summary
+                    TransactionTypeCard(
+                        title = "Transfers",
+                        icon = Icons.Default.SwapHoriz,
+                        amount = uiState.currentMonthTransfer,
+                        color = if (!isSystemInDarkTheme()) transfer_light else transfer_dark,
+                        emoji = "↔️"
+                    )
+                }
+                3 -> {
+                    // Investment Summary
+                    TransactionTypeCard(
+                        title = "Investments",
+                        icon = Icons.Default.ShowChart,
+                        amount = uiState.currentMonthInvestment,
+                        color = if (!isSystemInDarkTheme()) investment_light else investment_dark,
+                        emoji = "📈"
+                    )
+                }
+            }
+        }
+        
+        // Page Indicators
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.xs),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(4) { index ->
+                val color = if (pagerState.currentPage == index) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .size(8.dp)
+                        .background(
+                            color = color,
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionTypeCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    amount: BigDecimal,
+    color: Color,
+    emoji: String
+) {
+    val currentMonth = LocalDate.now().month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val now = LocalDate.now()
+    
+    val subtitle = when {
+        amount > BigDecimal.ZERO -> {
+            when (title) {
+                "Credit Card" -> "Spent on credit this month"
+                "Transfers" -> "Moved between accounts"
+                "Investments" -> "Invested this month"
+                else -> "Total this month"
+            }
+        }
+        else -> {
+            when (title) {
+                "Credit Card" -> "No credit card spending"
+                "Transfers" -> "No transfers this month"
+                "Investments" -> "No investments this month"
+                else -> "No transactions"
+            }
+        }
+    }
+    
+    SummaryCard(
+        title = "$emoji $title • $currentMonth",
+        subtitle = subtitle,
+        amount = CurrencyFormatter.formatCurrency(amount),
+        amountColor = color,
+        onClick = { /* TODO: Navigate to filtered view */ }
+    )
 }

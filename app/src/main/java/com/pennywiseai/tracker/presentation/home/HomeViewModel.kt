@@ -57,6 +57,34 @@ class HomeViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
+            // Load current month transactions by type
+            val now = java.time.LocalDate.now()
+            val startOfMonth = now.withDayOfMonth(1)
+            val endOfMonth = now.withDayOfMonth(now.lengthOfMonth())
+            
+            transactionRepository.getTransactionsBetweenDates(
+                startDate = startOfMonth,
+                endDate = endOfMonth
+            ).collect { transactions ->
+                val creditCardTotal = transactions
+                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT }
+                    .sumOf { it.amount }
+                val transferTotal = transactions
+                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER }
+                    .sumOf { it.amount }
+                val investmentTotal = transactions
+                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT }
+                    .sumOf { it.amount }
+                
+                _uiState.value = _uiState.value.copy(
+                    currentMonthCreditCard = creditCardTotal,
+                    currentMonthTransfer = transferTotal,
+                    currentMonthInvestment = investmentTotal
+                )
+            }
+        }
+        
+        viewModelScope.launch {
             // Load last month breakdown
             transactionRepository.getLastMonthBreakdown().collect { breakdown ->
                 _uiState.value = _uiState.value.copy(
@@ -178,6 +206,9 @@ data class HomeUiState(
     val currentMonthTotal: BigDecimal = BigDecimal.ZERO,
     val currentMonthIncome: BigDecimal = BigDecimal.ZERO,
     val currentMonthExpenses: BigDecimal = BigDecimal.ZERO,
+    val currentMonthCreditCard: BigDecimal = BigDecimal.ZERO,
+    val currentMonthTransfer: BigDecimal = BigDecimal.ZERO,
+    val currentMonthInvestment: BigDecimal = BigDecimal.ZERO,
     val lastMonthTotal: BigDecimal = BigDecimal.ZERO,
     val lastMonthIncome: BigDecimal = BigDecimal.ZERO,
     val lastMonthExpenses: BigDecimal = BigDecimal.ZERO,
