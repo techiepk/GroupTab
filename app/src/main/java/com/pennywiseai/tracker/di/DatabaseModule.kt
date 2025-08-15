@@ -2,6 +2,8 @@ package com.pennywiseai.tracker.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
@@ -13,6 +15,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Singleton
 
 /**
@@ -50,6 +55,9 @@ object DatabaseModule {
             
             // Allow queries on main thread for debugging (remove in production)
             // .allowMainThreadQueries()
+            
+            // Add callback to seed default data on first creation
+            .addCallback(DatabaseCallback())
             
             .build()
     }
@@ -112,5 +120,49 @@ object DatabaseModule {
     @Singleton
     fun provideCategoryDao(database: PennyWiseDatabase): CategoryDao {
         return database.categoryDao()
+    }
+}
+
+/**
+ * Database callback to seed initial data when database is first created
+ */
+class DatabaseCallback : RoomDatabase.Callback() {
+    override fun onCreate(db: SupportSQLiteDatabase) {
+        super.onCreate(db)
+        
+        // Seed default categories for new installations
+        CoroutineScope(Dispatchers.IO).launch {
+            seedCategories(db)
+        }
+    }
+    
+    private fun seedCategories(db: SupportSQLiteDatabase) {
+        val categories = listOf(
+            Triple("Food & Dining", "#FC8019", false),
+            Triple("Groceries", "#5AC85A", false),
+            Triple("Transportation", "#000000", false),
+            Triple("Shopping", "#FF9900", false),
+            Triple("Bills & Utilities", "#4CAF50", false),
+            Triple("Entertainment", "#E50914", false),
+            Triple("Healthcare", "#10847E", false),
+            Triple("Investments", "#00D09C", false),
+            Triple("Banking", "#004C8F", false),
+            Triple("Personal Care", "#6A4C93", false),
+            Triple("Education", "#673AB7", false),
+            Triple("Mobile", "#2A3890", false),
+            Triple("Fitness", "#FF3278", false),
+            Triple("Insurance", "#0066CC", false),
+            Triple("Travel", "#00BCD4", false),
+            Triple("Salary", "#4CAF50", true),
+            Triple("Income", "#4CAF50", true),
+            Triple("Others", "#757575", false)
+        )
+        
+        categories.forEachIndexed { index, (name, color, isIncome) ->
+            db.execSQL("""
+                INSERT OR IGNORE INTO categories (name, color, is_system, is_income, display_order, created_at, updated_at)
+                VALUES (?, ?, 1, ?, ?, datetime('now'), datetime('now'))
+            """.trimIndent(), arrayOf(name, color, if (isIncome) 1 else 0, index + 1))
+        }
     }
 }
