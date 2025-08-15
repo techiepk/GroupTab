@@ -68,6 +68,8 @@ class AiContextRepository @Inject constructor(
                 TransactionType.INCOME -> totalIncome = totalIncome.add(transaction.amount)
                 TransactionType.EXPENSE -> totalExpense = totalExpense.add(transaction.amount)
                 TransactionType.CREDIT -> totalExpense = totalExpense.add(transaction.amount) // Credit counts as expense
+                TransactionType.TRANSFER -> {} // Transfers don't affect income/expense totals
+                TransactionType.INVESTMENT -> {} // Investments are asset reallocation, not expenses
             }
         }
         

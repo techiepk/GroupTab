@@ -116,7 +116,7 @@ fun TransactionDetailScreen(
                         ) {
                             if (isSaving) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(Dimensions.Icon.small),
                                     strokeWidth = 2.dp
                                 )
                             } else {
@@ -233,11 +233,15 @@ private fun TransactionHeader(transaction: TransactionEntity) {
                 TransactionType.INCOME -> Color(0xFF4CAF50)
                 TransactionType.EXPENSE -> MaterialTheme.colorScheme.error
                 TransactionType.CREDIT -> Color(0xFFFF6B35)  // Orange for credit
+                TransactionType.TRANSFER -> Color(0xFF9C27B0)  // Purple for transfer
+                TransactionType.INVESTMENT -> Color(0xFF00796B)  // Teal for investment
             }
             val sign = when (transaction.transactionType) {
                 TransactionType.INCOME -> "+"
                 TransactionType.EXPENSE -> "-"
                 TransactionType.CREDIT -> "💳"
+                TransactionType.TRANSFER -> "↔"
+                TransactionType.INVESTMENT -> "📈"
             }
             
             Text(
@@ -359,6 +363,8 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
                     TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
                     TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
                     TransactionType.CREDIT -> Icons.Default.CreditCard
+                    TransactionType.TRANSFER -> Icons.Default.SwapHoriz
+                    TransactionType.INVESTMENT -> Icons.Default.ShowChart
                 }
             )
             
@@ -452,7 +458,7 @@ private fun InfoRow(
             icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(Dimensions.Icon.small)
         )
         Spacer(modifier = Modifier.width(Spacing.sm))
         Text(
@@ -512,26 +518,26 @@ private fun EditableTransactionHeader(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            // Transaction Type
+            // Transaction Type - First Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
                 FilterChip(
-                    selected = transaction.transactionType == TransactionType.EXPENSE,
-                    onClick = { viewModel.updateTransactionType(TransactionType.EXPENSE) },
-                    label = { Text("Expense") },
-                    leadingIcon = if (transaction.transactionType == TransactionType.EXPENSE) {
-                        { Icon(Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
                     selected = transaction.transactionType == TransactionType.INCOME,
                     onClick = { viewModel.updateTransactionType(TransactionType.INCOME) },
                     label = { Text("Income") },
                     leadingIcon = if (transaction.transactionType == TransactionType.INCOME) {
-                        { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = transaction.transactionType == TransactionType.EXPENSE,
+                    onClick = { viewModel.updateTransactionType(TransactionType.EXPENSE) },
+                    label = { Text("Expense") },
+                    leadingIcon = if (transaction.transactionType == TransactionType.EXPENSE) {
+                        { Icon(Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -540,10 +546,36 @@ private fun EditableTransactionHeader(
                     onClick = { viewModel.updateTransactionType(TransactionType.CREDIT) },
                     label = { Text("Credit") },
                     leadingIcon = if (transaction.transactionType == TransactionType.CREDIT) {
-                        { Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        { Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
+            }
+            
+            // Transaction Type - Second Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                FilterChip(
+                    selected = transaction.transactionType == TransactionType.TRANSFER,
+                    onClick = { viewModel.updateTransactionType(TransactionType.TRANSFER) },
+                    label = { Text("Transfer") },
+                    leadingIcon = if (transaction.transactionType == TransactionType.TRANSFER) {
+                        { Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = transaction.transactionType == TransactionType.INVESTMENT,
+                    onClick = { viewModel.updateTransactionType(TransactionType.INVESTMENT) },
+                    label = { Text("Investment") },
+                    leadingIcon = if (transaction.transactionType == TransactionType.INVESTMENT) {
+                        { Icon(Icons.Default.ShowChart, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.weight(1f)) // Empty space for alignment
             }
             
             // Date and Time
@@ -683,7 +715,7 @@ private fun EditableExtractedInfoCard(
                         Icons.Default.AccountBalance,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(Dimensions.Icon.small)
                     )
                     Spacer(modifier = Modifier.width(Spacing.sm))
                     Text(

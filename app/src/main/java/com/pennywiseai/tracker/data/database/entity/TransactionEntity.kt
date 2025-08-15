@@ -63,7 +63,9 @@ data class TransactionEntity(
 )
 
 enum class TransactionType {
-    INCOME,
-    EXPENSE,
-    CREDIT  // Credit card purchases
+    INCOME,     // Money received
+    EXPENSE,    // Money spent from accounts
+    CREDIT,     // Credit card purchases
+    TRANSFER,   // Between own accounts
+    INVESTMENT  // Mutual funds, stocks, etc.
 }

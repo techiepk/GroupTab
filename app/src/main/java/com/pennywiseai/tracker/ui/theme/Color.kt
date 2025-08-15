@@ -78,6 +78,10 @@ val expense_light = Color(0xFFD32F2F) // Medium red - good on white
 val expense_dark = Color(0xFFEF5350)  // Light red - readable on dark backgrounds
 val credit_light = Color(0xFFE65100)  // Dark orange for credit card - good on white
 val credit_dark = Color(0xFFFFB74D)   // Light orange for credit card - readable on dark
+val transfer_light = Color(0xFF6A1B9A) // Purple for transfers - good on white
+val transfer_dark = Color(0xFFBA68C8)  // Light purple for transfers - readable on dark
+val investment_light = Color(0xFF00695C) // Teal for investments - good on white
+val investment_dark = Color(0xFF4DB6AC)  // Light teal for investments - readable on dark
 
 // Category Colors (matching the owl theme)
 val category_food = Color(0xFFFF7043)  // Coral

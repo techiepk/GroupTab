@@ -152,17 +152,27 @@ fun TransactionsScreen(
                                 TransactionTypeFilter.INCOME -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(Dimensions.Icon.small)
                                 )
                                 TransactionTypeFilter.DEBIT -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(Dimensions.Icon.small)
                                 )
                                 TransactionTypeFilter.CREDIT -> Icon(
                                     Icons.Default.CreditCard,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(Dimensions.Icon.small)
+                                )
+                                TransactionTypeFilter.TRANSFER -> Icon(
+                                    Icons.Default.SwapHoriz,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(Dimensions.Icon.small)
+                                )
+                                TransactionTypeFilter.INVESTMENT -> Icon(
+                                    Icons.Default.ShowChart,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(Dimensions.Icon.small)
                                 )
                                 else -> null
                             }
@@ -427,6 +437,8 @@ private fun TransactionItem(
         TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
         TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
         TransactionType.CREDIT -> if (!isSystemInDarkTheme()) credit_light else credit_dark
+        TransactionType.TRANSFER -> if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+        TransactionType.INVESTMENT -> if (!isSystemInDarkTheme()) investment_light else investment_dark
     }
     
     val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
@@ -438,9 +450,12 @@ private fun TransactionItem(
     
     // Build subtitle without category (will show category separately)
     val subtitleParts = buildList {
-        // Add credit card indicator for CREDIT transactions
-        if (transaction.transactionType == TransactionType.CREDIT) {
-            add("Credit Card")
+        // Add transaction type indicator for special types
+        when (transaction.transactionType) {
+            TransactionType.CREDIT -> add("Credit Card")
+            TransactionType.TRANSFER -> add("Transfer")
+            TransactionType.INVESTMENT -> add("Investment")
+            else -> {} // No special label for INCOME/EXPENSE
         }
         add(dateTimeText)
         if (transaction.isRecurring) add("Recurring")

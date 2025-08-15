@@ -156,6 +156,8 @@ class TransactionsViewModel @Inject constructor(
                 TransactionTypeFilter.INCOME -> transactions.filter { it.transactionType == TransactionType.INCOME }
                 TransactionTypeFilter.DEBIT -> transactions.filter { it.transactionType == TransactionType.EXPENSE }
                 TransactionTypeFilter.CREDIT -> transactions.filter { it.transactionType == TransactionType.CREDIT }
+                TransactionTypeFilter.TRANSFER -> transactions.filter { it.transactionType == TransactionType.TRANSFER }
+                TransactionTypeFilter.INVESTMENT -> transactions.filter { it.transactionType == TransactionType.INVESTMENT }
             }
         }
         
@@ -207,7 +209,9 @@ enum class TransactionTypeFilter(val label: String) {
     ALL("All"),
     INCOME("Income"),
     DEBIT("Debit"),
-    CREDIT("Credit")
+    CREDIT("Credit"),
+    TRANSFER("Transfer"),
+    INVESTMENT("Investment")
 }
 
 data class FilterParams(
