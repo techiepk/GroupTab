@@ -112,21 +112,34 @@ class AxisBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
+        // Pattern 1: "A/c no. XXNNNN" - extract everything after "A/c no."
         val acNoPattern = Regex(
-            """A/c\s+no\.\s+(?:XX|X\*+)?(\d{4,5})""",
+            """A/c\s+no\.\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
         )
         acNoPattern.find(message)?.let { match ->
-            val digits = match.groupValues[1]
-            return if (digits.length > 4) digits.takeLast(4) else digits
+            val accountStr = match.groupValues[1]
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
         }
         
+        // Pattern 2: "Credit Card XXNNNN"
         val creditCardPattern = Regex(
-            """Credit\s+Card\s+(?:XX|X\*+)?(\d{4})""",
+            """Credit\s+Card\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
         )
         creditCardPattern.find(message)?.let { match ->
-            return match.groupValues[1]
+            val accountStr = match.groupValues[1]
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
         }
         
         return super.extractAccountLast4(message)

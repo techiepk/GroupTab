@@ -163,6 +163,18 @@ class HDFCBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
+        // Additional pattern for "HDFC Bank XXNNNN" format (without A/c prefix)
+        val hdfcBankPattern = Regex("""HDFC\s+Bank\s+([X\*]*\d+)""", RegexOption.IGNORE_CASE)
+        hdfcBankPattern.find(message)?.let { match ->
+            val accountStr = match.groupValues[1]
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
+        }
+        
         // HDFC specific patterns
         val hdfcPatterns = listOf(
             CompiledPatterns.HDFC.ACCOUNT_DEPOSITED,
@@ -178,6 +190,33 @@ class HDFCBankParser : BankParser() {
         }
         
         return super.extractAccountLast4(message)
+    }
+    
+    override fun extractBalance(message: String): BigDecimal? {
+        // HDFC specific pattern for "Avl bal:INR NNNN.NN"
+        val avlBalINRPattern = Regex("""Avl\s+bal:?\s*INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        avlBalINRPattern.find(message)?.let { match ->
+            val balanceStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(balanceStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern for "Available Balance: INR NNNN.NN"
+        val availableBalINRPattern = Regex("""Available\s+Balance:?\s*INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        availableBalINRPattern.find(message)?.let { match ->
+            val balanceStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(balanceStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Fall back to base class patterns for Rs format
+        return super.extractBalance(message)
     }
     
     override fun cleanMerchantName(merchant: String): String {

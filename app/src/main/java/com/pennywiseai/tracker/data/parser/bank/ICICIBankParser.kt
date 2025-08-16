@@ -174,22 +174,34 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: "Acct XXxxx"
+        // Pattern 1: "Acct XXNNNN" - extract everything after Acct
         val acctPattern = Regex(
-            """Acct\s+(?:XX|X\*+)?(\d{3,4})""",
+            """Acct\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
         )
         acctPattern.find(message)?.let { match ->
-            return match.groupValues[1]
+            val accountStr = match.groupValues[1]
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
         }
         
-        // Pattern 2: "ICICI Bank Acct XXxxx"
+        // Pattern 2: "ICICI Bank Acct XXNNNN"
         val bankAcctPattern = Regex(
-            """ICICI\s+Bank\s+Acct\s+(?:XX|X\*+)?(\d{3,4})""",
+            """ICICI\s+Bank\s+Acct\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
         )
         bankAcctPattern.find(message)?.let { match ->
-            return match.groupValues[1]
+            val accountStr = match.groupValues[1]
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
         }
         
         // Pattern 3: "ICICI Bank Account 1234XXXX1234" - extract last 4 visible digits

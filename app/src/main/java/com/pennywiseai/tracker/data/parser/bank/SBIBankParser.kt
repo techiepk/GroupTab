@@ -228,10 +228,17 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: A/c XX1234
-        val pattern1 = Regex("""A/c\s+(?:XX|X\*+)?(\d{4})""", RegexOption.IGNORE_CASE)
+        // Pattern 1: A/c XNNNN or A/c XXNNNN - extract everything after A/c
+        val pattern1 = Regex("""A/c\s+([X\*]*\d+)""", RegexOption.IGNORE_CASE)
         pattern1.find(message)?.let { match ->
-            return match.groupValues[1]
+            val accountStr = match.groupValues[1]
+            // Extract just the digits and take last 4
+            val digitsOnly = accountStr.filter { it.isDigit() }
+            return if (digitsOnly.length >= 4) {
+                digitsOnly.takeLast(4)
+            } else {
+                digitsOnly
+            }
         }
         
         // Pattern 2: from A/c ending 1234
