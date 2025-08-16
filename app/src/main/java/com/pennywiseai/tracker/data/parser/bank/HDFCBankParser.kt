@@ -112,8 +112,10 @@ class HDFCBankParser : BankParser() {
             lowerMessage.contains("spent on card") -> TransactionType.CREDIT
             lowerMessage.contains("card xx") && (lowerMessage.contains("at") || lowerMessage.contains("for")) 
                 && !lowerMessage.contains("payment") -> TransactionType.CREDIT
-            // Credit card withdrawals (identified by BLOCK CC instruction)
-            lowerMessage.contains("withdrawn") && lowerMessage.contains("block cc") -> TransactionType.CREDIT
+            // Credit card withdrawals (identified by BLOCK CC or BLOCK PCC instruction)
+            lowerMessage.contains("withdrawn") && (lowerMessage.contains("block cc") || lowerMessage.contains("block pcc")) -> TransactionType.CREDIT
+            // Credit card transactions with BLOCK PCC (for PIXEL and other cards)
+            lowerMessage.contains("spent") && lowerMessage.contains("block pcc") -> TransactionType.CREDIT
             
             // Credit card bill payments (these are regular expenses from bank account)
             lowerMessage.contains("payment") && lowerMessage.contains("credit card") -> TransactionType.EXPENSE

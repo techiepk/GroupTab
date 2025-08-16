@@ -30,4 +30,10 @@ class JuspayParser : BankParser() {
             else -> super.extractMerchant(message, sender) ?: "Amazon Pay"
         }
     }
+    
+    override fun extractTransactionType(message: String): TransactionType {
+        // Juspay/Amazon Pay transactions are typically wallet top-ups
+        // charged to credit cards, so we treat them as credit transactions
+        return TransactionType.CREDIT
+    }
 }
