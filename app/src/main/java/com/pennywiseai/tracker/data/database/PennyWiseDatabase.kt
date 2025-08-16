@@ -9,11 +9,13 @@ import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.converter.Converters
+import com.pennywiseai.tracker.data.database.dao.AccountBalanceDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
+import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.database.entity.MerchantMappingEntity
@@ -31,8 +33,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class],
-    version = 10,
+    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class],
+    version = 11,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -43,7 +45,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
         AutoMigration(from = 6, to = 7),
         AutoMigration(from = 7, to = 8, spec = Migration7To8::class),
         AutoMigration(from = 8, to = 9),
-        AutoMigration(from = 9, to = 10)
+        AutoMigration(from = 9, to = 10),
+        AutoMigration(from = 10, to = 11, spec = Migration10To11::class)
     ]
 )
 @TypeConverters(Converters::class)
@@ -53,6 +56,7 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
     abstract fun merchantMappingDao(): MerchantMappingDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun accountBalanceDao(): AccountBalanceDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -136,5 +140,32 @@ class Migration7To8 : AutoMigrationSpec {
                 VALUES (?, ?, 1, ?, ?, datetime('now'), datetime('now'))
             """.trimIndent(), arrayOf(name, color, if (isIncome) 1 else 0, index + 1))
         }
+    }
+}
+
+/**
+ * Migration from version 10 to 11.
+ * - Adds account_balances table for tracking account balance history
+ * - Migrates existing balance data from transactions table
+ */
+class Migration10To11 : AutoMigrationSpec {
+    override fun onPostMigrate(db: SupportSQLiteDatabase) {
+        super.onPostMigrate(db)
+        
+        // Migrate existing balance data from transactions table
+        db.execSQL("""
+            INSERT INTO account_balances (bank_name, account_last4, balance, timestamp, transaction_id, created_at)
+            SELECT 
+                bank_name,
+                account_number,
+                balance_after,
+                date_time,
+                id,
+                created_at
+            FROM transactions
+            WHERE balance_after IS NOT NULL 
+                AND bank_name IS NOT NULL 
+                AND account_number IS NOT NULL
+        """.trimIndent())
     }
 }
