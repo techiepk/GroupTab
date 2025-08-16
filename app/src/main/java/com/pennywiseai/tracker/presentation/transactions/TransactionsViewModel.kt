@@ -7,6 +7,9 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.repository.CategoryRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
+import com.pennywiseai.tracker.presentation.common.TimePeriod
+import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
+import com.pennywiseai.tracker.presentation.common.getDateRangeForPeriod
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -128,23 +131,12 @@ class TransactionsViewModel @Inject constructor(
         val periodFilteredFlow = when (period) {
             TimePeriod.ALL -> baseFlow
             else -> {
-                val (startDate, endDate) = when (period) {
-                    TimePeriod.THIS_MONTH -> {
-                        val now = YearMonth.now()
-                        now.atDay(1).atStartOfDay() to now.atEndOfMonth().atTime(23, 59, 59)
-                    }
-                    TimePeriod.LAST_MONTH -> {
-                        val lastMonth = YearMonth.now().minusMonths(1)
-                        lastMonth.atDay(1).atStartOfDay() to lastMonth.atEndOfMonth().atTime(23, 59, 59)
-                    }
-                    TimePeriod.ALL -> {
-                        // This case is handled above, but compiler needs it
-                        LocalDateTime.MIN to LocalDateTime.MAX
-                    }
-                }
+                val (startDate, endDate) = getDateRangeForPeriod(period)
+                val startDateTime = startDate.atStartOfDay()
+                val endDateTime = endDate.atTime(23, 59, 59)
                 
                 baseFlow.map { transactions ->
-                    transactions.filter { it.dateTime in startDate..endDate }
+                    transactions.filter { it.dateTime in startDateTime..endDateTime }
                 }
             }
         }
@@ -154,7 +146,7 @@ class TransactionsViewModel @Inject constructor(
             when (typeFilter) {
                 TransactionTypeFilter.ALL -> transactions
                 TransactionTypeFilter.INCOME -> transactions.filter { it.transactionType == TransactionType.INCOME }
-                TransactionTypeFilter.DEBIT -> transactions.filter { it.transactionType == TransactionType.EXPENSE }
+                TransactionTypeFilter.EXPENSE -> transactions.filter { it.transactionType == TransactionType.EXPENSE }
                 TransactionTypeFilter.CREDIT -> transactions.filter { it.transactionType == TransactionType.CREDIT }
                 TransactionTypeFilter.TRANSFER -> transactions.filter { it.transactionType == TransactionType.TRANSFER }
                 TransactionTypeFilter.INVESTMENT -> transactions.filter { it.transactionType == TransactionType.INVESTMENT }
@@ -198,21 +190,6 @@ data class TransactionsUiState(
     val groupedTransactions: Map<DateGroup, List<TransactionEntity>> = emptyMap(),
     val isLoading: Boolean = true
 )
-
-enum class TimePeriod(val label: String) {
-    THIS_MONTH("This Month"),
-    LAST_MONTH("Last Month"),
-    ALL("All")
-}
-
-enum class TransactionTypeFilter(val label: String) {
-    ALL("All"),
-    INCOME("Income"),
-    DEBIT("Debit"),
-    CREDIT("Credit"),
-    TRANSFER("Transfer"),
-    INVESTMENT("Investment")
-}
 
 data class FilterParams(
     val query: String,

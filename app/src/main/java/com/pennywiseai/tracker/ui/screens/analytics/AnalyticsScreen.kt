@@ -3,10 +3,14 @@ package com.pennywiseai.tracker.ui.screens.analytics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.pennywiseai.tracker.presentation.common.TimePeriod
+import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
 import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import com.pennywiseai.tracker.ui.theme.*
@@ -31,6 +37,7 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
+    val transactionTypeFilter by viewModel.transactionTypeFilter.collectAsStateWithLifecycle()
     
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
@@ -45,25 +52,73 @@ fun AnalyticsScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        // Period Selector
+        // Transaction Type Filter
         item {
-            Row(
+            LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                TimePeriod.values().forEach { period ->
+                items(TransactionTypeFilter.values().toList()) { typeFilter ->
+                    FilterChip(
+                        selected = transactionTypeFilter == typeFilter,
+                        onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
+                        label = { Text(typeFilter.label) },
+                        leadingIcon = if (transactionTypeFilter == typeFilter) {
+                            {
+                                when (typeFilter) {
+                                    TransactionTypeFilter.INCOME -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingUp,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.EXPENSE -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.CREDIT -> Icon(
+                                        Icons.Default.CreditCard,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.TRANSFER -> Icon(
+                                        Icons.Default.SwapHoriz,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.INVESTMENT -> Icon(
+                                        Icons.Default.ShowChart,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    else -> null
+                                }
+                            }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    )
+                }
+            }
+        }
+        
+        // Period Selector
+        item {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                items(TimePeriod.values().toList()) { period ->
                     FilterChip(
                         selected = selectedPeriod == period,
                         onClick = { viewModel.selectPeriod(period) },
-                        label = { 
-                            Text(
-                                text = when (period) {
-                                    TimePeriod.THIS_MONTH -> "This Month"
-                                    TimePeriod.LAST_MONTH -> "Last Month"
-                                    TimePeriod.LAST_3_MONTHS -> "Last 3 Months"
-                                }
-                            )
-                        }
+                        label = { Text(period.label) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     )
                 }
             }

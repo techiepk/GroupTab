@@ -25,6 +25,8 @@ import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.presentation.common.TimePeriod
+import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
 import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.theme.*
 import com.pennywiseai.tracker.utils.CurrencyFormatter
@@ -78,7 +80,8 @@ fun TransactionsScreen(
             val period = when (periodName) {
                 "THIS_MONTH" -> TimePeriod.THIS_MONTH
                 "LAST_MONTH" -> TimePeriod.LAST_MONTH
-                "LAST_3_MONTHS" -> TimePeriod.ALL // Map LAST_3_MONTHS to ALL for now
+                "LAST_3_MONTHS" -> TimePeriod.LAST_3_MONTHS
+                "ALL" -> TimePeriod.ALL
                 else -> null
             }
             period?.let { viewModel.selectPeriod(it) }
@@ -155,7 +158,7 @@ fun TransactionsScreen(
                                     contentDescription = null,
                                     modifier = Modifier.size(Dimensions.Icon.small)
                                 )
-                                TransactionTypeFilter.DEBIT -> Icon(
+                                TransactionTypeFilter.EXPENSE -> Icon(
                                     Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = null,
                                     modifier = Modifier.size(Dimensions.Icon.small)

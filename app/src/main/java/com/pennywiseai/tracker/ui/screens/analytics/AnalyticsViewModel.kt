@@ -3,6 +3,9 @@ package com.pennywiseai.tracker.ui.screens.analytics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pennywiseai.tracker.data.repository.TransactionRepository
+import com.pennywiseai.tracker.presentation.common.TimePeriod
+import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
+import com.pennywiseai.tracker.presentation.common.getDateRangeForPeriod
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,6 +22,9 @@ class AnalyticsViewModel @Inject constructor(
     private val _selectedPeriod = MutableStateFlow(TimePeriod.THIS_MONTH)
     val selectedPeriod: StateFlow<TimePeriod> = _selectedPeriod.asStateFlow()
     
+    private val _transactionTypeFilter = MutableStateFlow(TransactionTypeFilter.EXPENSE)
+    val transactionTypeFilter: StateFlow<TransactionTypeFilter> = _transactionTypeFilter.asStateFlow()
+    
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
     
@@ -31,22 +37,44 @@ class AnalyticsViewModel @Inject constructor(
         loadAnalytics()
     }
     
+    fun setTransactionTypeFilter(filter: TransactionTypeFilter) {
+        _transactionTypeFilter.value = filter
+        loadAnalytics()
+    }
+    
     private fun loadAnalytics() {
         viewModelScope.launch {
-            val dateRange = getDateRange(_selectedPeriod.value)
+            val dateRange = getDateRangeForPeriod(_selectedPeriod.value)
             
             transactionRepository.getTransactionsBetweenDates(
                 startDate = dateRange.first,
                 endDate = dateRange.second
             ).collect { transactions ->
-                // Filter only expenses
-                val expenses = transactions.filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.EXPENSE }
+                // Filter by selected transaction type
+                val filteredTransactions = when (_transactionTypeFilter.value) {
+                    TransactionTypeFilter.ALL -> transactions
+                    TransactionTypeFilter.INCOME -> transactions.filter { 
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME 
+                    }
+                    TransactionTypeFilter.EXPENSE -> transactions.filter { 
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.EXPENSE 
+                    }
+                    TransactionTypeFilter.CREDIT -> transactions.filter { 
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT 
+                    }
+                    TransactionTypeFilter.TRANSFER -> transactions.filter { 
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER 
+                    }
+                    TransactionTypeFilter.INVESTMENT -> transactions.filter { 
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT 
+                    }
+                }
                 
                 // Calculate total
-                val totalSpending = expenses.sumOf { it.amount.toDouble() }.toBigDecimal()
+                val totalSpending = filteredTransactions.sumOf { it.amount.toDouble() }.toBigDecimal()
                 
                 // Group by category
-                val categoryBreakdown = expenses
+                val categoryBreakdown = filteredTransactions
                     .groupBy { it.category ?: "Others" }
                     .map { (categoryName, txns) -> 
                         val categoryTotal = txns.sumOf { it.amount.toDouble() }.toBigDecimal()
@@ -62,7 +90,7 @@ class AnalyticsViewModel @Inject constructor(
                     .sortedByDescending { it.amount }
                 
                 // Group by merchant
-                val merchantBreakdown = expenses
+                val merchantBreakdown = filteredTransactions
                     .groupBy { it.merchantName }
                     .mapValues { (merchant, txns) -> 
                         MerchantData(
@@ -86,27 +114,6 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
     
-    private fun getDateRange(period: TimePeriod): Pair<LocalDate, LocalDate> {
-        val today = LocalDate.now()
-        return when (period) {
-            TimePeriod.THIS_MONTH -> {
-                val start = YearMonth.now().atDay(1)
-                val end = today
-                start to end
-            }
-            TimePeriod.LAST_MONTH -> {
-                val lastMonth = YearMonth.now().minusMonths(1)
-                val start = lastMonth.atDay(1)
-                val end = lastMonth.atEndOfMonth()
-                start to end
-            }
-            TimePeriod.LAST_3_MONTHS -> {
-                val start = today.minusMonths(3)
-                val end = today
-                start to end
-            }
-        }
-    }
 }
 
 data class AnalyticsUiState(
@@ -130,8 +137,3 @@ data class MerchantData(
     val isSubscription: Boolean
 )
 
-enum class TimePeriod {
-    THIS_MONTH,
-    LAST_MONTH,
-    LAST_3_MONTHS
-}
