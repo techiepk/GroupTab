@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
+import com.pennywiseai.tracker.data.database.dao.AccountBalanceDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
@@ -49,9 +50,8 @@ object DatabaseModule {
             // Enable auto-migrations
             // Room will automatically detect schema changes between versions
             
-            // Fallback strategy for development
-            // In production, remove this and handle all migrations properly
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            // Removed fallbackToDestructiveMigration to allow proper migrations
+            // .fallbackToDestructiveMigration(dropAllTables = true)
             
             // Allow queries on main thread for debugging (remove in production)
             // .allowMainThreadQueries()
@@ -120,6 +120,18 @@ object DatabaseModule {
     @Singleton
     fun provideCategoryDao(database: PennyWiseDatabase): CategoryDao {
         return database.categoryDao()
+    }
+    
+    /**
+     * Provides the AccountBalanceDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return AccountBalanceDao for accessing account balance data
+     */
+    @Provides
+    @Singleton
+    fun provideAccountBalanceDao(database: PennyWiseDatabase): AccountBalanceDao {
+        return database.accountBalanceDao()
     }
 }
 

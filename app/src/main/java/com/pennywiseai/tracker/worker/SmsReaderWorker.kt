@@ -14,6 +14,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
+import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
@@ -37,6 +38,7 @@ class SmsReaderWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
+    private val accountBalanceRepository: AccountBalanceRepository,
     private val llmRepository: LlmRepository,
     private val merchantMappingRepository: MerchantMappingRepository,
     private val userPreferencesRepository: UserPreferencesRepository
@@ -176,6 +178,20 @@ class SmsReaderWorker @AssistedInject constructor(
                             if (rowId != -1L) {
                                 savedCount++
                                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
+                                
+                                // Save balance information if available
+                                if (parsedTransaction.balance != null && 
+                                    parsedTransaction.bankName != null && 
+                                    parsedTransaction.accountLast4 != null) {
+                                    accountBalanceRepository.insertBalanceFromTransaction(
+                                        bankName = parsedTransaction.bankName,
+                                        accountLast4 = parsedTransaction.accountLast4,
+                                        balance = parsedTransaction.balance,
+                                        timestamp = finalEntity.dateTime,
+                                        transactionId = rowId
+                                    )
+                                    Log.d(TAG, "Saved balance update for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}")
+                                }
                             } else {
                                 Log.d(TAG, "Transaction already exists (duplicate), skipping: ${entity.transactionHash}")
                             }
