@@ -46,6 +46,7 @@ import com.pennywiseai.tracker.ui.components.SummaryCard
 import com.pennywiseai.tracker.ui.components.ListItemCard
 import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.ui.components.AccountBalancesCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
@@ -113,6 +114,17 @@ fun HomeScreen(
             // Transaction Summary Cards with HorizontalPager
             item {
                 TransactionSummaryCards(uiState = uiState)
+            }
+            
+            // Account Balances Section
+            if (uiState.accountBalances.isNotEmpty()) {
+                item {
+                    AccountBalancesCard(
+                        accountBalances = uiState.accountBalances,
+                        totalBalance = uiState.totalBalance,
+                        onViewAllClick = { /* TODO: Navigate to account balances screen */ }
+                    )
+                }
             }
             
             // Upcoming Subscriptions Alert

@@ -7,9 +7,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.manager.InAppUpdateManager
+import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -28,6 +30,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
+    private val accountBalanceRepository: AccountBalanceRepository,
     private val llmRepository: LlmRepository,
     private val inAppUpdateManager: InAppUpdateManager,
     @ApplicationContext private val context: Context
@@ -53,6 +56,16 @@ class HomeViewModel @Inject constructor(
                     currentMonthExpenses = breakdown.expenses
                 )
                 calculateMonthlyChange()
+            }
+        }
+        
+        viewModelScope.launch {
+            // Load account balances
+            accountBalanceRepository.getAllLatestBalances().collect { balances ->
+                _uiState.value = _uiState.value.copy(
+                    accountBalances = balances,
+                    totalBalance = balances.sumOf { it.balance }
+                )
             }
         }
         
@@ -217,6 +230,8 @@ data class HomeUiState(
     val recentTransactions: List<TransactionEntity> = emptyList(),
     val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
     val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
+    val accountBalances: List<AccountBalanceEntity> = emptyList(),
+    val totalBalance: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
     val isScanning: Boolean = false,
     val showBreakdownDialog: Boolean = false
