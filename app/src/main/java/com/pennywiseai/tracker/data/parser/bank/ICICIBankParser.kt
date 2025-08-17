@@ -37,7 +37,21 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
-        // Pattern 1: "debited with Rs xxx.00"
+        // Pattern 1: "INR xxx.xx spent" (for card transactions)
+        val inrSpentPattern = Regex(
+            """INR\s+([0-9,]+(?:\.\d{2})?)\s+spent""",
+            RegexOption.IGNORE_CASE
+        )
+        inrSpentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern 2: "debited with Rs xxx.00"
         val debitWithPattern = Regex(
             """debited\s+with\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
@@ -51,7 +65,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "debited for Rs xxx.00"
+        // Pattern 3: "debited for Rs xxx.00"
         val debitForPattern = Regex(
             """debited\s+for\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
@@ -65,7 +79,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 3: "credited with Rs xxx.00"
+        // Pattern 4: "credited with Rs xxx.00"
         val creditWithPattern = Regex(
             """credited\s+with\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
@@ -79,7 +93,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 4: "Cash deposit transaction of Rs xxx" (must have "has been completed")
+        // Pattern 5: "Cash deposit transaction of Rs xxx" (must have "has been completed")
         if (message.contains("Cash deposit transaction", ignoreCase = true) && 
             message.contains("has been completed", ignoreCase = true)) {
             val cashDepositPattern = Regex(
@@ -101,7 +115,19 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: ACH/NACH dividend payments - "Info ACH*COMPANY NAME*XXX"
+        // Pattern 1: Card transactions - "on DD-Mon-YY on MERCHANT NAME. Avl"
+        val cardMerchantPattern = Regex(
+            """on\s+\d{1,2}-\w{3}-\d{2}\s+on\s+([^.]+?)(?:\.|$)""",
+            RegexOption.IGNORE_CASE
+        )
+        cardMerchantPattern.find(message)?.let { match ->
+            val merchant = cleanMerchantName(match.groupValues[1].trim())
+            if (isValidMerchantName(merchant)) {
+                return merchant
+            }
+        }
+        
+        // Pattern 2: ACH/NACH dividend payments - "Info ACH*COMPANY NAME*XXX"
         val achNachPattern = Regex(
             """Info\s+(?:ACH|NACH)\*([^*]+)\*""",
             RegexOption.IGNORE_CASE
@@ -112,7 +138,7 @@ class ICICIBankParser : BankParser() {
             return "$companyName Dividend"
         }
         
-        // Pattern 2: "towards <merchant> for"
+        // Pattern 3: "towards <merchant> for"
         val towardsPattern = Regex(
             """towards\s+([^.\n]+?)\s+for""",
             RegexOption.IGNORE_CASE
@@ -124,7 +150,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 3: "from <name>. UPI"
+        // Pattern 4: "from <name>. UPI"
         val fromUpiPattern = Regex(
             """from\s+([^.\n]+?)\.\s*UPI""",
             RegexOption.IGNORE_CASE
@@ -136,7 +162,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 4: "; <name> credited. UPI"
+        // Pattern 5: "; <name> credited. UPI"
         val creditedPattern = Regex(
             """;\s*([^.\n]+?)\s+credited\.\s*UPI""",
             RegexOption.IGNORE_CASE
@@ -148,13 +174,13 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 5: Cash deposit (only if completed)
+        // Pattern 6: Cash deposit (only if completed)
         if (message.contains("Cash deposit transaction", ignoreCase = true) && 
             message.contains("has been completed", ignoreCase = true)) {
             return "Cash Deposit"
         }
         
-        // Pattern 5: AutoPay specific - extract service name
+        // Pattern 7: AutoPay specific - extract service name
         if (message.contains("AutoPay", ignoreCase = true)) {
             // Look for common AutoPay services
             val lowerMessage = message.lowercase()
@@ -174,7 +200,21 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern 1: "Acct XXNNNN" - extract everything after Acct
+        // Pattern 1: "ICICI Bank Card XXNNNN" - for card transactions
+        val cardPattern = Regex(
+            """ICICI\s+Bank\s+Card\s+[X\*]*(\d+)""",
+            RegexOption.IGNORE_CASE
+        )
+        cardPattern.find(message)?.let { match ->
+            val cardNumber = match.groupValues[1]
+            return if (cardNumber.length >= 4) {
+                cardNumber.takeLast(4)
+            } else {
+                cardNumber
+            }
+        }
+        
+        // Pattern 2: "Acct XXNNNN" - extract everything after Acct
         val acctPattern = Regex(
             """Acct\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
@@ -189,7 +229,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "ICICI Bank Acct XXNNNN"
+        // Pattern 3: "ICICI Bank Acct XXNNNN"
         val bankAcctPattern = Regex(
             """ICICI\s+Bank\s+Acct\s+([X\*]*\d+)""",
             RegexOption.IGNORE_CASE
@@ -204,7 +244,7 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 3: "ICICI Bank Account 1234XXXX1234" - extract last 4 visible digits
+        // Pattern 4: "ICICI Bank Account 1234XXXX1234" - extract last 4 visible digits
         val accountFullPattern = Regex(
             """ICICI\s+Bank\s+Account\s+\d+X+(\d{4})""",
             RegexOption.IGNORE_CASE
@@ -264,7 +304,9 @@ class ICICIBankParser : BankParser() {
             "debited for",
             "credited with",
             "autopay",
-            "your account has been"
+            "your account has been",
+            "inr", // For "INR xxx spent" pattern
+            "spent using" // For card transactions
         )
         
         // Special check for cash deposit - must be completed
@@ -285,8 +327,9 @@ class ICICIBankParser : BankParser() {
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
         
-        // Credit card transactions
-        if (lowerMessage.contains("icici bank credit card") && 
+        // Credit card transactions - both "ICICI Bank Credit Card" and "ICICI Bank Card" with spent
+        if ((lowerMessage.contains("icici bank credit card") || 
+             (lowerMessage.contains("icici bank card") && lowerMessage.contains("spent"))) && 
             (lowerMessage.contains("spent") || lowerMessage.contains("debited"))) {
             return TransactionType.CREDIT
         }
