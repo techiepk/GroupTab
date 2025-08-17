@@ -36,7 +36,38 @@ class HDFCBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Try HDFC specific patterns first
+        // Check for ATM withdrawals first
+        if (message.contains("withdrawn", ignoreCase = true) || 
+            message.contains("ATM", ignoreCase = true)) {
+            return "ATM"
+        }
+        
+        // For credit card transactions (with BLOCK CC/PCC instruction), extract merchant after "At"
+        if (message.contains("card", ignoreCase = true) && 
+            message.contains(" at ", ignoreCase = true) &&
+            (message.contains("block cc", ignoreCase = true) || message.contains("block pcc", ignoreCase = true))) {
+            // Pattern for "at [merchant] by UPI" or just "at [merchant]"
+            val atPattern = Regex("""at\s+([^@\s]+(?:@[^\s]+)?(?:\s+[^\s]+)?)(?:\s+by\s+|\s+on\s+|$)""", RegexOption.IGNORE_CASE)
+            atPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                // For UPI VPA, extract the part before @ (e.g., "paytmqr" from "paytmqr@paytm")
+                val cleanedMerchant = if (merchant.contains("@")) {
+                    val vpaName = merchant.substringBefore("@").trim()
+                    // Clean up common UPI prefixes/suffixes
+                    when {
+                        vpaName.endsWith("qr", ignoreCase = true) -> vpaName.dropLast(2)
+                        else -> vpaName
+                    }
+                } else {
+                    merchant
+                }
+                if (cleanedMerchant.isNotEmpty()) {
+                    return cleanMerchantName(cleanedMerchant)
+                }
+            }
+        }
+        
+        // Try HDFC specific patterns
         
         // Pattern 1: Salary credit - "for XXXXX-ABC-XYZ MONTH SALARY-COMPANY NAME"
         if (message.contains("SALARY", ignoreCase = true) && message.contains("deposited", ignoreCase = true)) {
@@ -181,14 +212,12 @@ class HDFCBankParser : BankParser() {
         }
         
         return when {
-            // Credit card transactions
-            lowerMessage.contains("spent on card") -> TransactionType.CREDIT
-            lowerMessage.contains("card xx") && (lowerMessage.contains("at") || lowerMessage.contains("for")) 
-                && !lowerMessage.contains("payment") -> TransactionType.CREDIT
-            // Credit card withdrawals (identified by BLOCK CC or BLOCK PCC instruction)
-            lowerMessage.contains("withdrawn") && (lowerMessage.contains("block cc") || lowerMessage.contains("block pcc")) -> TransactionType.CREDIT
-            // Credit card transactions with BLOCK PCC (for PIXEL and other cards)
-            lowerMessage.contains("spent") && lowerMessage.contains("block pcc") -> TransactionType.CREDIT
+            // Credit card transactions - ONLY if message contains CC or PCC indicators
+            // Any transaction with BLOCK CC or BLOCK PCC is a credit card transaction
+            lowerMessage.contains("block cc") || lowerMessage.contains("block pcc") -> TransactionType.CREDIT
+            
+            // Legacy pattern for older format that explicitly says "spent on card"
+            lowerMessage.contains("spent on card") && !lowerMessage.contains("block dc") -> TransactionType.CREDIT
             
             // Credit card bill payments (these are regular expenses from bank account)
             lowerMessage.contains("payment") && lowerMessage.contains("credit card") -> TransactionType.EXPENSE
@@ -196,6 +225,9 @@ class HDFCBankParser : BankParser() {
             
             // HDFC specific: "Sent Rs.X From HDFC Bank"
             lowerMessage.contains("sent") && lowerMessage.contains("from hdfc") -> TransactionType.EXPENSE
+            
+            // HDFC specific: "Spent Rs.X From HDFC Bank Card" (debit card transactions)
+            lowerMessage.contains("spent") && lowerMessage.contains("from hdfc bank card") -> TransactionType.EXPENSE
             
             // Standard expense keywords
             lowerMessage.contains("debited") -> TransactionType.EXPENSE
@@ -280,6 +312,17 @@ class HDFCBankParser : BankParser() {
         // Pattern for "Available Balance: INR NNNN.NN"
         val availableBalINRPattern = Regex("""Available\s+Balance:?\s*INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         availableBalINRPattern.find(message)?.let { match ->
+            val balanceStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(balanceStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern for "Bal Rs.NNNN.NN" or "Bal Rs NNNN.NN"
+        val balRsPattern = Regex("""Bal\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        balRsPattern.find(message)?.let { match ->
             val balanceStr = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(balanceStr)
