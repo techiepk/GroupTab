@@ -28,6 +28,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.presentation.common.TimePeriod
 import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
 import com.pennywiseai.tracker.ui.components.*
+import com.pennywiseai.tracker.ui.components.CollapsibleFilterRow
 import com.pennywiseai.tracker.ui.theme.*
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
@@ -55,6 +56,13 @@ fun TransactionsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showExportDialog by remember { mutableStateOf(false) }
+    var showAdvancedFilters by remember { mutableStateOf(false) }
+    
+    // Calculate active filter count for advanced filters
+    val activeFilterCount = listOf(
+        transactionTypeFilter != TransactionTypeFilter.ALL,
+        categoryFilter != null
+    ).count { it }
     
     // Initialize ViewModel with navigation arguments
     LaunchedEffect(Unit) {
@@ -138,75 +146,11 @@ fun TransactionsScreen(
                 .padding(top = Dimensions.Padding.content)
         )
         
-        // Totals Card
-        TransactionTotalsCard(
-            income = filteredTotals.income,
-            expenses = filteredTotals.expenses + filteredTotals.credit + filteredTotals.transfer + filteredTotals.investment,
-            netBalance = filteredTotals.netBalance,
-            isLoading = uiState.isLoading,
-            modifier = Modifier
-                .padding(horizontal = Dimensions.Padding.content)
-                .padding(top = Spacing.sm)
-        )
-        
-        // Transaction Type Filter Chips
+        // Period Filter Chips - Always visible
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = Spacing.sm),
-            contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
-            items(TransactionTypeFilter.values().toList()) { typeFilter ->
-                FilterChip(
-                    selected = transactionTypeFilter == typeFilter,
-                    onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
-                    label = { Text(typeFilter.label) },
-                    leadingIcon = if (transactionTypeFilter == typeFilter) {
-                        {
-                            when (typeFilter) {
-                                TransactionTypeFilter.INCOME -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingUp,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(Dimensions.Icon.small)
-                                )
-                                TransactionTypeFilter.EXPENSE -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(Dimensions.Icon.small)
-                                )
-                                TransactionTypeFilter.CREDIT -> Icon(
-                                    Icons.Default.CreditCard,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(Dimensions.Icon.small)
-                                )
-                                TransactionTypeFilter.TRANSFER -> Icon(
-                                    Icons.Default.SwapHoriz,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(Dimensions.Icon.small)
-                                )
-                                TransactionTypeFilter.INVESTMENT -> Icon(
-                                    Icons.Default.ShowChart,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(Dimensions.Icon.small)
-                                )
-                                else -> null
-                            }
-                        }
-                    } else null,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                )
-            }
-        }
-        
-        // Period and Category Filter Chips
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Spacing.sm),
             contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
@@ -222,9 +166,87 @@ fun TransactionsScreen(
                     )
                 )
             }
-            
-            // Category filter chip (if active)
-            categoryFilter?.let { category ->
+        }
+        
+        // Collapsible Advanced Filters
+        CollapsibleFilterRow(
+            isExpanded = showAdvancedFilters,
+            activeFilterCount = activeFilterCount,
+            onToggle = { showAdvancedFilters = !showAdvancedFilters },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Transaction Type Filter Chips
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                items(TransactionTypeFilter.values().toList()) { typeFilter ->
+                    FilterChip(
+                        selected = transactionTypeFilter == typeFilter,
+                        onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
+                        label = { Text(typeFilter.label) },
+                        leadingIcon = if (transactionTypeFilter == typeFilter) {
+                            {
+                                when (typeFilter) {
+                                    TransactionTypeFilter.INCOME -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingUp,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.EXPENSE -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.CREDIT -> Icon(
+                                        Icons.Default.CreditCard,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.TRANSFER -> Icon(
+                                        Icons.Default.SwapHoriz,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    TransactionTypeFilter.INVESTMENT -> Icon(
+                                        Icons.Default.ShowChart,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Dimensions.Icon.small)
+                                    )
+                                    else -> null
+                                }
+                            }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    )
+                }
+            }
+        }
+        
+        // Totals Card - Moved after filters
+        TransactionTotalsCard(
+            income = filteredTotals.income,
+            expenses = filteredTotals.expenses + filteredTotals.credit + filteredTotals.transfer + filteredTotals.investment,
+            netBalance = filteredTotals.netBalance,
+            isLoading = uiState.isLoading,
+            modifier = Modifier
+                .padding(horizontal = Dimensions.Padding.content)
+                .padding(top = Spacing.sm)
+        )
+        
+        // Category Filter Chip (if active) - Moved to its own row
+        categoryFilter?.let { category ->
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.xs),
+                contentPadding = PaddingValues(horizontal = Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
                 item {
                     FilterChip(
                         selected = true,

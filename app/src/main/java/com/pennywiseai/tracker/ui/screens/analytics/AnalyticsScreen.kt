@@ -38,6 +38,10 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
     val transactionTypeFilter by viewModel.transactionTypeFilter.collectAsStateWithLifecycle()
+    var showAdvancedFilters by remember { mutableStateOf(false) }
+    
+    // Calculate active filter count
+    val activeFilterCount = if (transactionTypeFilter != TransactionTypeFilter.EXPENSE) 1 else 0
     
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
@@ -52,59 +56,7 @@ fun AnalyticsScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        // Transaction Type Filter
-        item {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
-                items(TransactionTypeFilter.values().toList()) { typeFilter ->
-                    FilterChip(
-                        selected = transactionTypeFilter == typeFilter,
-                        onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
-                        label = { Text(typeFilter.label) },
-                        leadingIcon = if (transactionTypeFilter == typeFilter) {
-                            {
-                                when (typeFilter) {
-                                    TransactionTypeFilter.INCOME -> Icon(
-                                        Icons.AutoMirrored.Filled.TrendingUp,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                    TransactionTypeFilter.EXPENSE -> Icon(
-                                        Icons.AutoMirrored.Filled.TrendingDown,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                    TransactionTypeFilter.CREDIT -> Icon(
-                                        Icons.Default.CreditCard,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                    TransactionTypeFilter.TRANSFER -> Icon(
-                                        Icons.Default.SwapHoriz,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                    TransactionTypeFilter.INVESTMENT -> Icon(
-                                        Icons.Default.ShowChart,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(Dimensions.Icon.small)
-                                    )
-                                    else -> null
-                                }
-                            }
-                        } else null,
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    )
-                }
-            }
-        }
-        
-        // Period Selector
+        // Period Selector - Always visible
         item {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -120,6 +72,65 @@ fun AnalyticsScreen(
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
+                }
+            }
+        }
+        
+        // Collapsible Transaction Type Filter
+        item {
+            CollapsibleFilterRow(
+                isExpanded = showAdvancedFilters,
+                activeFilterCount = activeFilterCount,
+                onToggle = { showAdvancedFilters = !showAdvancedFilters },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    items(TransactionTypeFilter.values().toList()) { typeFilter ->
+                        FilterChip(
+                            selected = transactionTypeFilter == typeFilter,
+                            onClick = { viewModel.setTransactionTypeFilter(typeFilter) },
+                            label = { Text(typeFilter.label) },
+                            leadingIcon = if (transactionTypeFilter == typeFilter) {
+                                {
+                                    when (typeFilter) {
+                                        TransactionTypeFilter.INCOME -> Icon(
+                                            Icons.AutoMirrored.Filled.TrendingUp,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Dimensions.Icon.small)
+                                        )
+                                        TransactionTypeFilter.EXPENSE -> Icon(
+                                            Icons.AutoMirrored.Filled.TrendingDown,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Dimensions.Icon.small)
+                                        )
+                                        TransactionTypeFilter.CREDIT -> Icon(
+                                            Icons.Default.CreditCard,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Dimensions.Icon.small)
+                                        )
+                                        TransactionTypeFilter.TRANSFER -> Icon(
+                                            Icons.Default.SwapHoriz,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Dimensions.Icon.small)
+                                        )
+                                        TransactionTypeFilter.INVESTMENT -> Icon(
+                                            Icons.Default.ShowChart,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Dimensions.Icon.small)
+                                        )
+                                        else -> null
+                                    }
+                                }
+                            } else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        )
+                    }
                 }
             }
         }
