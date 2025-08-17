@@ -12,11 +12,13 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,11 +54,13 @@ fun TransactionsScreen(
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val categoriesMap by viewModel.categories.collectAsState()
     val filteredTotals by viewModel.filteredTotals.collectAsState()
+    val sortOption by viewModel.sortOption.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showExportDialog by remember { mutableStateOf(false) }
     var showAdvancedFilters by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
     
     // Calculate active filter count for advanced filters
     val activeFilterCount = listOf(
@@ -135,16 +139,65 @@ fun TransactionsScreen(
                 .fillMaxSize()
                 .padding(0.dp)
         ) {
-        // Search Bar
-        TransactionSearchBar(
-            query = searchQuery,
-            onQueryChange = viewModel::updateSearchQuery,
-            categoryFilter = categoryFilter,
+        // Search Bar with Sort Button
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimensions.Padding.content)
-                .padding(top = Dimensions.Padding.content)
-        )
+                .padding(top = Dimensions.Padding.content),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            TransactionSearchBar(
+                query = searchQuery,
+                onQueryChange = viewModel::updateSearchQuery,
+                categoryFilter = categoryFilter,
+                modifier = Modifier.weight(1f)
+            )
+            
+            // Sort button
+            Box {
+                IconButton(
+                    onClick = { showSortMenu = true },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Sort,
+                        contentDescription = "Sort",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                DropdownMenu(
+                    expanded = showSortMenu,
+                    onDismissRequest = { showSortMenu = false }
+                ) {
+                    SortOption.values().forEach { option ->
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = sortOption == option,
+                                        onClick = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(option.label)
+                                }
+                            },
+                            onClick = {
+                                viewModel.setSortOption(option)
+                                showSortMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
         
         // Period Filter Chips - Always visible
         LazyRow(

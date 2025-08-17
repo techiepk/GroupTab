@@ -40,6 +40,9 @@ class TransactionsViewModel @Inject constructor(
     private val _transactionTypeFilter = MutableStateFlow(TransactionTypeFilter.ALL)
     val transactionTypeFilter: StateFlow<TransactionTypeFilter> = _transactionTypeFilter.asStateFlow()
     
+    private val _sortOption = MutableStateFlow(SortOption.DATE_NEWEST)
+    val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
+    
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
@@ -61,16 +64,18 @@ class TransactionsViewModel @Inject constructor(
         )
     
     init {
-        // Combine all filters: search query, period, category, and transaction type
+        // Combine all filters: search query, period, category, transaction type, and sort
         combine(
             searchQuery.debounce(300), // Debounce search for performance
             selectedPeriod,
             categoryFilter,
-            transactionTypeFilter
-        ) { query, period, category, typeFilter ->
-            FilterParams(query, period, category, typeFilter)
-        }.flatMapLatest { params ->
+            transactionTypeFilter,
+            sortOption
+        ) { query, period, category, typeFilter, sort ->
+            FilterParams(query, period, category, typeFilter) to sort
+        }.flatMapLatest { (params, sort) ->
             getFilteredTransactions(params.query, params.period, params.category, params.typeFilter)
+                .map { transactions -> sortTransactions(transactions, sort) }
         }.onEach { transactions ->
             _uiState.value = _uiState.value.copy(
                 transactions = transactions,
@@ -101,6 +106,10 @@ class TransactionsViewModel @Inject constructor(
     
     fun setTransactionTypeFilter(filter: TransactionTypeFilter) {
         _transactionTypeFilter.value = filter
+    }
+    
+    fun setSortOption(option: SortOption) {
+        _sortOption.value = option
     }
     
     fun deleteTransaction(transaction: TransactionEntity) {
@@ -169,6 +178,17 @@ class TransactionsViewModel @Inject constructor(
                     transaction.description?.contains(searchQuery, ignoreCase = true) == true
                 }
             }
+        }
+    }
+    
+    private fun sortTransactions(transactions: List<TransactionEntity>, sortOption: SortOption): List<TransactionEntity> {
+        return when (sortOption) {
+            SortOption.DATE_NEWEST -> transactions.sortedByDescending { it.dateTime }
+            SortOption.DATE_OLDEST -> transactions.sortedBy { it.dateTime }
+            SortOption.AMOUNT_HIGHEST -> transactions.sortedByDescending { it.amount }
+            SortOption.AMOUNT_LOWEST -> transactions.sortedBy { it.amount }
+            SortOption.MERCHANT_AZ -> transactions.sortedBy { it.merchantName.lowercase() }
+            SortOption.MERCHANT_ZA -> transactions.sortedByDescending { it.merchantName.lowercase() }
         }
     }
     
@@ -249,6 +269,15 @@ enum class DateGroup(val label: String) {
     YESTERDAY("Yesterday"),
     THIS_WEEK("This Week"),
     EARLIER("Earlier")
+}
+
+enum class SortOption(val label: String) {
+    DATE_NEWEST("Newest First"),
+    DATE_OLDEST("Oldest First"),
+    AMOUNT_HIGHEST("Highest Amount"),
+    AMOUNT_LOWEST("Lowest Amount"),
+    MERCHANT_AZ("Merchant (A-Z)"),
+    MERCHANT_ZA("Merchant (Z-A)")
 }
 
 data class FilteredTotals(
