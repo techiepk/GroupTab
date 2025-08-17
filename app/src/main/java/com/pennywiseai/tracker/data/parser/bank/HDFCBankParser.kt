@@ -100,12 +100,85 @@ class HDFCBankParser : BankParser() {
             }
         }
         
+        // Pattern 7: "towards [Merchant Name]" (for payment alerts)
+        if (message.contains("towards", ignoreCase = true)) {
+            val towardsPattern = Regex("""towards\s+([^\n]+?)(?:\s+UMRN|\s+ID:|\s+Alert:|$)""", RegexOption.IGNORE_CASE)
+            towardsPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+        
+        // Pattern 8: "For: [Description]" (for payment alerts)
+        if (message.contains("For:", ignoreCase = true)) {
+            val forColonPattern = Regex("""For:\s+([^\n]+?)(?:\s+From|\s+Via|$)""", RegexOption.IGNORE_CASE)
+            forColonPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+        
+        // Pattern 9: "for [Merchant Name]" (for future debit notifications)
+        if (message.contains("for ", ignoreCase = true) && message.contains("will be debited", ignoreCase = true)) {
+            val forPattern = Regex("""for\s+([^\n]+?)(?:\s+ID:|\s+Act:|$)""", RegexOption.IGNORE_CASE)
+            forPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+        
         // Fall back to generic extraction
         return super.extractMerchant(message, sender)
     }
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
+        
+        // Check if it's an investment transaction
+        val investmentKeywords = listOf(
+            "indian clearing corporation",  // Mutual funds clearing
+            "groww",                        // Investment platform
+            "zerodha",                      // Stock broker
+            "upstox",                       // Stock broker
+            "kite",                         // Zerodha's platform
+            "kuvera",                       // Mutual fund platform
+            "paytm money",                  // Investment platform
+            "etmoney",                      // Investment platform
+            "coin by zerodha",              // Zerodha mutual funds
+            "smallcase",                    // Investment platform
+            "angel one",                    // Stock broker (formerly Angel Broking)
+            "angel broking",                // Old name
+            "5paisa",                       // Stock broker
+            "icici securities",             // Stock broker
+            "icici direct",                 // Stock broker
+            "hdfc securities",              // Stock broker
+            "kotak securities",             // Stock broker
+            "motilal oswal",                // Stock broker
+            "sharekhan",                    // Stock broker
+            "edelweiss",                    // Stock broker
+            "axis direct",                  // Stock broker
+            "sbi securities",               // Stock broker
+            "nse",                          // National Stock Exchange
+            "bse",                          // Bombay Stock Exchange
+            "cdsl",                         // Central Depository Services
+            "nsdl",                         // National Securities Depository
+            "mutual fund",                  // Generic mutual fund
+            "sip",                          // Systematic Investment Plan
+            "elss",                         // Tax saving funds
+            "ipo",                          // Initial Public Offering
+            "stockbroker",                  // Generic
+            "demat"                         // Demat account related
+        )
+        
+        if (investmentKeywords.any { lowerMessage.contains(it) }) {
+            return TransactionType.INVESTMENT
+        }
         
         return when {
             // Credit card transactions
@@ -232,6 +305,13 @@ class HDFCBankParser : BankParser() {
     }
     
     /**
+     * Checks if this is a future debit notification (subscription alert, not a current transaction).
+     */
+    fun isFutureDebitNotification(message: String): Boolean {
+        return message.contains("will be debited on", ignoreCase = true)
+    }
+    
+    /**
      * Parses E-Mandate subscription information.
      */
     fun parseEMandateSubscription(message: String): EMandateInfo? {
@@ -274,7 +354,20 @@ class HDFCBankParser : BankParser() {
             return false
         }
         
+        // Skip future debit notifications (these are subscription alerts, not transactions)
+        if (isFutureDebitNotification(message)) {
+            return false
+        }
+        
         val lowerMessage = message.lowercase()
+        
+        // Check for payment alerts (current transactions)
+        if (lowerMessage.contains("payment alert")) {
+            // Make sure it's not a future debit
+            if (!lowerMessage.contains("will be")) {
+                return true
+            }
+        }
         
         // Skip payment request messages
         if (lowerMessage.contains("has requested") || 
@@ -312,10 +405,59 @@ class HDFCBankParser : BankParser() {
         val hdfcTransactionKeywords = listOf(
             "debited", "credited", "withdrawn", "deposited",
             "spent", "received", "transferred", "paid", 
-            "sent" // HDFC uses "Sent Rs.X From HDFC Bank"
+            "sent", // HDFC uses "Sent Rs.X From HDFC Bank"
+            "deducted" // Add support for "deducted from" pattern
         )
         
         return hdfcTransactionKeywords.any { lowerMessage.contains(it) }
+    }
+    
+    /**
+     * Parses future debit notifications for subscription tracking.
+     * Similar to E-Mandate but for regular future debit alerts.
+     */
+    fun parseFutureDebit(message: String): EMandateInfo? {
+        if (!isFutureDebitNotification(message)) {
+            return null
+        }
+        
+        // Extract amount
+        val amountPattern = Regex("""INR\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        val amount = amountPattern.find(message)?.let { match ->
+            val amountStr = match.groupValues[1].replace(",", "")
+            try {
+                BigDecimal(amountStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        } ?: return null
+        
+        // Extract date (DD/MM/YYYY format)
+        val datePattern = Regex("""will\s+be\s+debited\s+on\s+(\d{2}/\d{2}/\d{4})""", RegexOption.IGNORE_CASE)
+        val debitDate = datePattern.find(message)?.groupValues?.get(1)?.let { dateStr ->
+            // Convert DD/MM/YYYY to DD/MM/YY for consistency with EMandateInfo
+            try {
+                val parts = dateStr.split("/")
+                if (parts.size == 3) {
+                    "${parts[0]}/${parts[1]}/${parts[2].takeLast(2)}"
+                } else {
+                    dateStr
+                }
+            } catch (e: Exception) {
+                dateStr
+            }
+        }
+        
+        // Extract merchant using the existing method
+        val merchant = extractMerchant(message, "HDFCBK") ?: "Unknown Subscription"
+        
+        // Return as EMandateInfo to reuse existing subscription creation logic
+        return EMandateInfo(
+            amount = amount,
+            nextDeductionDate = debitDate,
+            merchant = merchant,
+            umn = null // Future debits don't have UMN
+        )
     }
     
     /**

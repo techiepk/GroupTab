@@ -88,6 +88,7 @@ class SmsReaderWorker @AssistedInject constructor(
                     // Check if it's a mandate/subscription notification
                     when (parser) {
                         is HDFCBankParser -> {
+                            // Check for E-Mandate notifications
                             if (parser.isEMandateNotification(sms.body)) {
                                 val eMandateInfo = parser.parseEMandateSubscription(sms.body)
                                 if (eMandateInfo != null) {
@@ -97,12 +98,31 @@ class SmsReaderWorker @AssistedInject constructor(
                                             parser.getBankName()
                                         )
                                         subscriptionCount++
-                                        Log.d(TAG, "Created/Updated HDFC subscription: $subscriptionId for ${eMandateInfo.merchant}")
+                                        Log.d(TAG, "Created/Updated HDFC E-Mandate subscription: $subscriptionId for ${eMandateInfo.merchant}")
                                     } catch (e: Exception) {
-                                        Log.e(TAG, "Error saving HDFC subscription: ${e.message}")
+                                        Log.e(TAG, "Error saving HDFC E-Mandate subscription: ${e.message}")
                                     }
                                 }
                                 continue // Skip transaction parsing for E-Mandate
+                            }
+                            
+                            // Check for Future Debit notifications (like Twitter subscription)
+                            if (parser.isFutureDebitNotification(sms.body)) {
+                                val futureDebitInfo = parser.parseFutureDebit(sms.body)
+                                if (futureDebitInfo != null) {
+                                    try {
+                                        // Use the same EMandateInfo structure for subscription creation
+                                        val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
+                                            futureDebitInfo,
+                                            parser.getBankName()
+                                        )
+                                        subscriptionCount++
+                                        Log.d(TAG, "Created/Updated HDFC future debit subscription: $subscriptionId for ${futureDebitInfo.merchant}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving HDFC future debit subscription: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing for future debit
                             }
                         }
                         is IndianBankParser -> {
