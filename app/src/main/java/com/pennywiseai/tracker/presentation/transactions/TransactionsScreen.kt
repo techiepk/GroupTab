@@ -50,6 +50,7 @@ fun TransactionsScreen(
     val transactionTypeFilter by viewModel.transactionTypeFilter.collectAsState()
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val categoriesMap by viewModel.categories.collectAsState()
+    val filteredTotals by viewModel.filteredTotals.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -135,6 +136,17 @@ fun TransactionsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = Dimensions.Padding.content)
                 .padding(top = Dimensions.Padding.content)
+        )
+        
+        // Totals Card
+        TransactionTotalsCard(
+            income = filteredTotals.income,
+            expenses = filteredTotals.expenses + filteredTotals.credit + filteredTotals.transfer + filteredTotals.investment,
+            netBalance = filteredTotals.netBalance,
+            isLoading = uiState.isLoading,
+            modifier = Modifier
+                .padding(horizontal = Dimensions.Padding.content)
+                .padding(top = Spacing.sm)
         )
         
         // Transaction Type Filter Chips

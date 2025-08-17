@@ -104,10 +104,24 @@ class AnalyticsViewModel @Inject constructor(
                     .sortedByDescending { it.amount }
                     .take(10) // Top 10 merchants
                 
+                // Calculate average amount
+                val averageAmount = if (filteredTransactions.isNotEmpty()) {
+                    totalSpending.divide(BigDecimal(filteredTransactions.size), 2, java.math.RoundingMode.HALF_UP)
+                } else {
+                    BigDecimal.ZERO
+                }
+                
+                // Get top category info
+                val topCategory = categoryBreakdown.firstOrNull()
+                
                 _uiState.value = AnalyticsUiState(
                     totalSpending = totalSpending,
                     categoryBreakdown = categoryBreakdown,
                     topMerchants = merchantBreakdown,
+                    transactionCount = filteredTransactions.size,
+                    averageAmount = averageAmount,
+                    topCategory = topCategory?.name,
+                    topCategoryPercentage = topCategory?.percentage ?: 0f,
                     isLoading = false
                 )
             }
@@ -120,6 +134,10 @@ data class AnalyticsUiState(
     val totalSpending: BigDecimal = BigDecimal.ZERO,
     val categoryBreakdown: List<CategoryData> = emptyList(),
     val topMerchants: List<MerchantData> = emptyList(),
+    val transactionCount: Int = 0,
+    val averageAmount: BigDecimal = BigDecimal.ZERO,
+    val topCategory: String? = null,
+    val topCategoryPercentage: Float = 0f,
     val isLoading: Boolean = true
 )
 

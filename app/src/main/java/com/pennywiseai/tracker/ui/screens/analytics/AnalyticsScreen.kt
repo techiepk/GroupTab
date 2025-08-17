@@ -124,6 +124,20 @@ fun AnalyticsScreen(
             }
         }
         
+        // Analytics Summary Card
+        if (uiState.totalSpending > BigDecimal.ZERO || uiState.transactionCount > 0) {
+            item {
+                AnalyticsSummaryCard(
+                    totalAmount = uiState.totalSpending,
+                    transactionCount = uiState.transactionCount,
+                    averageAmount = uiState.averageAmount,
+                    topCategory = uiState.topCategory,
+                    topCategoryPercentage = uiState.topCategoryPercentage,
+                    isLoading = uiState.isLoading
+                )
+            }
+        }
+        
         // Category Breakdown Section
         if (uiState.categoryBreakdown.isNotEmpty()) {
             item {

@@ -15,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -41,6 +42,9 @@ class TransactionsViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
+    
+    private val _filteredTotals = MutableStateFlow(FilteredTotals())
+    val filteredTotals: StateFlow<FilteredTotals> = _filteredTotals.asStateFlow()
     
     private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
@@ -73,6 +77,8 @@ class TransactionsViewModel @Inject constructor(
                 groupedTransactions = groupTransactionsByDate(transactions),
                 isLoading = false
             )
+            // Calculate totals for filtered transactions
+            _filteredTotals.value = calculateTotals(transactions)
         }.launchIn(viewModelScope)
     }
     
@@ -183,6 +189,46 @@ class TransactionsViewModel @Inject constructor(
             }
         }
     }
+    
+    private fun calculateTotals(transactions: List<TransactionEntity>): FilteredTotals {
+        val income = transactions
+            .filter { it.transactionType == TransactionType.INCOME }
+            .sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            
+        val expenses = transactions
+            .filter { it.transactionType == TransactionType.EXPENSE }
+            .sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            
+        val credit = transactions
+            .filter { it.transactionType == TransactionType.CREDIT }
+            .sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            
+        val transfer = transactions
+            .filter { it.transactionType == TransactionType.TRANSFER }
+            .sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            
+        val investment = transactions
+            .filter { it.transactionType == TransactionType.INVESTMENT }
+            .sumOf { it.amount.toDouble() }
+            .toBigDecimal()
+            
+        // Calculate net balance (income minus all outgoing)
+        val netBalance = income - expenses - credit - transfer - investment
+        
+        return FilteredTotals(
+            income = income,
+            expenses = expenses,
+            credit = credit,
+            transfer = transfer,
+            investment = investment,
+            netBalance = netBalance,
+            transactionCount = transactions.size
+        )
+    }
 }
 
 data class TransactionsUiState(
@@ -204,3 +250,13 @@ enum class DateGroup(val label: String) {
     THIS_WEEK("This Week"),
     EARLIER("Earlier")
 }
+
+data class FilteredTotals(
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expenses: BigDecimal = BigDecimal.ZERO,
+    val credit: BigDecimal = BigDecimal.ZERO,
+    val transfer: BigDecimal = BigDecimal.ZERO,
+    val investment: BigDecimal = BigDecimal.ZERO,
+    val netBalance: BigDecimal = BigDecimal.ZERO,
+    val transactionCount: Int = 0
+)
