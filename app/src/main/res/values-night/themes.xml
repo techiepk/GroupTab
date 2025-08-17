@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base theme -->
-    <style name="Theme.Pennywisecompose" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base dark theme -->
+    <style name="Theme.Pennywisecompose" parent="android:Theme.Material.NoActionBar" />
     
-    <!-- Splash Screen theme for light mode -->
+    <!-- Splash Screen theme for dark mode -->
     <style name="Theme.PennyWise.SplashScreen" parent="Theme.SplashScreen">
-        <!-- Set the background color -->
-        <item name="windowSplashScreenBackground">#FFFBFE</item>
+        <!-- Dark background color matching Material Design 3 dark theme -->
+        <item name="windowSplashScreenBackground">#121212</item>
         
         <!-- Use the app icon as splash icon -->
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>

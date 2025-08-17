@@ -140,6 +140,9 @@ dependencies {
     // Color Picker for Compose
     implementation("com.github.skydoves:colorpicker-compose:1.1.2")
     
+    // Splash Screen API
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    
     // Lifecycle and ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
