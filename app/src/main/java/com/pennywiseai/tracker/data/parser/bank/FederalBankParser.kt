@@ -22,8 +22,11 @@ class FederalBankParser : BankParser() {
         val normalizedSender = sender.uppercase()
         return normalizedSender.contains("FEDBNK") ||
                normalizedSender.contains("FEDERAL") ||
+               normalizedSender.contains("FEDFIB") ||
                // DLT patterns for transactions (-S suffix)
                normalizedSender.matches(Regex("^[A-Z]{2}-FEDBNK-S$")) ||
+               // FedFiB patterns
+               normalizedSender.matches(Regex("^[A-Z]{2}-FedFiB-[A-Z]$")) ||
                // Other DLT patterns
                normalizedSender.matches(Regex("^[A-Z]{2}-FEDBNK-[TPG]$")) ||
                // Legacy patterns

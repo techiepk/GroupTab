@@ -5,10 +5,11 @@ const FederalBankConfig: BankConfig = {
   bankName: 'Federal Bank',
   bankCode: 'federal',
   senders: {
-    exact: ['FEDBNK', 'FEDERAL'],
-    contains: ['FEDBNK', 'FEDERAL'],
+    exact: ['FEDBNK', 'FEDERAL', 'FEDFIB'],
+    contains: ['FEDBNK', 'FEDERAL', 'FEDFIB'],
     patterns: [
       /^[A-Z]{2}-FEDBNK-S$/,
+      /^[A-Z]{2}-FedFiB-[A-Z]$/,
       /^[A-Z]{2}-FEDBNK-[TPG]$/,
       /^[A-Z]{2}-FEDBNK$/
     ]
