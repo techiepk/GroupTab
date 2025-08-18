@@ -13,6 +13,13 @@ import { KarnatakaBankParser } from './banks/karnataka'
 import { JupiterParser } from './banks/jupiter'
 import { JioPaymentsBankParser } from './banks/jiopayments'
 import { JuspayParser } from './banks/juspay'
+import { SliceParser } from './banks/slice'
+import { UtkarshBankParser } from './banks/utkarsh'
+import { KotakBankParser } from './banks/kotak'
+import { IDFCFirstBankParser } from './banks/idfc'
+import { UnionBankParser } from './banks/union'
+import { HSBCBankParser } from './banks/hsbc'
+import { CentralBankOfIndiaParser } from './banks/centralbank'
 import { ParseResult, ParsedTransaction } from './types'
 
 export class BankParserFactory {
@@ -31,6 +38,13 @@ export class BankParserFactory {
     new JupiterParser(),
     new JioPaymentsBankParser(),
     new JuspayParser(),
+    new SliceParser(),
+    new UtkarshBankParser(),
+    new KotakBankParser(),
+    new IDFCFirstBankParser(),
+    new UnionBankParser(),
+    new HSBCBankParser(),
+    new CentralBankOfIndiaParser(),
   ]
 
   /**

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { BankParserFactory } from '@/lib/parsers'
 import { CategoryMapper } from '@/lib/categorization'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,17 +13,18 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { SubmissionDialog } from '@/components/submission-dialog'
-import { BankTemplates } from '@/components/bank-templates'
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Github } from 'lucide-react'
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams()
   const [smsBody, setSmsBody] = useState('')
   const [sender, setSender] = useState('')
   const [parseResult, setParseResult] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false)
   const [submissionMode, setSubmissionMode] = useState<'submit' | 'improve'>('submit')
+  const [hasAutoProcessed, setHasAutoProcessed] = useState(false)
 
   const handleParse = () => {
     setIsLoading(true)
@@ -51,7 +53,45 @@ export default function Home() {
     setShowSubmissionDialog(true)
   }
 
-  const supportedBanks = BankParserFactory.getSupportedBanks()
+  // Handle URL parameters on mount
+  useEffect(() => {
+    if (hasAutoProcessed) return // Prevent re-running
+    
+    const message = searchParams.get('message')
+    const senderId = searchParams.get('sender')
+    const autoParse = searchParams.get('autoparse')
+    
+    if (message) {
+      const decodedMessage = decodeURIComponent(message)
+      setSmsBody(decodedMessage)
+    }
+    
+    if (senderId) {
+      const decodedSender = decodeURIComponent(senderId)
+      setSender(decodedSender)
+    }
+    
+    // Auto-parse if requested and both message and sender are provided
+    if (autoParse === 'true' && message && senderId) {
+      setHasAutoProcessed(true)
+      // Delay parsing slightly to ensure state is set
+      setTimeout(() => {
+        const decodedMessage = decodeURIComponent(message)
+        const decodedSender = decodeURIComponent(senderId)
+        
+        try {
+          const result = BankParserFactory.parse(decodedMessage, decodedSender, Date.now())
+          setParseResult(result)
+        } catch (error) {
+          setParseResult({
+            success: false,
+            error: 'An error occurred while parsing the SMS'
+          })
+        }
+      }, 100)
+    }
+  }, [searchParams, hasAutoProcessed])
+
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
@@ -63,12 +103,20 @@ export default function Home() {
               Test if your bank SMS messages are compatible with PennyWise
             </p>
           </div>
-          <Link href="/bank-support">
-            <Button variant="outline" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              Bank Support Docs
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/bank-support">
+              <Button variant="outline" className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                Bank Support Docs
+              </Button>
+            </Link>
+            <Link href="https://github.com/sarim2000/pennywiseai-tracker" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="gap-2">
+                <Github className="h-4 w-4" />
+                GitHub
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Card>
@@ -101,6 +149,9 @@ export default function Home() {
                 onChange={(e) => setSmsBody(e.target.value)}
                 rows={6}
               />
+              <p className="text-xs text-muted-foreground">
+                ⚠️ Please randomize your private information (account numbers, card numbers, UPI IDs, etc.) before submitting
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -233,25 +284,6 @@ export default function Home() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Supported Banks</CardTitle>
-            <CardDescription>
-              Currently supporting {supportedBanks.length} banks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {supportedBanks.map((bank) => (
-                <Badge key={bank.code} variant="secondary">
-                  {bank.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <BankTemplates />
 
         <Card>
           <CardHeader>
@@ -282,5 +314,17 @@ export default function Home() {
         mode={submissionMode}
       />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto py-8 px-4 max-w-4xl">
+        <div className="text-center">Loading...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }
