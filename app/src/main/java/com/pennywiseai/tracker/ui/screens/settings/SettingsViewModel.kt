@@ -18,7 +18,13 @@ import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.data.repository.ModelRepository
 import com.pennywiseai.tracker.data.repository.ModelState
+import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
+import android.content.Intent
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
+import java.net.URLEncoder
 import java.io.File
 import javax.inject.Inject
 
@@ -26,7 +32,8 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val modelRepository: ModelRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val unrecognizedSmsRepository: UnrecognizedSmsRepository
 ) : ViewModel() {
     
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -51,6 +58,14 @@ class SettingsViewModel @Inject constructor(
     
     // SMS scan period state
     val smsScanMonths = userPreferencesRepository.smsScanMonths
+    
+    // Unrecognized SMS state
+    val unreportedSmsCount = unrecognizedSmsRepository.getUnreportedCount()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
     
     init {
         checkDownloadStatus()
@@ -335,6 +350,36 @@ class SettingsViewModel @Inject constructor(
     fun updateSmsScanMonths(months: Int) {
         viewModelScope.launch {
             userPreferencesRepository.updateSmsScanMonths(months)
+        }
+    }
+    
+    fun openUnrecognizedSmsReport(context: Context) {
+        viewModelScope.launch {
+            try {
+                val firstUnreported = unrecognizedSmsRepository.getFirstUnreported()
+                
+                if (firstUnreported != null) {
+                    // URL encode the parameters
+                    val encodedMessage = URLEncoder.encode(firstUnreported.smsBody, "UTF-8")
+                    val encodedSender = URLEncoder.encode(firstUnreported.sender, "UTF-8")
+                    
+                    // Create the report URL
+                    val url = "https://pennywise-5qh.pages.dev/?message=$encodedMessage&sender=$encodedSender&autoparse=true"
+                    
+                    // Open in browser
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    context.startActivity(intent)
+                    
+                    // Mark as reported
+                    unrecognizedSmsRepository.markAsReported(listOf(firstUnreported.id))
+                    
+                    Log.d("SettingsViewModel", "Opened report for unrecognized SMS from: ${firstUnreported.sender}")
+                } else {
+                    Log.d("SettingsViewModel", "No unreported SMS messages found")
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error opening unrecognized SMS report", e)
+            }
         }
     }
 }

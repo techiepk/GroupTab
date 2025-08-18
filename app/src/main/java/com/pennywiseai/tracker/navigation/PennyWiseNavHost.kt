@@ -14,6 +14,7 @@ import com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen
 import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
 import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
+import com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
 @Composable
@@ -73,6 +74,9 @@ fun PennyWiseNavHost(
                 },
                 onNavigateToCategories = {
                     navController.navigate(Categories)
+                },
+                onNavigateToUnrecognizedSms = {
+                    navController.navigate(UnrecognizedSms)
                 }
             )
         }
@@ -99,6 +103,19 @@ fun PennyWiseNavHost(
             val transactionDetail = backStackEntry.toRoute<TransactionDetail>()
             TransactionDetailScreen(
                 transactionId = transactionDetail.transactionId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable<UnrecognizedSms>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            UnrecognizedSmsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

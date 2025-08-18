@@ -22,6 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
@@ -383,11 +386,17 @@ fun TransactionsScreen(
                                 items = transactions,
                                 key = { it.id }
                             ) { transaction ->
+                                val context = LocalContext.current
                                 SwipeableTransactionItem(
                                     transaction = transaction,
                                     categoriesMap = categoriesMap,
                                     showDate = dateGroup == DateGroup.EARLIER,
                                     onDelete = { viewModel.deleteTransaction(transaction) },
+                                    onReport = {
+                                        val reportUrl = viewModel.getReportUrl(transaction)
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl))
+                                        context.startActivity(intent)
+                                    },
                                     onClick = { onTransactionClick(transaction.id) }
                                 )
                                 if (transaction != transactions.last()) {
@@ -466,6 +475,7 @@ private fun SwipeableTransactionItem(
     categoriesMap: Map<String, CategoryEntity>,
     showDate: Boolean,
     onDelete: () -> Unit,
+    onReport: () -> Unit,
     onClick: () -> Unit = {}
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -511,6 +521,7 @@ private fun SwipeableTransactionItem(
                 transaction = transaction,
                 categoriesMap = categoriesMap,
                 showDate = showDate,
+                onReport = onReport,
                 onClick = onClick
             )
         }
@@ -522,8 +533,10 @@ private fun TransactionItem(
     transaction: TransactionEntity,
     categoriesMap: Map<String, CategoryEntity>,
     showDate: Boolean,
+    onReport: () -> Unit = {},
     onClick: () -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
     val amountColor = when (transaction.transactionType) {
         TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
         TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
@@ -611,6 +624,41 @@ private fun TransactionItem(
                     fontWeight = FontWeight.SemiBold,
                     color = amountColor
                 )
+                
+                // More options menu
+                Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "More options",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Report Issue") },
+                            onClick = {
+                                showMenu = false
+                                onReport()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.BugReport,
+                                    contentDescription = "Report",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
     )

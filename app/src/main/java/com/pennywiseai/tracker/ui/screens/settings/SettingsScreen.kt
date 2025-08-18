@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.ui.screens.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +36,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onNavigateToCategories: () -> Unit = {},
+    onNavigateToUnrecognizedSms: () -> Unit = {},
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
@@ -44,6 +47,7 @@ fun SettingsScreen(
     val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle(initialValue = false)
     val smsScanMonths by settingsViewModel.smsScanMonths.collectAsStateWithLifecycle(initialValue = 3)
     var showSmsScanDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     Column(
         modifier = modifier
@@ -342,6 +346,59 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+        }
+        
+        // Unrecognized Messages Section (only show if count > 0)
+        val unreportedCount by settingsViewModel.unreportedSmsCount.collectAsStateWithLifecycle()
+        
+        if (unreportedCount > 0) {
+            SectionHeader(title = "Help Improve PennyWise")
+            
+            PennyWiseCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { 
+                    Log.d("SettingsScreen", "Navigating to UnrecognizedSms screen")
+                    onNavigateToUnrecognizedSms() 
+                }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimensions.Padding.content),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Unrecognized Bank Messages",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "$unreportedCount message${if (unreportedCount > 1) "s" else ""} from potential banks",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(unreportedCount.toString())
+                        }
+                        
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "View Messages",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

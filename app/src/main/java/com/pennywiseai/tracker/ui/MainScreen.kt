@@ -74,11 +74,12 @@ fun MainScreen(
                     "analytics" -> "Analytics"
                     "settings" -> "Settings"
                     "categories" -> "Categories"
+                    "unrecognized_sms" -> "Unrecognized Messages"
                     else -> "PennyWise"
                 },
-                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories"),
-                showSettingsButton = currentRoute !in listOf("settings", "categories"),
-                showDiscordButton = currentRoute !in listOf("settings", "categories"), // Hide on settings and categories
+                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms"),
+                showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms"),
+                showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms"), // Hide on settings, categories and unrecognized_sms
                 onBackClick = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate("settings") },
                 onDiscordClick = {
@@ -218,12 +219,23 @@ fun MainScreen(
                     },
                     onNavigateToCategories = {
                         navController.navigate("categories")
+                    },
+                    onNavigateToUnrecognizedSms = {
+                        navController.navigate("unrecognized_sms")
                     }
                 )
             }
             
             composable("categories") {
                 com.pennywiseai.tracker.presentation.categories.CategoriesScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            
+            composable("unrecognized_sms") {
+                com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

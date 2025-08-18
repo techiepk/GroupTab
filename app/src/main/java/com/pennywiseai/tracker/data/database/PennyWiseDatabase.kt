@@ -15,12 +15,14 @@ import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
+import com.pennywiseai.tracker.data.database.dao.UnrecognizedSmsDao
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.database.entity.MerchantMappingEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
+import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
 
 /**
  * The PennyWise Room database.
@@ -33,8 +35,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class],
-    version = 11,
+    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class],
+    version = 12,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -46,7 +48,8 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
         AutoMigration(from = 7, to = 8, spec = Migration7To8::class),
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
-        AutoMigration(from = 10, to = 11, spec = Migration10To11::class)
+        AutoMigration(from = 10, to = 11, spec = Migration10To11::class),
+        AutoMigration(from = 11, to = 12)
     ]
 )
 @TypeConverters(Converters::class)
@@ -57,6 +60,7 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun merchantMappingDao(): MerchantMappingDao
     abstract fun categoryDao(): CategoryDao
     abstract fun accountBalanceDao(): AccountBalanceDao
+    abstract fun unrecognizedSmsDao(): UnrecognizedSmsDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"

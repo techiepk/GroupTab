@@ -19,6 +19,8 @@ import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
+import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
+import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -41,7 +43,8 @@ class SmsReaderWorker @AssistedInject constructor(
     private val accountBalanceRepository: AccountBalanceRepository,
     private val llmRepository: LlmRepository,
     private val merchantMappingRepository: MerchantMappingRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val unrecognizedSmsRepository: UnrecognizedSmsRepository
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -219,7 +222,35 @@ class SmsReaderWorker @AssistedInject constructor(
                             Log.e(TAG, "Error saving transaction: ${e.message}")
                         }
                     }
+                } else {
+                    // Check if it's from a potential financial provider (-T or -S suffix)
+                    val upperSender = sms.sender.uppercase()
+                    if (upperSender.endsWith("-T") || upperSender.endsWith("-S")) {
+                        try {
+                            // Store unrecognized SMS for later reporting
+                            val unrecognizedSms = UnrecognizedSmsEntity(
+                                sender = sms.sender,
+                                smsBody = sms.body,
+                                receivedAt = LocalDateTime.ofInstant(
+                                    Instant.ofEpochMilli(sms.timestamp),
+                                    ZoneId.systemDefault()
+                                )
+                            )
+                            unrecognizedSmsRepository.insert(unrecognizedSms)
+                            Log.d(TAG, "Stored unrecognized SMS from potential financial provider: ${sms.sender}")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error storing unrecognized SMS: ${e.message}")
+                        }
+                    }
                 }
+            }
+            
+            // Clean up old unrecognized SMS entries
+            try {
+                unrecognizedSmsRepository.cleanupOldEntries()
+                Log.d(TAG, "Cleaned up old unrecognized SMS entries")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error cleaning up unrecognized SMS: ${e.message}")
             }
             
             Log.d(TAG, "SMS parsing completed. Parsed: $parsedCount, Saved: $savedCount, Subscriptions: $subscriptionCount")

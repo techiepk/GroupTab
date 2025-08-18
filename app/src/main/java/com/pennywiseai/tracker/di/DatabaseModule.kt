@@ -11,6 +11,7 @@ import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
+import com.pennywiseai.tracker.data.database.dao.UnrecognizedSmsDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -132,6 +133,18 @@ object DatabaseModule {
     @Singleton
     fun provideAccountBalanceDao(database: PennyWiseDatabase): AccountBalanceDao {
         return database.accountBalanceDao()
+    }
+    
+    /**
+     * Provides the UnrecognizedSmsDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return UnrecognizedSmsDao for accessing unrecognized SMS data
+     */
+    @Provides
+    @Singleton
+    fun provideUnrecognizedSmsDao(database: PennyWiseDatabase): UnrecognizedSmsDao {
+        return database.unrecognizedSmsDao()
     }
 }
 

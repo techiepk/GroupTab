@@ -249,6 +249,29 @@ class TransactionsViewModel @Inject constructor(
             transactionCount = transactions.size
         )
     }
+    
+    fun getReportUrl(transaction: TransactionEntity): String {
+        // If we have the original SMS body, create report URL
+        val smsBody = transaction.smsBody ?: ""
+        // For now, we'll need to extract sender from bank name or leave blank
+        // TODO: Add sender field to TransactionEntity for better reporting
+        val sender = when (transaction.bankName?.uppercase()) {
+            "HDFC BANK" -> "HDFCBK"
+            "SBI", "STATE BANK OF INDIA" -> "SBIBNK"
+            "ICICI BANK" -> "ICICIB"
+            "AXIS BANK" -> "AXISBK"
+            "FEDERAL BANK" -> "FEDERA"
+            "INDIAN BANK" -> "INDBNK"
+            else -> ""
+        }
+        
+        // URL encode the parameters
+        val encodedMessage = java.net.URLEncoder.encode(smsBody, "UTF-8")
+        val encodedSender = java.net.URLEncoder.encode(sender, "UTF-8")
+        
+        // Create the report URL with parameters
+        return "https://pennywise-5qh.pages.dev/?message=$encodedMessage&sender=$encodedSender&autoparse=true"
+    }
 }
 
 data class TransactionsUiState(
