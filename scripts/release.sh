@@ -11,6 +11,30 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Global variables for cleanup
+CHANGELOG_FILE=""
+CHANGELOG_DIR="fastlane/metadata/android/en-US/changelogs"
+CHANGES_MADE=false
+
+# Cleanup function for interruptions
+cleanup_on_exit() {
+    if [ "$CHANGES_MADE" = true ]; then
+        echo ""
+        echo -e "${YELLOW}⚠️  Script interrupted. Reverting changes...${NC}"
+        git checkout -- app/build.gradle.kts 2>/dev/null || true
+        if [ -n "$CHANGELOG_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
+            rm -f "$CHANGELOG_FILE"
+        fi
+        if [ -f "$CHANGELOG_DIR/default.txt" ]; then
+            git checkout -- "$CHANGELOG_DIR/default.txt" 2>/dev/null || rm -f "$CHANGELOG_DIR/default.txt"
+        fi
+        echo -e "${YELLOW}Changes reverted.${NC}"
+    fi
+}
+
+# Set trap for cleanup on exit
+trap cleanup_on_exit EXIT INT TERM
+
 # Parse arguments
 VERSION_BUMP=${1:-patch}
 DRY_RUN=""
@@ -86,12 +110,18 @@ if [ "$DRY_RUN" = "true" ]; then
 fi
 
 # 5. Update version (versionName and versionCode)
-sed -i "s/versionName = \".*\"/versionName = \"$NEXT_VERSION\"/" app/build.gradle.kts
-sed -i "s/versionCode = .*/versionCode = $NEXT_CODE/" app/build.gradle.kts
+# Use sed -i '' for macOS, sed -i for Linux
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/versionName = \".*\"/versionName = \"$NEXT_VERSION\"/" app/build.gradle.kts
+    sed -i '' "s/versionCode = .*/versionCode = $NEXT_CODE/" app/build.gradle.kts
+else
+    sed -i "s/versionName = \".*\"/versionName = \"$NEXT_VERSION\"/" app/build.gradle.kts
+    sed -i "s/versionCode = .*/versionCode = $NEXT_CODE/" app/build.gradle.kts
+fi
+CHANGES_MADE=true  # Mark that we've made changes
 echo -e "${GREEN}✅ Version updated: $NEXT_VERSION (code: $NEXT_CODE)${NC}"
 
 # 5a. Update fastlane changelog
-CHANGELOG_DIR="fastlane/metadata/android/en-US/changelogs"
 CHANGELOG_FILE="$CHANGELOG_DIR/${NEXT_CODE}.txt"
 
 # Generate simple changelog for fastlane
@@ -127,9 +157,41 @@ echo -e "${GREEN}✅ Fastlane changelog created: $CHANGELOG_FILE${NC}"
 
 # 6. Build APKs
 echo -e "${YELLOW}🔨 Building APKs...${NC}"
-./gradlew clean
-./gradlew assembleStandardRelease
-./gradlew assembleFdroidRelease
+
+# Function to revert changes on failure
+revert_changes() {
+    echo -e "${RED}❌ Build failed! Reverting changes...${NC}"
+    
+    CHANGES_MADE=false  # Reset flag so cleanup_on_exit doesn't run again
+    
+    # Revert build.gradle.kts
+    git checkout -- app/build.gradle.kts
+    
+    # Remove fastlane changelog files
+    if [ -f "$CHANGELOG_FILE" ]; then
+        rm -f "$CHANGELOG_FILE"
+    fi
+    if [ -f "$CHANGELOG_DIR/default.txt" ]; then
+        git checkout -- "$CHANGELOG_DIR/default.txt" 2>/dev/null || rm -f "$CHANGELOG_DIR/default.txt"
+    fi
+    
+    echo -e "${YELLOW}⚠️  Changes reverted. Please fix the build errors and try again.${NC}"
+    exit 1
+}
+
+# Try to build with error handling
+if ! ./gradlew clean; then
+    revert_changes
+fi
+
+if ! ./gradlew assembleStandardRelease; then
+    revert_changes
+fi
+
+if ! ./gradlew assembleFdroidRelease; then
+    revert_changes
+fi
+
 echo -e "${GREEN}✅ APKs built${NC}"
 
 # 7. Rename APKs (matching GitHub Actions)
@@ -159,6 +221,7 @@ fi
 echo -e "${GREEN}✅ APKs renamed${NC}"
 
 # 8. Calculate SHA256
+ORIGINAL_DIR="$PWD"
 cd "$STANDARD_PATH"
 for apk in PennyWise-v${NEXT_VERSION}*.apk; do
     if [ -f "$apk" ]; then
@@ -166,20 +229,33 @@ for apk in PennyWise-v${NEXT_VERSION}*.apk; do
     fi
 done
 
-cd "$OLDPWD/$FDROID_PATH"
+cd "$ORIGINAL_DIR/$FDROID_PATH"
 if [ -f "PennyWise-fdroid-v${NEXT_VERSION}.apk" ]; then
     sha256sum "PennyWise-fdroid-v${NEXT_VERSION}.apk" > "PennyWise-fdroid-v${NEXT_VERSION}.apk.sha256"
 fi
-cd "$OLDPWD"
+cd "$ORIGINAL_DIR"
 
 echo -e "${GREEN}✅ SHA256 calculated${NC}"
 
 # 9. Commit and tag
-git add app/build.gradle.kts
-git add "$CHANGELOG_FILE"
-git add "$CHANGELOG_DIR/default.txt"
+if [ -f "app/build.gradle.kts" ]; then
+    git add app/build.gradle.kts
+else
+    echo -e "${RED}Error: app/build.gradle.kts not found${NC}"
+    exit 1
+fi
+
+if [ -f "$CHANGELOG_FILE" ]; then
+    git add "$CHANGELOG_FILE"
+fi
+
+if [ -f "$CHANGELOG_DIR/default.txt" ]; then
+    git add "$CHANGELOG_DIR/default.txt"
+fi
+
 git commit -m "chore(release): bump version to $NEXT_VERSION [skip ci]"
 git tag -a "v$NEXT_VERSION" -m "Release v$NEXT_VERSION"
+CHANGES_MADE=false  # Changes are now committed, no need to revert
 echo -e "${GREEN}✅ Commit and tag created${NC}"
 
 # 10. Push to GitHub
