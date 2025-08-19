@@ -46,7 +46,10 @@ object DatabaseModule {
             PennyWiseDatabase.DATABASE_NAME
         )
             // Add manual migrations here when needed
-            // .addMigrations(PennyWiseDatabase.MIGRATION_1_2)
+            .addMigrations(
+                PennyWiseDatabase.MIGRATION_12_14,
+                PennyWiseDatabase.MIGRATION_13_14
+            )
             
             // Enable auto-migrations
             // Room will automatically detect schema changes between versions

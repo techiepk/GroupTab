@@ -26,6 +26,11 @@ class UnrecognizedSmsRepository @Inject constructor(
     fun getAllUnreported(): Flow<List<UnrecognizedSmsEntity>> = dao.getAllUnreported()
     
     /**
+     * Get all visible messages (including reported, excluding deleted)
+     */
+    fun getAllVisible(): Flow<List<UnrecognizedSmsEntity>> = dao.getAllVisible()
+    
+    /**
      * Get first unreported message
      */
     suspend fun getFirstUnreported(): UnrecognizedSmsEntity? = dao.getFirstUnreported()
@@ -60,9 +65,16 @@ class UnrecognizedSmsRepository @Inject constructor(
     }
     
     /**
-     * Delete a specific message by ID
+     * Soft delete a specific message by ID
      */
     suspend fun deleteMessage(id: Long) {
-        dao.deleteById(id)
+        dao.softDeleteById(id)
+    }
+    
+    /**
+     * Check if a message already exists (including deleted ones)
+     */
+    suspend fun exists(sender: String, smsBody: String): Boolean {
+        return dao.findBySenderAndBody(sender, smsBody) != null
     }
 }

@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import java.net.URLEncoder
 import javax.inject.Inject
 
@@ -24,13 +25,27 @@ class UnrecognizedSmsViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    private val _showReported = MutableStateFlow(true)
+    val showReported: StateFlow<Boolean> = _showReported.asStateFlow()
+    
+    private val allMessages = unrecognizedSmsRepository.getAllVisible()
+    
     val unrecognizedMessages: StateFlow<List<UnrecognizedSmsEntity>> = 
-        unrecognizedSmsRepository.getAllUnreported()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
+        combine(allMessages, _showReported) { messages, showReported ->
+            if (showReported) {
+                messages
+            } else {
+                messages.filter { !it.reported }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
+    fun toggleShowReported() {
+        _showReported.value = !_showReported.value
+    }
     
     fun reportMessage(message: UnrecognizedSmsEntity) {
         viewModelScope.launch {

@@ -30,6 +30,7 @@ fun UnrecognizedSmsScreen(
 ) {
     val unrecognizedMessages by viewModel.unrecognizedMessages.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val showReported by viewModel.showReported.collectAsStateWithLifecycle()
     var selectedMessage by remember { mutableStateOf<UnrecognizedSmsEntity?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     
@@ -70,15 +71,42 @@ fun UnrecognizedSmsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                if (unrecognizedMessages.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                    ) {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ) {
-                            Text("${unrecognizedMessages.size} messages")
+                // Filter toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    FilterChip(
+                        selected = showReported,
+                        onClick = { viewModel.toggleShowReported() },
+                        label = { Text("Show Reported") },
+                        leadingIcon = if (showReported) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    if (unrecognizedMessages.isNotEmpty()) {
+                        val reportedCount = unrecognizedMessages.count { it.reported }
+                        val unreportedCount = unrecognizedMessages.size - reportedCount
+                        
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                            if (unreportedCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Text("$unreportedCount new")
+                                }
+                            }
+                            if (reportedCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Text("$reportedCount reported")
+                                }
+                            }
                         }
                     }
                 }

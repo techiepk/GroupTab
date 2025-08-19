@@ -13,27 +13,33 @@ import java.time.LocalDateTime
 @Dao
 interface UnrecognizedSmsDao {
     
-    @Insert
+    @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
     suspend fun insert(sms: UnrecognizedSmsEntity): Long
     
-    @Query("SELECT * FROM unrecognized_sms WHERE reported = 0 ORDER BY received_at DESC")
+    @Query("SELECT * FROM unrecognized_sms WHERE reported = 0 AND is_deleted = 0 ORDER BY received_at DESC")
     fun getAllUnreported(): Flow<List<UnrecognizedSmsEntity>>
     
-    @Query("SELECT * FROM unrecognized_sms WHERE reported = 0 ORDER BY received_at DESC LIMIT 1")
+    @Query("SELECT * FROM unrecognized_sms WHERE is_deleted = 0 ORDER BY received_at DESC")
+    fun getAllVisible(): Flow<List<UnrecognizedSmsEntity>>
+    
+    @Query("SELECT * FROM unrecognized_sms WHERE reported = 0 AND is_deleted = 0 ORDER BY received_at DESC LIMIT 1")
     suspend fun getFirstUnreported(): UnrecognizedSmsEntity?
     
-    @Query("SELECT COUNT(*) FROM unrecognized_sms WHERE reported = 0")
+    @Query("SELECT COUNT(*) FROM unrecognized_sms WHERE reported = 0 AND is_deleted = 0")
     fun getUnreportedCount(): Flow<Int>
     
     @Query("UPDATE unrecognized_sms SET reported = 1 WHERE id IN (:ids)")
     suspend fun markAsReported(ids: List<Long>)
     
-    @Query("DELETE FROM unrecognized_sms WHERE received_at < :cutoffDate")
+    @Query("UPDATE unrecognized_sms SET is_deleted = 1 WHERE received_at < :cutoffDate")
     suspend fun deleteOldEntries(cutoffDate: LocalDateTime)
     
-    @Query("DELETE FROM unrecognized_sms")
+    @Query("UPDATE unrecognized_sms SET is_deleted = 1")
     suspend fun deleteAll()
     
-    @Query("DELETE FROM unrecognized_sms WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    @Query("UPDATE unrecognized_sms SET is_deleted = 1 WHERE id = :id")
+    suspend fun softDeleteById(id: Long)
+    
+    @Query("SELECT * FROM unrecognized_sms WHERE sender = :sender AND sms_body = :smsBody LIMIT 1")
+    suspend fun findBySenderAndBody(sender: String, smsBody: String): UnrecognizedSmsEntity?
 }

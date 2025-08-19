@@ -36,7 +36,7 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class],
-    version = 13,
+    version = 14,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -74,6 +74,94 @@ abstract class PennyWiseDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Example: Add a new column
                 // db.execSQL("ALTER TABLE transactions ADD COLUMN tags TEXT")
+            }
+        }
+        
+        /**
+         * Manual migration from version 13 to 14.
+         * Adds is_deleted column and unique constraint, handling existing duplicates.
+         */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Check if sms_sender column already exists in transactions table
+                val cursor = db.query("PRAGMA table_info(transactions)")
+                var hasSenderColumn = false
+                while (cursor.moveToNext()) {
+                    val columnName = cursor.getString(cursor.getColumnIndex("name"))
+                    if (columnName == "sms_sender") {
+                        hasSenderColumn = true
+                        break
+                    }
+                }
+                cursor.close()
+                
+                // Add sms_sender column to transactions table only if it doesn't exist
+                if (!hasSenderColumn) {
+                    db.execSQL("ALTER TABLE transactions ADD COLUMN sms_sender TEXT")
+                }
+                
+                // Check if is_deleted column already exists in unrecognized_sms table
+                val cursor2 = db.query("PRAGMA table_info(unrecognized_sms)")
+                var hasIsDeletedColumn = false
+                while (cursor2.moveToNext()) {
+                    val columnName = cursor2.getString(cursor2.getColumnIndex("name"))
+                    if (columnName == "is_deleted") {
+                        hasIsDeletedColumn = true
+                        break
+                    }
+                }
+                cursor2.close()
+                
+                // Only proceed with unrecognized_sms migration if needed
+                if (!hasIsDeletedColumn) {
+                    // First, add the is_deleted column with default value
+                    db.execSQL("ALTER TABLE unrecognized_sms ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0")
+                    
+                    // Create a temporary table with the new schema (including unique constraint)
+                    db.execSQL("""
+                        CREATE TABLE unrecognized_sms_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            sender TEXT NOT NULL,
+                            sms_body TEXT NOT NULL,
+                            received_at TEXT NOT NULL,
+                            reported INTEGER NOT NULL,
+                            is_deleted INTEGER NOT NULL DEFAULT 0,
+                            created_at TEXT NOT NULL
+                        )
+                    """)
+                    
+                    // Copy data from old table, keeping only the most recent of duplicates
+                    db.execSQL("""
+                        INSERT INTO unrecognized_sms_new (id, sender, sms_body, received_at, reported, is_deleted, created_at)
+                        SELECT id, sender, sms_body, received_at, reported, is_deleted, created_at
+                        FROM unrecognized_sms
+                        WHERE id IN (
+                            SELECT MAX(id)
+                            FROM unrecognized_sms
+                            GROUP BY sender, sms_body
+                        )
+                    """)
+                    
+                    // Drop the old table
+                    db.execSQL("DROP TABLE unrecognized_sms")
+                    
+                    // Rename the new table to the original name
+                    db.execSQL("ALTER TABLE unrecognized_sms_new RENAME TO unrecognized_sms")
+                    
+                    // Create the unique index
+                    db.execSQL("CREATE UNIQUE INDEX index_unrecognized_sms_sender_sms_body ON unrecognized_sms (sender, sms_body)")
+                }
+            }
+        }
+        
+        /**
+         * Manual migration from version 12 to 14.
+         * Handles direct upgrade from 12 to 14, combining migrations 12->13 and 13->14.
+         */
+        val MIGRATION_12_14 = object : Migration(12, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Same as MIGRATION_13_14 since we need to handle both cases
+                MIGRATION_13_14.migrate(db)
             }
         }
     }

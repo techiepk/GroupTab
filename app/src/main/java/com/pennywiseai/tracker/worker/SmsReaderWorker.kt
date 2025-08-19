@@ -227,17 +227,24 @@ class SmsReaderWorker @AssistedInject constructor(
                     val upperSender = sms.sender.uppercase()
                     if (upperSender.endsWith("-T") || upperSender.endsWith("-S")) {
                         try {
-                            // Store unrecognized SMS for later reporting
-                            val unrecognizedSms = UnrecognizedSmsEntity(
-                                sender = sms.sender,
-                                smsBody = sms.body,
-                                receivedAt = LocalDateTime.ofInstant(
-                                    Instant.ofEpochMilli(sms.timestamp),
-                                    ZoneId.systemDefault()
+                            // Check if this message already exists (including soft-deleted ones)
+                            val alreadyExists = unrecognizedSmsRepository.exists(sms.sender, sms.body)
+                            
+                            if (!alreadyExists) {
+                                // Store unrecognized SMS for later reporting
+                                val unrecognizedSms = UnrecognizedSmsEntity(
+                                    sender = sms.sender,
+                                    smsBody = sms.body,
+                                    receivedAt = LocalDateTime.ofInstant(
+                                        Instant.ofEpochMilli(sms.timestamp),
+                                        ZoneId.systemDefault()
+                                    )
                                 )
-                            )
-                            unrecognizedSmsRepository.insert(unrecognizedSms)
-                            Log.d(TAG, "Stored unrecognized SMS from potential financial provider: ${sms.sender}")
+                                unrecognizedSmsRepository.insert(unrecognizedSms)
+                                Log.d(TAG, "Stored unrecognized SMS from potential financial provider: ${sms.sender}")
+                            } else {
+                                Log.d(TAG, "Skipping duplicate unrecognized SMS from: ${sms.sender}")
+                            }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error storing unrecognized SMS: ${e.message}")
                         }

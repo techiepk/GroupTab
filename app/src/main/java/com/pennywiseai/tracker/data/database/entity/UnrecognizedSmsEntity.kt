@@ -10,7 +10,15 @@ import java.time.LocalDateTime
  * Only stores messages from senders ending with -T (transaction) or -S (service) suffixes,
  * which indicate DLT-registered financial service providers.
  */
-@Entity(tableName = "unrecognized_sms")
+@Entity(
+    tableName = "unrecognized_sms",
+    indices = [
+        androidx.room.Index(
+            value = ["sender", "sms_body"],
+            unique = true
+        )
+    ]
+)
 data class UnrecognizedSmsEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
@@ -27,6 +35,9 @@ data class UnrecognizedSmsEntity(
     
     @ColumnInfo(name = "reported")
     val reported: Boolean = false,
+    
+    @ColumnInfo(name = "is_deleted", defaultValue = "0")
+    val isDeleted: Boolean = false,
     
     @ColumnInfo(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now()
