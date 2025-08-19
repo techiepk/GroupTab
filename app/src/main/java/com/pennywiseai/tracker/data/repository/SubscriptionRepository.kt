@@ -309,7 +309,6 @@ class SubscriptionRepository @Inject constructor(
             SubscriptionEntity(
                 merchantName = upiMandateInfo.merchant,
                 amount = upiMandateInfo.amount,
-                billingCycle = "Monthly", // Default to monthly for SBI UPI-Mandates
                 nextPaymentDate = nextPaymentDate,
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,

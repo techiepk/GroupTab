@@ -14,6 +14,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
+import com.pennywiseai.tracker.data.parser.bank.SBIBankParser
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
