@@ -92,7 +92,7 @@ fun ChatScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Gemma Model Required",
+                                    text = "Qwen Model Required",
                                     style = MaterialTheme.typography.headlineSmall
                                 )
                                 Text(
@@ -523,7 +523,7 @@ fun DeveloperInfoCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Gemma 2B • ${chatStats.messageCount} messages",
+                        text = "Qwen 2.5 • ${chatStats.messageCount} messages",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

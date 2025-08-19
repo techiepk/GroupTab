@@ -69,10 +69,10 @@ object Constants {
      * LLM Model Configuration
      */
     object ModelDownload {
-        const val MODEL_URL = "https://d3q489kjw0f759.cloudfront.net/Gemma2-2B-IT_multi-prefill-seq_q8_ekv1280.task"
-        const val MODEL_FILE_NAME = "gemma2-2b.task"
-        const val MODEL_SIZE_MB = 2587L // 2587 MB
-        const val MODEL_SIZE_BYTES = 2_712_674_304L // 2587 MB in bytes
-        const val REQUIRED_SPACE_BYTES = 5_425_348_608L // ~5.2GB (2x model size for safety)
+        const val MODEL_URL = "https://d3q489kjw0f759.cloudfront.net/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.task"
+        const val MODEL_FILE_NAME = "qwen2.5-1.5b-instruct.task"
+        const val MODEL_SIZE_MB = 1536L // 1536 MB
+        const val MODEL_SIZE_BYTES = 1_610_613_760L // 1536 MB in bytes
+        const val REQUIRED_SPACE_BYTES = 2_013_771_776L // ~2GB (2x model size for safety)
     }
 }

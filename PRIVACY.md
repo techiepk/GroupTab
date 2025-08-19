@@ -8,7 +8,7 @@ PennyWise AI is built with privacy as the core principle. We believe your financ
 
 ## 100% On-Device Processing
 
-**All data processing happens locally on your device.** We use MediaPipe's on-device LLM (Gemma 2B) for AI features, ensuring:
+**All data processing happens locally on your device.** We use MediaPipe's on-device LLM (Qwen 2.5) for AI features, ensuring:
 
 - ✅ **No cloud servers** - Your data never leaves your phone
 - ✅ **No data collection** - We don't collect, store, or transmit any user data
@@ -42,8 +42,8 @@ PennyWise AI is built with privacy as the core principle. We believe your financ
 - **Storage**: Only transaction data is extracted and stored, not full messages
 
 ### Internet Permission
-- **Primary Purpose**: To download the AI model (Gemma 2B) on first use
-- **Model Download**: One-time download of ~2.6GB model file from CloudFront CDN
+- **Primary Purpose**: To download the AI model (Qwen 2.5) on first use
+- **Model Download**: One-time download of ~1.5GB model file from CloudFront CDN
 - **App Updates**: Google Play Store variant uses Play Services for app updates (F-Droid variant does not)
 - **After Model Download**: AI works completely offline, no internet required for core features
 - **Your Data**: Never transmitted over the internet, all processing remains on-device
@@ -68,7 +68,7 @@ PennyWise AI does **NOT** use:
 ## AI Features
 
 ### On-Device AI Assistant
-- Uses MediaPipe's Gemma 2B model (2.6GB download)
+- Uses MediaPipe's Qwen 2.5 model (1.5GB download)
 - Model runs entirely on your device using MediaPipe LLM Inference
 - After initial download, no internet connection required
 - Conversations are not stored or transmitted

@@ -215,10 +215,10 @@ fun SettingsScreen(
                         )
                         Text(
                             text = when (downloadState) {
-                                DownloadState.NOT_DOWNLOADED -> "Download Gemma 2B model (${Constants.ModelDownload.MODEL_SIZE_MB} MB)"
-                                DownloadState.DOWNLOADING -> "Downloading Gemma model..."
+                                DownloadState.NOT_DOWNLOADED -> "Download Qwen 2.5 model (${Constants.ModelDownload.MODEL_SIZE_MB} MB)"
+                                DownloadState.DOWNLOADING -> "Downloading Qwen model..."
                                 DownloadState.PAUSED -> "Download interrupted"
-                                DownloadState.COMPLETED -> "Gemma ready for chat"
+                                DownloadState.COMPLETED -> "Qwen ready for chat"
                                 DownloadState.FAILED -> "Download failed"
                                 DownloadState.ERROR_INSUFFICIENT_SPACE -> "Not enough storage space"
                             },
@@ -341,7 +341,7 @@ fun SettingsScreen(
                     downloadState == DownloadState.ERROR_INSUFFICIENT_SPACE) {
                     HorizontalDivider()
                     Text(
-                        text = "Chat with Gemma AI about your expenses and get financial insights. " +
+                        text = "Chat with Qwen AI about your expenses and get financial insights. " +
                               "All conversations stay private on your device.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
