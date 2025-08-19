@@ -351,7 +351,7 @@ class HDFCBankParser : BankParser() {
      * Checks if this is a future debit notification (subscription alert, not a current transaction).
      */
     fun isFutureDebitNotification(message: String): Boolean {
-        return message.contains("will be debited on", ignoreCase = true)
+        return message.contains("will be", ignoreCase = true)
     }
     
     /**
@@ -449,7 +449,8 @@ class HDFCBankParser : BankParser() {
             "debited", "credited", "withdrawn", "deposited",
             "spent", "received", "transferred", "paid", 
             "sent", // HDFC uses "Sent Rs.X From HDFC Bank"
-            "deducted" // Add support for "deducted from" pattern
+            "deducted", // Add support for "deducted from" pattern
+            "txn" // HDFC uses "Txn Rs.X" for card transactions
         )
         
         return hdfcTransactionKeywords.any { lowerMessage.contains(it) }
