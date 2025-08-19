@@ -1,1 +1,4 @@
+Version 2.15.2
+Released on 2025-08-19
+
 Bug fixes and performance improvements
