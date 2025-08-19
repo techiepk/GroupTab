@@ -1,0 +1,8 @@
+# PennyWise v2.15.2
+
+## What's Changed
+New Features:
+• feat: update database schema to version 14 and enhance unrecognized SMS handling
+• feat: update app descriptions and features for enhanced clarity
+• feat: update AI model references from Gemma 2B to Qwen 2.5
+• feat: update database schema and enhance transaction reporting functionality
