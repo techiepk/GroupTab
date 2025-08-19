@@ -40,6 +40,9 @@ data class TransactionEntity(
     @ColumnInfo(name = "bank_name")
     val bankName: String? = null,
     
+    @ColumnInfo(name = "sms_sender")
+    val smsSender: String? = null,
+    
     @ColumnInfo(name = "account_number")
     val accountNumber: String? = null,
     

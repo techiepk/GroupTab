@@ -12,6 +12,10 @@ plugins {
 android {
     namespace = "com.pennywiseai.tracker"
     compileSdk = 36
+    
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.pennywiseai.tracker"
@@ -21,6 +25,19 @@ android {
         versionName = "2.15.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Load RSA public key from local.properties
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            val localProperties = Properties()
+            localProperties.load(localPropertiesFile.inputStream())
+            
+            val rsaPublicKey = localProperties.getProperty("RSA_PUBLIC_KEY", "")
+            buildConfigField("String", "RSA_PUBLIC_KEY", "\"$rsaPublicKey\"")
+        } else {
+            // Fallback empty key for CI/CD builds
+            buildConfigField("String", "RSA_PUBLIC_KEY", "\"\"")
+        }
     }
 
     signingConfigs {

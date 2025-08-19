@@ -25,7 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     
     private val _searchQuery = MutableStateFlow("")
@@ -253,25 +254,25 @@ class TransactionsViewModel @Inject constructor(
     fun getReportUrl(transaction: TransactionEntity): String {
         // If we have the original SMS body, create report URL
         val smsBody = transaction.smsBody ?: ""
-        // For now, we'll need to extract sender from bank name or leave blank
-        // TODO: Add sender field to TransactionEntity for better reporting
-        val sender = when (transaction.bankName?.uppercase()) {
-            "HDFC BANK" -> "HDFCBK"
-            "SBI", "STATE BANK OF INDIA" -> "SBIBNK"
-            "ICICI BANK" -> "ICICIB"
-            "AXIS BANK" -> "AXISBK"
-            "FEDERAL BANK" -> "FEDERA"
-            "INDIAN BANK" -> "INDBNK"
-            else -> ""
-        }
+        // Use the original SMS sender if available
+        val sender = transaction.smsSender ?: ""
         
         // URL encode the parameters
         val encodedMessage = java.net.URLEncoder.encode(smsBody, "UTF-8")
         val encodedSender = java.net.URLEncoder.encode(sender, "UTF-8")
         
-        // Create the report URL with parameters
-        return "https://pennywise-5qh.pages.dev/?message=$encodedMessage&sender=$encodedSender&autoparse=true"
+        // Encrypt device data for verification
+        val encryptedDeviceData = com.pennywiseai.tracker.utils.DeviceEncryption.encryptDeviceData(context)
+        val encodedDeviceData = if (encryptedDeviceData != null) {
+            java.net.URLEncoder.encode(encryptedDeviceData, "UTF-8")
+        } else {
+            ""
+        }
+        
+        // Create the report URL using hash fragment for privacy
+        return "https://pennywise-5qh.pages.dev/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
     }
+    
 }
 
 data class TransactionsUiState(

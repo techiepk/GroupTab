@@ -39,8 +39,20 @@ class UnrecognizedSmsViewModel @Inject constructor(
                 val encodedMessage = URLEncoder.encode(message.smsBody, "UTF-8")
                 val encodedSender = URLEncoder.encode(message.sender, "UTF-8")
                 
-                // Create the report URL
-                val url = "https://pennywise-5qh.pages.dev/?message=$encodedMessage&sender=$encodedSender&autoparse=true"
+                // Encrypt device data for verification
+                val encryptedDeviceData = com.pennywiseai.tracker.utils.DeviceEncryption.encryptDeviceData(context)
+                Log.d("UnrecognizedSmsViewModel", "Encrypted device data: ${encryptedDeviceData?.take(50)}... (length: ${encryptedDeviceData?.length})")
+                
+                val encodedDeviceData = if (encryptedDeviceData != null) {
+                    URLEncoder.encode(encryptedDeviceData, "UTF-8")
+                } else {
+                    ""
+                }
+                Log.d("UnrecognizedSmsViewModel", "Encoded device data: ${encodedDeviceData.take(50)}... (length: ${encodedDeviceData.length})")
+                
+                // Create the report URL using hash fragment for privacy
+                val url = "https://pennywise-5qh.pages.dev/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
+                Log.d("UnrecognizedSmsViewModel", "Full URL length: ${url.length}")
                 
                 // Open in browser
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {

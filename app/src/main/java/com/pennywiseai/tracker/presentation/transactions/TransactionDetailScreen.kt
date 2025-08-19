@@ -9,6 +9,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.input.KeyboardType
@@ -82,8 +85,35 @@ fun TransactionDetailScreen(
         viewModel.loadTransaction(transactionId)
     }
     
+    val context = LocalContext.current
+    
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        floatingActionButton = {
+            // Show Report Issue FAB only when not in edit mode and transaction exists
+            if (!isEditMode && transaction != null) {
+                FloatingActionButton(
+                    onClick = {
+                        val reportUrl = viewModel.getReportUrl()
+                        android.util.Log.d("TransactionDetail", "Report FAB clicked, opening URL: ${reportUrl.take(200)}...")
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl))
+                        try {
+                            context.startActivity(intent)
+                            android.util.Log.d("TransactionDetail", "Successfully launched browser intent")
+                        } catch (e: Exception) {
+                            android.util.Log.e("TransactionDetail", "Error launching browser", e)
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BugReport,
+                        contentDescription = "Report Issue"
+                    )
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text(if (isEditMode) "Edit Transaction" else "Transaction Details") },

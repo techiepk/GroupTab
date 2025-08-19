@@ -38,3 +38,5 @@ RELEASE_NOTES.md
 *.jks
 *.keystore
 release.properties
+
+*.pem

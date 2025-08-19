@@ -60,6 +60,7 @@ data class ParsedTransaction(
             description = null,
             smsBody = smsBody,
             bankName = bankName,
+            smsSender = sender,
             accountNumber = accountLast4,
             balanceAfter = balance,
             transactionHash = generateTransactionId(),

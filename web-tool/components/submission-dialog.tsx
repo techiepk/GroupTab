@@ -26,6 +26,7 @@ interface SubmissionDialogProps {
   sender: string
   parseResult?: any
   mode?: 'submit' | 'improve'
+  encryptedDeviceData?: string | null
 }
 
 export function SubmissionDialog({ 
@@ -34,7 +35,8 @@ export function SubmissionDialog({
   smsBody, 
   sender,
   parseResult,
-  mode = 'submit'
+  mode = 'submit',
+  encryptedDeviceData
 }: SubmissionDialogProps) {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -76,41 +78,52 @@ export function SubmissionDialog({
     setError('')
     
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+      // Check if we have encrypted device data (from Android app)
+      // If not, this is from web-only usage which we'll allow but flag differently
+      if (!encryptedDeviceData) {
+        console.log('No device verification available - web submission')
+      }
 
-      const { error: submitError } = await supabase
-        .from('submissions')
-        .insert({
-          sms_body: smsBody,
-          sender: sender,
-          is_supported: parseResult?.success || false,
-          is_parseable: parseResult?.success || false,
-          confidence_score: parseResult?.confidence || null,
-          parsed_data: parseResult?.success ? {
-            amount: parseResult.data.amount,
-            type: parseResult.data.type,
-            merchant: parseResult.data.merchant,
-            category: parseResult.data.category,
-            reference: parseResult.data.reference,
-            account: parseResult.data.accountLast4,
-            balance: parseResult.data.balance
-          } : null,
-          parse_errors: parseResult?.error ? [{ error: parseResult.error }] : null,
-          user_expected: {
-            amount: shouldIgnore ? null : (amount ? parseFloat(amount) : null),
-            merchant: shouldIgnore ? null : (merchant || null),
-            category: shouldIgnore ? null : (category || null),
-            type: shouldIgnore ? null : transactionType,
-            isTransaction: !shouldIgnore
-          },
-          admin_notes: additionalNotes || null,
-          status: shouldIgnore ? 'rejected' : (mode === 'improve' ? 'improvement' : 'pending')
-        })
+      // Prepare the request payload
+      const payload = {
+        smsBody: smsBody,
+        sender: sender,
+        encryptedDeviceData: encryptedDeviceData || '', // Empty string if from web
+        parsedData: parseResult?.success ? {
+          amount: parseResult.data.amount,
+          type: parseResult.data.type,
+          merchant: parseResult.data.merchant,
+          category: parseResult.data.category,
+          reference: parseResult.data.reference,
+          accountLast4: parseResult.data.accountLast4,
+          balance: parseResult.data.balance
+        } : undefined,
+        userExpected: {
+          amount: shouldIgnore ? null : (amount ? parseFloat(amount) : null),
+          merchant: shouldIgnore ? null : (merchant || null),
+          category: shouldIgnore ? null : (category || null),
+          type: shouldIgnore ? null : transactionType,
+          isTransaction: !shouldIgnore
+        },
+        additionalNotes: additionalNotes || null,
+        mode: mode
+      }
 
-      if (submitError) throw submitError
+      // Call the Edge Function
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit')
+      }
 
       setSuccess(true)
       setTimeout(() => {

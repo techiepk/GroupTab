@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { BankParserFactory } from '@/lib/parsers'
 import { CategoryMapper } from '@/lib/categorization'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +16,6 @@ import Link from 'next/link'
 import { BookOpen, Github } from 'lucide-react'
 
 function HomeContent() {
-  const searchParams = useSearchParams()
   const [smsBody, setSmsBody] = useState('')
   const [sender, setSender] = useState('')
   const [parseResult, setParseResult] = useState<any>(null)
@@ -25,6 +23,7 @@ function HomeContent() {
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false)
   const [submissionMode, setSubmissionMode] = useState<'submit' | 'improve'>('submit')
   const [hasAutoProcessed, setHasAutoProcessed] = useState(false)
+  const [encryptedDeviceData, setEncryptedDeviceData] = useState<string | null>(null)
 
   const handleParse = () => {
     setIsLoading(true)
@@ -53,13 +52,20 @@ function HomeContent() {
     setShowSubmissionDialog(true)
   }
 
-  // Handle URL parameters on mount
+  // Handle URL hash parameters on mount
   useEffect(() => {
     if (hasAutoProcessed) return // Prevent re-running
     
-    const message = searchParams.get('message')
-    const senderId = searchParams.get('sender')
-    const autoParse = searchParams.get('autoparse')
+    // Parse hash fragment instead of query params
+    const hash = window.location.hash
+    if (!hash || hash.length <= 1) return
+    
+    // Remove the # and parse the parameters
+    const hashParams = new URLSearchParams(hash.slice(1))
+    const message = hashParams.get('message')
+    const senderId = hashParams.get('sender')
+    const deviceData = hashParams.get('device')
+    const autoParse = hashParams.get('autoparse')
     
     if (message) {
       const decodedMessage = decodeURIComponent(message)
@@ -69,6 +75,24 @@ function HomeContent() {
     if (senderId) {
       const decodedSender = decodeURIComponent(senderId)
       setSender(decodedSender)
+    }
+    
+    if (deviceData) {
+      const decodedDeviceData = decodeURIComponent(deviceData)
+      console.log('Received device data from hash:', { 
+        raw: deviceData, 
+        decoded: decodedDeviceData,
+        length: decodedDeviceData.length 
+      })
+      setEncryptedDeviceData(decodedDeviceData)
+    } else {
+      console.log('No device data in hash parameters')
+    }
+    
+    // Clear hash for privacy - remove sensitive data from URL
+    if (message || senderId || deviceData) {
+      // Use replaceState to avoid adding to browser history
+      window.history.replaceState(null, '', window.location.pathname)
     }
     
     // Auto-parse if requested and both message and sender are provided
@@ -90,7 +114,7 @@ function HomeContent() {
         }
       }, 100)
     }
-  }, [searchParams, hasAutoProcessed])
+  }, [hasAutoProcessed])
 
 
   return (
@@ -312,6 +336,7 @@ function HomeContent() {
         sender={sender}
         parseResult={parseResult}
         mode={submissionMode}
+        encryptedDeviceData={encryptedDeviceData}
       />
     </div>
   )
