@@ -5,6 +5,7 @@ import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
+import com.pennywiseai.tracker.data.parser.bank.SBIBankParser
 import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -248,6 +249,72 @@ class SubscriptionRepository @Inject constructor(
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,
                 category = determineCategory(mandateInfo.merchant)
+            )
+        }
+        
+        return subscriptionDao.insertSubscription(subscription)
+    }
+    
+    /**
+     * Creates or updates a subscription from SBI UPI-Mandate info
+     */
+    suspend fun createOrUpdateFromSBIMandate(
+        upiMandateInfo: SBIBankParser.UPIMandateInfo,
+        bankName: String
+    ): Long {
+        val nextPaymentDate = upiMandateInfo.nextDeductionDate?.let { dateStr ->
+            try {
+                // Parse DD/MM/YY format if provided
+                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd/MM/yy"))
+            } catch (e: Exception) {
+                // Fallback to 30 days from now if parsing fails
+                LocalDate.now().plusDays(30)
+            }
+        } ?: LocalDate.now().plusDays(30) // SBI doesn't provide date, default to 30 days
+        
+        // For SBI, UMN is the primary identifier when available
+        val existing = if (upiMandateInfo.umn != null) {
+            subscriptionDao.getSubscriptionByUmn(upiMandateInfo.umn)
+        } else {
+            // When no UMN, use merchant and amount matching
+            subscriptionDao.getSubscriptionByMerchantAndAmount(
+                upiMandateInfo.merchant,
+                upiMandateInfo.amount
+            )
+        }
+        
+        Log.d(TAG, "SBI UPI-Mandate lookup - Merchant: ${upiMandateInfo.merchant}, Amount: ${upiMandateInfo.amount}, " +
+                  "UMN: ${upiMandateInfo.umn}, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}" } ?: "NOT FOUND"}")
+        
+        val subscription = if (existing != null) {
+            // Check if this is a hidden subscription that should be reactivated
+            val newState = if (existing.state == SubscriptionState.HIDDEN) {
+                SubscriptionState.ACTIVE
+            } else {
+                existing.state
+            }
+            
+            existing.copy(
+                amount = upiMandateInfo.amount,
+                nextPaymentDate = nextPaymentDate,
+                umn = upiMandateInfo.umn ?: existing.umn,
+                state = newState,
+                updatedAt = java.time.LocalDateTime.now()
+            ).also {
+                subscriptionDao.updateSubscription(it)
+                Log.d(TAG, "Updated existing SBI subscription ID=${it.id}")
+            }
+        } else {
+            // Create new subscription
+            SubscriptionEntity(
+                merchantName = upiMandateInfo.merchant,
+                amount = upiMandateInfo.amount,
+                billingCycle = "Monthly", // Default to monthly for SBI UPI-Mandates
+                nextPaymentDate = nextPaymentDate,
+                state = SubscriptionState.ACTIVE,
+                bankName = bankName,
+                umn = upiMandateInfo.umn,
+                category = determineCategory(upiMandateInfo.merchant)
             )
         }
         

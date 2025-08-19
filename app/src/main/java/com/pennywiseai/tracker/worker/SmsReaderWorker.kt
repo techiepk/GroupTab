@@ -90,6 +90,25 @@ class SmsReaderWorker @AssistedInject constructor(
                     
                     // Check if it's a mandate/subscription notification
                     when (parser) {
+                        is SBIBankParser -> {
+                            // Check for UPI-Mandate notifications
+                            if (parser.isUPIMandateNotification(sms.body)) {
+                                val upiMandateInfo = parser.parseUPIMandateSubscription(sms.body)
+                                if (upiMandateInfo != null) {
+                                    try {
+                                        val subscriptionId = subscriptionRepository.createOrUpdateFromSBIMandate(
+                                            upiMandateInfo,
+                                            parser.getBankName()
+                                        )
+                                        subscriptionCount++
+                                        Log.d(TAG, "Created/Updated SBI UPI-Mandate subscription: $subscriptionId for ${upiMandateInfo.merchant}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving SBI UPI-Mandate subscription: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing for UPI-Mandate
+                            }
+                        }
                         is HDFCBankParser -> {
                             // Check for E-Mandate notifications
                             if (parser.isEMandateNotification(sms.body)) {
