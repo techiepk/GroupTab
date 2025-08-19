@@ -15,7 +15,7 @@ const HDFCConfig: BankConfig = {
     ]
   },
   transactionType: {
-    expense: ['debited', 'withdrawn', 'spent', 'charged', 'paid', 'purchase', 'sent'],
+    expense: ['debited', 'withdrawn', 'spent', 'charged', 'paid', 'purchase', 'sent', 'deducted', 'txn'],
     income: ['credited', 'deposited', 'received', 'refund', 'cashback']
   },
   skipPatterns: [
@@ -188,6 +188,11 @@ export class HDFCBankParser extends BankParser {
     }
 
     const lowerMessage = message.toLowerCase()
+
+    // Skip future transaction notifications (reminders)
+    if (lowerMessage.includes('will be')) {
+      return false
+    }
 
     // Skip credit card blocking notifications
     if (lowerMessage.includes('block cc')) {
