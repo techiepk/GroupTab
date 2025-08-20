@@ -161,4 +161,17 @@ class TransactionRepository @Inject constructor(
                 transactions.take(limit)
             }
     }
+    
+    fun getTransactionsByAccount(bankName: String, accountLast4: String): Flow<List<TransactionEntity>> {
+        return transactionDao.getTransactionsByAccount(bankName, accountLast4)
+    }
+    
+    fun getTransactionsByAccountAndDateRange(
+        bankName: String,
+        accountLast4: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): Flow<List<TransactionEntity>> {
+        return transactionDao.getTransactionsByAccountAndDateRange(bankName, accountLast4, startDate, endDate)
+    }
 }

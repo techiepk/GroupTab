@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.pennywiseai.tracker.presentation.accounts.AccountDetailScreen
 import com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen
 import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
@@ -119,6 +120,18 @@ fun PennyWiseNavHost(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+        
+        composable<AccountDetail>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) { backStackEntry ->
+            val accountDetail = backStackEntry.toRoute<AccountDetail>()
+            AccountDetailScreen(
+                navController = navController
             )
         }
         

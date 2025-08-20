@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
@@ -58,6 +59,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    navController: NavController,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
@@ -122,7 +124,15 @@ fun HomeScreen(
                     AccountBalancesCard(
                         accountBalances = uiState.accountBalances,
                         totalBalance = uiState.totalBalance,
-                        onViewAllClick = { /* TODO: Navigate to account balances screen */ }
+                        onViewAllClick = { /* TODO: Navigate to account balances screen */ },
+                        onAccountClick = { bankName, accountLast4 ->
+                            navController.navigate(
+                                com.pennywiseai.tracker.navigation.AccountDetail(
+                                    bankName = bankName,
+                                    accountLast4 = accountLast4
+                                )
+                            )
+                        }
                     )
                 }
             }

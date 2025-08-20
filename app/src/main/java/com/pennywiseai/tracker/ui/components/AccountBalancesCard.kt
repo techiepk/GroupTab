@@ -19,6 +19,7 @@ fun AccountBalancesCard(
     accountBalances: List<AccountBalanceEntity>,
     totalBalance: BigDecimal,
     onViewAllClick: () -> Unit = {},
+    onAccountClick: (bankName: String, accountLast4: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val displayBalances = if (accountBalances.size <= 5) {
@@ -56,7 +57,10 @@ fun AccountBalancesCard(
                 
                 // Individual account balances - compact list
                 displayBalances.forEach { balance ->
-                    AccountBalanceItem(balance = balance)
+                    AccountBalanceItem(
+                        balance = balance,
+                        onClick = { onAccountClick(balance.bankName, balance.accountLast4) }
+                    )
                 }
                 
                 // View all link - only if more than 5 accounts
@@ -80,11 +84,13 @@ fun AccountBalancesCard(
 @Composable
 private fun AccountBalanceItem(
     balance: AccountBalanceEntity,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

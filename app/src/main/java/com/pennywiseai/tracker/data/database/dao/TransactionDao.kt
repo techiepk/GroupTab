@@ -103,4 +103,31 @@ interface TransactionDao {
         startDate: LocalDateTime,
         endDate: LocalDateTime
     ): List<TransactionEntity>
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE is_deleted = 0 
+        AND bank_name = :bankName 
+        AND account_number = :accountLast4
+        ORDER BY date_time DESC
+    """)
+    fun getTransactionsByAccount(
+        bankName: String,
+        accountLast4: String
+    ): Flow<List<TransactionEntity>>
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE is_deleted = 0 
+        AND bank_name = :bankName 
+        AND account_number = :accountLast4
+        AND date_time BETWEEN :startDate AND :endDate
+        ORDER BY date_time DESC
+    """)
+    fun getTransactionsByAccountAndDateRange(
+        bankName: String,
+        accountLast4: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): Flow<List<TransactionEntity>>
 }

@@ -108,6 +108,7 @@ fun MainScreen(
                 val homeViewModel: com.pennywiseai.tracker.presentation.home.HomeViewModel = hiltViewModel()
                 HomeScreen(
                     viewModel = homeViewModel,
+                    navController = rootNavController ?: navController,
                     onNavigateToSettings = {
                         navController.navigate("settings")
                     },
