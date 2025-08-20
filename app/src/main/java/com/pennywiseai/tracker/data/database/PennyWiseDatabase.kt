@@ -36,7 +36,7 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class],
-    version = 14,
+    version = 15,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -50,7 +50,8 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11, spec = Migration10To11::class),
         AutoMigration(from = 11, to = 12),
-        AutoMigration(from = 12, to = 13)
+        AutoMigration(from = 12, to = 13),
+        AutoMigration(from = 14, to = 15)
     ]
 )
 @TypeConverters(Converters::class)
@@ -162,6 +163,17 @@ abstract class PennyWiseDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Same as MIGRATION_13_14 since we need to handle both cases
                 MIGRATION_13_14.migrate(db)
+            }
+        }
+        
+        /**
+         * Manual migration from version 14 to 15.
+         * Adds sms_body column to subscriptions table.
+         */
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add sms_body column to subscriptions table
+                db.execSQL("ALTER TABLE subscriptions ADD COLUMN sms_body TEXT")
             }
         }
     }

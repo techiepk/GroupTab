@@ -34,6 +34,9 @@ data class SubscriptionEntity(
     @ColumnInfo(name = "category")
     val category: String? = null,
     
+    @ColumnInfo(name = "sms_body")
+    val smsBody: String? = null,
+    
     @ColumnInfo(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now(),
     

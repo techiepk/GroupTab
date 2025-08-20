@@ -63,7 +63,8 @@ class SubscriptionRepository @Inject constructor(
      */
     suspend fun createOrUpdateFromEMandate(
         eMandateInfo: HDFCBankParser.EMandateInfo,
-        bankName: String
+        bankName: String,
+        smsBody: String? = null
     ): Long {
         val nextPaymentDate = eMandateInfo.nextDeductionDate?.let { dateStr ->
             try {
@@ -121,6 +122,7 @@ class SubscriptionRepository @Inject constructor(
                 merchantName = eMandateInfo.merchant,
                 umn = eMandateInfo.umn ?: existing.umn, // Update UMN if provided
                 state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
+                smsBody = smsBody ?: existing.smsBody, // Update SMS body if provided
                 updatedAt = java.time.LocalDateTime.now()
             )
         } else {
@@ -134,7 +136,8 @@ class SubscriptionRepository @Inject constructor(
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,
                 umn = eMandateInfo.umn,
-                category = determineCategory(eMandateInfo.merchant)
+                category = determineCategory(eMandateInfo.merchant),
+                smsBody = smsBody
             )
         }
         
@@ -184,7 +187,8 @@ class SubscriptionRepository @Inject constructor(
      */
     suspend fun createOrUpdateFromIndianBankMandate(
         mandateInfo: IndianBankParser.MandateInfo,
-        bankName: String
+        bankName: String,
+        smsBody: String? = null
     ): Long {
         val nextPaymentDate = mandateInfo.nextDeductionDate?.let { dateStr ->
             try {
@@ -236,6 +240,7 @@ class SubscriptionRepository @Inject constructor(
                 nextPaymentDate = nextPaymentDate,
                 merchantName = mandateInfo.merchant,
                 state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
+                smsBody = smsBody ?: existing.smsBody,
                 updatedAt = java.time.LocalDateTime.now()
             )
         } else {
@@ -248,7 +253,8 @@ class SubscriptionRepository @Inject constructor(
                 nextPaymentDate = nextPaymentDate,
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,
-                category = determineCategory(mandateInfo.merchant)
+                category = determineCategory(mandateInfo.merchant),
+                smsBody = smsBody
             )
         }
         
@@ -260,7 +266,8 @@ class SubscriptionRepository @Inject constructor(
      */
     suspend fun createOrUpdateFromSBIMandate(
         upiMandateInfo: SBIBankParser.UPIMandateInfo,
-        bankName: String
+        bankName: String,
+        smsBody: String? = null
     ): Long {
         val nextPaymentDate = upiMandateInfo.nextDeductionDate?.let { dateStr ->
             try {
@@ -299,6 +306,7 @@ class SubscriptionRepository @Inject constructor(
                 nextPaymentDate = nextPaymentDate,
                 umn = upiMandateInfo.umn ?: existing.umn,
                 state = newState,
+                smsBody = smsBody ?: existing.smsBody,
                 updatedAt = java.time.LocalDateTime.now()
             ).also {
                 subscriptionDao.updateSubscription(it)
@@ -313,7 +321,8 @@ class SubscriptionRepository @Inject constructor(
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,
                 umn = upiMandateInfo.umn,
-                category = determineCategory(upiMandateInfo.merchant)
+                category = determineCategory(upiMandateInfo.merchant),
+                smsBody = smsBody
             )
         }
         

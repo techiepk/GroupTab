@@ -3,11 +3,14 @@ package com.pennywiseai.tracker.presentation.subscriptions
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -132,6 +136,8 @@ private fun SwipeableSubscriptionItem(
     subscription: SubscriptionEntity,
     onHide: () -> Unit
 ) {
+    var showSmsBody by remember { mutableStateOf(false) }
+    
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
@@ -169,18 +175,26 @@ private fun SwipeableSubscriptionItem(
             }
         },
         content = {
-            Card(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(Dimensions.Padding.content),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        .clickable(enabled = !subscription.smsBody.isNullOrBlank()) {
+                            showSmsBody = !showSmsBody
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Dimensions.Padding.content),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                    ) {
                     // Brand Icon
                     BrandIcon(
                         merchantName = subscription.merchantName,
@@ -210,6 +224,16 @@ private fun SwipeableSubscriptionItem(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // SMS indicator if available
+                                if (!subscription.smsBody.isNullOrBlank()) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Chat,
+                                        contentDescription = "SMS available",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                
                                 // Calculate the actual next payment date
                                 val today = LocalDate.now()
                                 var nextPaymentDate = subscription.nextPaymentDate
@@ -263,6 +287,57 @@ private fun SwipeableSubscriptionItem(
                     }
                 }
             }
+            
+            // SMS Body Display (expandable)
+            if (showSmsBody && !subscription.smsBody.isNullOrBlank()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Dimensions.Padding.content)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(Spacing.sm))
+                            Text(
+                                text = "Original SMS",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        
+                        // SMS text in monospace font
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = subscription.smsBody,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace
+                                ),
+                                modifier = Modifier.padding(Spacing.md)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         }
     )
 }

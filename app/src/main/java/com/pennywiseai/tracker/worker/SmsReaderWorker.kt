@@ -89,17 +89,31 @@ class SmsReaderWorker @AssistedInject constructor(
                     Log.d(TAG, "Processing SMS from ${parser.getBankName()}")
                     Log.d(TAG, "SMS Content: ${sms.body.take(Constants.SmsProcessing.SMS_PREVIEW_LENGTH)}...")
                     
+                    // Calculate SMS age for subscription filtering
+                    val smsDateTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(sms.timestamp),
+                        ZoneId.systemDefault()
+                    )
+                    val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+                    val isRecentMessage = smsDateTime.isAfter(thirtyDaysAgo)
+                    
                     // Check if it's a mandate/subscription notification
+                    // Only process subscription messages from the last 30 days
                     when (parser) {
                         is SBIBankParser -> {
                             // Check for UPI-Mandate notifications
                             if (parser.isUPIMandateNotification(sms.body)) {
+                                if (!isRecentMessage) {
+                                    Log.d(TAG, "Skipping old SBI UPI-Mandate from ${smsDateTime.toLocalDate()}")
+                                    continue
+                                }
                                 val upiMandateInfo = parser.parseUPIMandateSubscription(sms.body)
                                 if (upiMandateInfo != null) {
                                     try {
                                         val subscriptionId = subscriptionRepository.createOrUpdateFromSBIMandate(
                                             upiMandateInfo,
-                                            parser.getBankName()
+                                            parser.getBankName(),
+                                            sms.body
                                         )
                                         subscriptionCount++
                                         Log.d(TAG, "Created/Updated SBI UPI-Mandate subscription: $subscriptionId for ${upiMandateInfo.merchant}")
@@ -113,12 +127,17 @@ class SmsReaderWorker @AssistedInject constructor(
                         is HDFCBankParser -> {
                             // Check for E-Mandate notifications
                             if (parser.isEMandateNotification(sms.body)) {
+                                if (!isRecentMessage) {
+                                    Log.d(TAG, "Skipping old HDFC E-Mandate from ${smsDateTime.toLocalDate()}")
+                                    continue
+                                }
                                 val eMandateInfo = parser.parseEMandateSubscription(sms.body)
                                 if (eMandateInfo != null) {
                                     try {
                                         val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
                                             eMandateInfo,
-                                            parser.getBankName()
+                                            parser.getBankName(),
+                                            sms.body
                                         )
                                         subscriptionCount++
                                         Log.d(TAG, "Created/Updated HDFC E-Mandate subscription: $subscriptionId for ${eMandateInfo.merchant}")
@@ -131,13 +150,18 @@ class SmsReaderWorker @AssistedInject constructor(
                             
                             // Check for Future Debit notifications (like Twitter subscription)
                             if (parser.isFutureDebitNotification(sms.body)) {
+                                if (!isRecentMessage) {
+                                    Log.d(TAG, "Skipping old HDFC Future Debit from ${smsDateTime.toLocalDate()}")
+                                    continue
+                                }
                                 val futureDebitInfo = parser.parseFutureDebit(sms.body)
                                 if (futureDebitInfo != null) {
                                     try {
                                         // Use the same EMandateInfo structure for subscription creation
                                         val subscriptionId = subscriptionRepository.createOrUpdateFromEMandate(
                                             futureDebitInfo,
-                                            parser.getBankName()
+                                            parser.getBankName(),
+                                            sms.body
                                         )
                                         subscriptionCount++
                                         Log.d(TAG, "Created/Updated HDFC future debit subscription: $subscriptionId for ${futureDebitInfo.merchant}")
@@ -150,12 +174,17 @@ class SmsReaderWorker @AssistedInject constructor(
                         }
                         is IndianBankParser -> {
                             if (parser.isMandateNotification(sms.body)) {
+                                if (!isRecentMessage) {
+                                    Log.d(TAG, "Skipping old Indian Bank Mandate from ${smsDateTime.toLocalDate()}")
+                                    continue
+                                }
                                 val mandateInfo = parser.parseMandateSubscription(sms.body)
                                 if (mandateInfo != null) {
                                     try {
                                         val subscriptionId = subscriptionRepository.createOrUpdateFromIndianBankMandate(
                                             mandateInfo,
-                                            parser.getBankName()
+                                            parser.getBankName(),
+                                            sms.body
                                         )
                                         subscriptionCount++
                                         Log.d(TAG, "Created/Updated Indian Bank subscription: $subscriptionId for ${mandateInfo.merchant}")
