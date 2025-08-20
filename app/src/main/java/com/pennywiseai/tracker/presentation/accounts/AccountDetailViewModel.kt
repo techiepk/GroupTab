@@ -7,6 +7,7 @@ import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
+import com.pennywiseai.tracker.ui.components.BalancePoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -35,6 +36,7 @@ class AccountDetailViewModel @Inject constructor(
         loadAccountData()
         observeTransactions()
         observeBalanceHistory()
+        observeBalanceChartData()
     }
     
     private fun loadAccountData() {
@@ -110,6 +112,33 @@ class AccountDetailViewModel @Inject constructor(
         }
     }
     
+    private fun observeBalanceChartData() {
+        // Always fetch last 3 months for the chart, independent of filter
+        viewModelScope.launch {
+            val endDate = LocalDateTime.now()
+            val startDate = endDate.minusMonths(3)
+            
+            accountBalanceRepository.getBalanceHistory(
+                bankName,
+                accountLast4,
+                startDate,
+                endDate
+            ).collect { balanceHistory ->
+                // Convert to BalancePoint for chart
+                val chartData = balanceHistory.map { entity ->
+                    BalancePoint(
+                        timestamp = entity.timestamp,
+                        balance = entity.balance
+                    )
+                }
+                
+                _uiState.update { state ->
+                    state.copy(balanceChartData = chartData)
+                }
+            }
+        }
+    }
+    
     fun selectDateRange(dateRange: DateRange) {
         _selectedDateRange.value = dateRange
     }
@@ -133,6 +162,7 @@ data class AccountDetailUiState(
     val accountLast4: String = "",
     val currentBalance: AccountBalanceEntity? = null,
     val balanceHistory: List<AccountBalanceEntity> = emptyList(),
+    val balanceChartData: List<BalancePoint> = emptyList(),
     val transactions: List<TransactionEntity> = emptyList(),
     val totalIncome: BigDecimal = BigDecimal.ZERO,
     val totalExpenses: BigDecimal = BigDecimal.ZERO,

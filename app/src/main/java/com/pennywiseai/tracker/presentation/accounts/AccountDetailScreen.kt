@@ -1,5 +1,8 @@
 package com.pennywiseai.tracker.presentation.accounts
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -13,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,14 +66,13 @@ fun AccountDetailScreen(
                 )
             }
             
-            // Summary Statistics
-            item {
-                SummaryStatistics(
-                    totalIncome = uiState.totalIncome,
-                    totalExpenses = uiState.totalExpenses,
-                    netBalance = uiState.netBalance,
-                    period = selectedDateRange.label
-                )
+            // Balance Chart (Expandable) - Always shows last 3 months
+            if (uiState.balanceChartData.isNotEmpty()) {
+                item {
+                    ExpandableBalanceChart(
+                        balanceHistory = uiState.balanceChartData
+                    )
+                }
             }
             
             // Date Range Filter
@@ -77,6 +80,16 @@ fun AccountDetailScreen(
                 DateRangeFilter(
                     selectedRange = selectedDateRange,
                     onRangeSelected = viewModel::selectDateRange
+                )
+            }
+            
+            // Summary Statistics
+            item {
+                SummaryStatistics(
+                    totalIncome = uiState.totalIncome,
+                    totalExpenses = uiState.totalExpenses,
+                    netBalance = uiState.netBalance,
+                    period = selectedDateRange.label
                 )
             }
             
@@ -119,6 +132,79 @@ fun AccountDetailScreen(
                     ) {
                         CircularProgressIndicator()
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpandableBalanceChart(
+    balanceHistory: List<BalancePoint>
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    
+    PennyWiseCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { isExpanded = !isExpanded }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.Padding.content)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ShowChart,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Balance Trend",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(
+                        text = "Last 3 Months",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 28.dp)
+                    )
+                }
+                
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .rotate(if (isExpanded) 180f else 0f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                    BalanceChart(
+                        balanceHistory = balanceHistory,
+                        height = 180
+                    )
                 }
             }
         }
