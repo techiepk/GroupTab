@@ -21,8 +21,8 @@ android {
         applicationId = "com.pennywiseai.tracker"
         minSdk = 31
         targetSdk = 36
-        versionCode = 38
-        versionName = "2.15.3"
+        versionCode = 39
+        versionName = "2.15.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
