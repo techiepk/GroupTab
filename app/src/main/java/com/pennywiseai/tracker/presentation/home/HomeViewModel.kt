@@ -209,6 +209,16 @@ class HomeViewModel @Inject constructor(
         }
     }
     
+    fun undoDeleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            transactionRepository.undoDeleteTransaction(transaction)
+        }
+    }
+    
+    fun clearDeletedTransaction() {
+        _deletedTransaction.value = null
+    }
+    
     override fun onCleared() {
         super.onCleared()
         inAppUpdateManager.cleanup()

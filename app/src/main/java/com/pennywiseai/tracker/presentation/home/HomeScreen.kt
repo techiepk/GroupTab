@@ -83,7 +83,10 @@ fun HomeScreen(
     
     // Handle delete undo snackbar
     LaunchedEffect(deletedTransaction) {
-        deletedTransaction?.let {
+        deletedTransaction?.let { transaction ->
+            // Clear the state immediately to prevent re-triggering
+            viewModel.clearDeletedTransaction()
+            
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message = "Transaction deleted",
@@ -91,9 +94,17 @@ fun HomeScreen(
                     duration = SnackbarDuration.Short
                 )
                 if (result == SnackbarResult.ActionPerformed) {
-                    viewModel.undoDelete()
+                    // Pass the transaction directly since state is already cleared
+                    viewModel.undoDeleteTransaction(transaction)
                 }
             }
+        }
+    }
+    
+    // Clear snackbar when navigating away
+    DisposableEffect(Unit) {
+        onDispose {
+            snackbarHostState.currentSnackbarData?.dismiss()
         }
     }
     

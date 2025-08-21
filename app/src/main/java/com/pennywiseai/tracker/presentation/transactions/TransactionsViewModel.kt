@@ -129,6 +129,16 @@ class TransactionsViewModel @Inject constructor(
         }
     }
     
+    fun undoDeleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            transactionRepository.undoDeleteTransaction(transaction)
+        }
+    }
+    
+    fun clearDeletedTransaction() {
+        _deletedTransaction.value = null
+    }
+    
     private fun getFilteredTransactions(
         searchQuery: String,
         period: TimePeriod,
