@@ -188,6 +188,7 @@ private fun TransactionDetailContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()  // Add IME padding to push content up when keyboard appears
             .verticalScroll(scrollState)
             .padding(Dimensions.Padding.content)
     ) {
@@ -227,6 +228,11 @@ private fun TransactionDetailContent(
         // Additional Details - Always read-only
         if (transaction.balanceAfter != null || transaction.accountNumber != null) {
             AdditionalDetailsCard(transaction)
+        }
+        
+        // Add extra bottom padding when in edit mode to ensure description field is visible above keyboard
+        if (isEditMode) {
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
