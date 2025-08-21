@@ -5,7 +5,7 @@
 [![Android](https://img.shields.io/badge/Android-12+-3DDC84)](https://developer.android.com/about/versions/12)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF)](https://kotlinlang.org/)
 [![Privacy](https://img.shields.io/badge/AI-100%25_On--Device-FF6B6B)](https://developers.google.com/mediapipe)
-[![Beta Testers](https://img.shields.io/badge/Beta_Testers-50+-orange)](https://forms.gle/7FTkx7Z6BAwqzWJE9)
+[![Downloads](https://img.shields.io/badge/Downloads-100+-green)](https://play.google.com/store/apps/details?id=com.pennywiseai.tracker)
 [![GitHub release](https://img.shields.io/github/v/release/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/sarim2000/pennywiseai-tracker)](https://github.com/sarim2000/pennywiseai-tracker/commits)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-5865F2)](https://discord.gg/H3xWeMWjKQ)
@@ -26,13 +26,9 @@ Turn bank SMS into a clean, searchable money timeline with on-device AI assistan
 
 For Android users in India who want automatic expense tracking from bank SMS — clean categories, subscription detection, and clear insights.
 
-> ### 🚨 **BETA TESTING OPEN** 🚨
-> 
-> <a href="https://forms.gle/7FTkx7Z6BAwqzWJE9">
->   <img src="https://img.shields.io/badge/JOIN_THE_BETA-Get_Early_Access-FF0000?style=for-the-badge&labelColor=FF0000&color=FF4444" alt="Join Beta" />
-> </a>
-> 
-> **Get early access** • Test new features first • Shape the future of PennyWise
+<a href="https://play.google.com/store/apps/details?id=com.pennywiseai.tracker">
+  <img src="https://img.shields.io/badge/GET_IT_ON-Google_Play-00875F?style=for-the-badge&logo=google-play&logoColor=white" alt="Get it on Google Play" />
+</a>
 
 ### How it works
 
