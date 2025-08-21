@@ -93,20 +93,17 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 5: "Cash deposit transaction of Rs xxx" (must have "has been completed")
-        if (message.contains("Cash deposit transaction", ignoreCase = true) && 
-            message.contains("has been completed", ignoreCase = true)) {
-            val cashDepositPattern = Regex(
-                """Cash\s+deposit\s+transaction\s+of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
-                RegexOption.IGNORE_CASE
-            )
-            cashDepositPattern.find(message)?.let { match ->
-                val amount = match.groupValues[1].replace(",", "")
-                return try {
-                    BigDecimal(amount)
-                } catch (e: NumberFormatException) {
-                    null
-                }
+        // Pattern 5: "credited:Rs. xxx.xx" (colon format for cash deposits)
+        val creditColonPattern = Regex(
+            """credited:\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
+            RegexOption.IGNORE_CASE
+        )
+        creditColonPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
             }
         }
         
@@ -174,9 +171,8 @@ class ICICIBankParser : BankParser() {
             }
         }
         
-        // Pattern 6: Cash deposit (only if completed)
-        if (message.contains("Cash deposit transaction", ignoreCase = true) && 
-            message.contains("has been completed", ignoreCase = true)) {
+        // Pattern 6: Cash deposit via "Info BY CASH" pattern
+        if (message.contains("Info BY CASH", ignoreCase = true)) {
             return "Cash Deposit"
         }
         
@@ -298,22 +294,24 @@ class ICICIBankParser : BankParser() {
             // Don't skip the entire message, just ignore this part
         }
         
+        // Skip cash deposit confirmation messages (these are duplicates)
+        // We only want to process the actual credit notification
+        if (lowerMessage.contains("cash deposit transaction") && 
+            lowerMessage.contains("has been completed")) {
+            return false // Skip this confirmation message
+        }
+        
         // Check for ICICI-specific transaction keywords
         val iciciKeywords = listOf(
             "debited with",
             "debited for",
             "credited with",
+            "credited:",  // For "credited:Rs." format
             "autopay",
             "your account has been",
             "inr", // For "INR xxx spent" pattern
             "spent using" // For card transactions
         )
-        
-        // Special check for cash deposit - must be completed
-        if (lowerMessage.contains("cash deposit transaction") && 
-            lowerMessage.contains("has been completed")) {
-            return true
-        }
         
         // If any ICICI-specific pattern is found, it's likely a transaction
         if (iciciKeywords.any { lowerMessage.contains(it) }) {
@@ -334,9 +332,8 @@ class ICICIBankParser : BankParser() {
             return TransactionType.CREDIT
         }
         
-        // Cash deposit is income (only if completed)
-        if (lowerMessage.contains("cash deposit transaction") && 
-            lowerMessage.contains("has been completed")) {
+        // Cash deposit via "Info BY CASH" is income
+        if (lowerMessage.contains("info by cash")) {
             return TransactionType.INCOME
         }
         
