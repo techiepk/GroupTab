@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.data.parser.bank
 import com.pennywiseai.tracker.core.CompiledPatterns
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 /**
  * HDFC Bank specific parser.
@@ -513,4 +514,105 @@ class HDFCBankParser : BankParser() {
         val merchant: String,
         val umn: String?
     )
+    
+    /**
+     * Balance update information.
+     */
+    data class BalanceUpdateInfo(
+        val bankName: String,
+        val accountLast4: String,
+        val balance: BigDecimal,
+        val asOfDate: LocalDateTime? = null
+    )
+    
+    /**
+     * Checks if this is a balance update notification (not a transaction).
+     */
+    fun isBalanceUpdateNotification(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // Check for balance update patterns
+        return (lowerMessage.contains("available bal") || 
+                lowerMessage.contains("avl bal") || 
+                lowerMessage.contains("account balance") ||
+                lowerMessage.contains("a/c balance")) &&
+               lowerMessage.contains("as on") &&
+               !lowerMessage.contains("debited") &&
+               !lowerMessage.contains("credited") &&
+               !lowerMessage.contains("withdrawn") &&
+               !lowerMessage.contains("spent") &&
+               !lowerMessage.contains("transferred")
+    }
+    
+    /**
+     * Parses balance update notification.
+     */
+    fun parseBalanceUpdate(message: String): BalanceUpdateInfo? {
+        if (!isBalanceUpdateNotification(message)) {
+            return null
+        }
+        
+        // Extract account last 4 digits
+        val accountLast4 = extractAccountLast4(message) ?: return null
+        
+        // Extract balance amount - pattern for "is INR 12,678.00"
+        val balancePattern = Regex("""is\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        val balance = balancePattern.find(message)?.let { match ->
+            val balanceStr = match.groupValues[1].replace(",", "")
+            try {
+                BigDecimal(balanceStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        } ?: return null
+        
+        // Extract date if present (e.g., "as on yesterday:21-AUG-25")
+        val datePattern = Regex("""as\s+on\s+(?:yesterday:)?(\d{1,2}-[A-Z]{3}-\d{2})""", RegexOption.IGNORE_CASE)
+        val asOfDate = datePattern.find(message)?.let { match ->
+            // Parse date format DD-MMM-YY
+            val dateStr = match.groupValues[1]
+            try {
+                val parts = dateStr.split("-")
+                if (parts.size == 3) {
+                    val day = parts[0].toInt()
+                    val month = getMonthNumber(parts[1])
+                    val year = 2000 + parts[2].toInt() // Assuming 20XX for YY format
+                    
+                    LocalDateTime.of(year, month, day, 0, 0)
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+        
+        return BalanceUpdateInfo(
+            bankName = getBankName(),
+            accountLast4 = accountLast4,
+            balance = balance,
+            asOfDate = asOfDate
+        )
+    }
+    
+    /**
+     * Helper function to convert month abbreviation to number.
+     */
+    private fun getMonthNumber(monthAbbr: String): Int {
+        return when (monthAbbr.uppercase()) {
+            "JAN" -> 1
+            "FEB" -> 2
+            "MAR" -> 3
+            "APR" -> 4
+            "MAY" -> 5
+            "JUN" -> 6
+            "JUL" -> 7
+            "AUG" -> 8
+            "SEP" -> 9
+            "OCT" -> 10
+            "NOV" -> 11
+            "DEC" -> 12
+            else -> 1
+        }
+    }
 }

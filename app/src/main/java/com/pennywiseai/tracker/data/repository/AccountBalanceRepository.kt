@@ -79,4 +79,23 @@ class AccountBalanceRepository @Inject constructor(
             insertBalance(balanceEntity)
         }
     }
+    
+    /**
+     * Inserts a balance update from a balance notification SMS
+     */
+    suspend fun insertBalanceUpdate(
+        bankName: String,
+        accountLast4: String,
+        balance: BigDecimal,
+        timestamp: LocalDateTime
+    ) {
+        val balanceEntity = AccountBalanceEntity(
+            bankName = bankName,
+            accountLast4 = accountLast4,
+            balance = balance,
+            timestamp = timestamp,
+            transactionId = null
+        )
+        insertBalance(balanceEntity)
+    }
 }

@@ -171,6 +171,26 @@ class SmsReaderWorker @AssistedInject constructor(
                                 }
                                 continue // Skip transaction parsing for future debit
                             }
+                            
+                            // Check for Balance Update notifications
+                            if (parser.isBalanceUpdateNotification(sms.body)) {
+                                val balanceUpdateInfo = parser.parseBalanceUpdate(sms.body)
+                                if (balanceUpdateInfo != null) {
+                                    try {
+                                        // Save to account_balances table
+                                        accountBalanceRepository.insertBalanceUpdate(
+                                            bankName = balanceUpdateInfo.bankName,
+                                            accountLast4 = balanceUpdateInfo.accountLast4,
+                                            balance = balanceUpdateInfo.balance,
+                                            timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime
+                                        )
+                                        Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName} **${balanceUpdateInfo.accountLast4}: ${balanceUpdateInfo.balance}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving balance update: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing
+                            }
                         }
                         is IndianBankParser -> {
                             if (parser.isMandateNotification(sms.body)) {
