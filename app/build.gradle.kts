@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.pennywiseai.tracker"
-        minSdk = 31
+        minSdk = 30
         targetSdk = 36
         versionCode = 40
         versionName = "2.15.5"
