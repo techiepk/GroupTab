@@ -181,9 +181,73 @@ export class HDFCBankParser extends BankParser {
     return message.toLowerCase().includes('e-mandate!')
   }
 
+  /**
+   * Check if this is a balance update notification (not a transaction)
+   */
+  isBalanceUpdateNotification(message: string): boolean {
+    const lowerMessage = message.toLowerCase()
+    
+    // Check for balance update patterns
+    return (lowerMessage.includes('available bal') || 
+            lowerMessage.includes('avl bal') || 
+            lowerMessage.includes('account balance') ||
+            lowerMessage.includes('a/c balance')) &&
+           lowerMessage.includes('as on') &&
+           !lowerMessage.includes('debited') &&
+           !lowerMessage.includes('credited') &&
+           !lowerMessage.includes('withdrawn') &&
+           !lowerMessage.includes('spent') &&
+           !lowerMessage.includes('transferred')
+  }
+
+  /**
+   * Parse balance update notification
+   */
+  parseBalanceUpdate(message: string): { bankName: string; accountLast4: string; balance: number; asOfDate?: string } | null {
+    if (!this.isBalanceUpdateNotification(message)) {
+      return null
+    }
+    
+    // Extract account last 4 digits
+    const accountLast4 = this.extractAccountLast4(message)
+    if (!accountLast4) {
+      return null
+    }
+    
+    // Extract balance amount - pattern for "is INR 12,678.00"
+    const balancePattern = /is\s+INR\s*([\d,]+(?:\.\d{2})?)/i
+    const balanceMatch = message.match(balancePattern)
+    if (!balanceMatch) {
+      return null
+    }
+    
+    const balanceStr = balanceMatch[1].replace(/,/g, '')
+    const balance = parseFloat(balanceStr)
+    if (isNaN(balance)) {
+      return null
+    }
+    
+    // Extract date if present (e.g., "as on yesterday:21-AUG-25")
+    const datePattern = /as\s+on\s+(?:yesterday:)?(\d{1,2}-[A-Z]{3}-\d{2})/i
+    const dateMatch = message.match(datePattern)
+    const asOfDate = dateMatch ? dateMatch[1] : undefined
+    
+    return {
+      bankName: this.config.bankName,
+      accountLast4,
+      balance,
+      asOfDate
+    }
+  }
+
   protected isTransactionMessage(message: string): boolean {
     // Skip E-Mandate notifications
     if (this.isEMandateNotification(message)) {
+      return false
+    }
+
+    // Skip balance update notifications
+    if (this.isBalanceUpdateNotification(message)) {
       return false
     }
 
