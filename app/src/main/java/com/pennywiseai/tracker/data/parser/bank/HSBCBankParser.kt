@@ -47,14 +47,29 @@ class HSBCBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
-        // Pattern: INR 49.00 is paid from
-        // Pattern: INR 1000.50 is credited to
-        val pattern = Regex(
+        // Pattern 1: INR 49.00 is paid from
+        // Pattern 2: INR 1000.50 is credited to
+        val pattern1 = Regex(
             """INR\s+([\d,]+(?:\.\d{2})?)\s+is\s+(?:paid|credited|debited)""",
             RegexOption.IGNORE_CASE
         )
         
-        pattern.find(message)?.let { match ->
+        pattern1.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern 3: "used at ... for INR 305.00" (credit card)
+        val creditCardPattern = Regex(
+            """for\s+INR\s+([\d,]+(?:\.\d{2})?)""",
+            RegexOption.IGNORE_CASE
+        )
+        
+        creditCardPattern.find(message)?.let { match ->
             val amount = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(amount)
@@ -67,7 +82,19 @@ class HSBCBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: "to [Merchant] on" for payments
+        // Pattern 1: "used at [Merchant] for" (credit card)
+        val creditCardPattern = Regex(
+            """used\s+at\s+([^.]+?)\s+for\s+INR""",
+            RegexOption.IGNORE_CASE
+        )
+        creditCardPattern.find(message)?.let { match ->
+            val merchant = cleanMerchantName(match.groupValues[1].trim())
+            if (isValidMerchantName(merchant)) {
+                return merchant
+            }
+        }
+        
+        // Pattern 2: "to [Merchant] on" for payments
         val paymentPattern = Regex(
             """to\s+([^.]+?)\s+on\s+\d""",
             RegexOption.IGNORE_CASE
@@ -79,7 +106,7 @@ class HSBCBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: "from [Merchant]" for credits
+        // Pattern 3: "from [Merchant]" for credits
         val creditPattern = Regex(
             """from\s+([^.]+?)(?:\s+on\s+|\s+with\s+|$)""",
             RegexOption.IGNORE_CASE
@@ -95,12 +122,21 @@ class HSBCBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern: account XXXXXX1234
-        val pattern = Regex(
+        // Pattern 1: "creditcard xxxxx1234" or "credit card xxxxx1234"
+        val creditCardPattern = Regex(
+            """credit\s*card\s+[xX*]+(\d{4})""",
+            RegexOption.IGNORE_CASE
+        )
+        creditCardPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        // Pattern 2: account XXXXXX1234
+        val accountPattern = Regex(
             """account\s+[X*]+(\d{4})""",
             RegexOption.IGNORE_CASE
         )
-        pattern.find(message)?.let { match ->
+        accountPattern.find(message)?.let { match ->
             return match.groupValues[1]
         }
         
@@ -124,6 +160,11 @@ class HSBCBankParser : BankParser() {
         val lowerMessage = message.lowercase()
         
         return when {
+            lowerMessage.contains("creditcard") || lowerMessage.contains("credit card") -> {
+                // Credit card transactions that say "used at" are expenses (credit type)
+                if (lowerMessage.contains("used at")) TransactionType.CREDIT
+                else TransactionType.CREDIT
+            }
             lowerMessage.contains("is paid from") -> TransactionType.EXPENSE
             lowerMessage.contains("is debited") -> TransactionType.EXPENSE
             lowerMessage.contains("is credited to") -> TransactionType.INCOME
@@ -139,6 +180,8 @@ class HSBCBankParser : BankParser() {
         if (lowerMessage.contains("is paid from") ||
             lowerMessage.contains("is credited to") ||
             lowerMessage.contains("is debited") ||
+            (lowerMessage.contains("creditcard") && lowerMessage.contains("used at")) ||
+            (lowerMessage.contains("credit card") && lowerMessage.contains("used at")) ||
             (lowerMessage.contains("inr") && lowerMessage.contains("account"))) {
             return true
         }
