@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.presentation.transactions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -554,10 +555,11 @@ private fun EditableTransactionHeader(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            // Transaction Type - All in one row with wrapping
-            Row(
+            // Transaction Type - Using FlowRow for responsive layout
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
                     selected = transaction.transactionType == TransactionType.INCOME,
@@ -570,8 +572,7 @@ private fun EditableTransactionHeader(
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.INCOME) {
                         { Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
+                    } else null
                 )
                 FilterChip(
                     selected = transaction.transactionType == TransactionType.EXPENSE,
@@ -584,8 +585,7 @@ private fun EditableTransactionHeader(
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.EXPENSE) {
                         { Icon(Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
+                    } else null
                 )
                 FilterChip(
                     selected = transaction.transactionType == TransactionType.CREDIT,
@@ -598,16 +598,8 @@ private fun EditableTransactionHeader(
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.CREDIT) {
                         { Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
+                    } else null
                 )
-            }
-            
-            // Transaction Type - Second Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-            ) {
                 FilterChip(
                     selected = transaction.transactionType == TransactionType.TRANSFER,
                     onClick = { viewModel.updateTransactionType(TransactionType.TRANSFER) },
@@ -619,8 +611,7 @@ private fun EditableTransactionHeader(
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.TRANSFER) {
                         { Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
+                    } else null
                 )
                 FilterChip(
                     selected = transaction.transactionType == TransactionType.INVESTMENT,
@@ -633,10 +624,8 @@ private fun EditableTransactionHeader(
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.INVESTMENT) {
                         { Icon(Icons.Default.ShowChart, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
+                    } else null
                 )
-                Spacer(modifier = Modifier.weight(1f))
             }
             
             // Date and Time
