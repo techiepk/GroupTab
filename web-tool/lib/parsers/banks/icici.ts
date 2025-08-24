@@ -189,6 +189,11 @@ export class ICICIBankParser extends BankParser {
       return false
     }
 
+    // Skip payment due reminders
+    if (lowerMessage.includes('is due by')) {
+      return false
+    }
+
     // Check for ICICI-specific transaction keywords
     const iciciKeywords = [
       'debited with',

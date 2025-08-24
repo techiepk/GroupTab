@@ -43,6 +43,16 @@ export class SouthIndianBankParser extends BankParser {
   protected extractMerchant(message: string, sender: string): string | null {
     // For UPI transactions, try to extract UPI ID or merchant name
     if (message.toLowerCase().includes('upi')) {
+      // Pattern for "Info:UPI/IPOS/number/MERCHANT NAME on" format
+      const infoPattern = /Info:UPI\/[^\/]+\/[^\/]+\/([^\/]+?)\s+on/i
+      const infoMatch = message.match(infoPattern)
+      if (infoMatch) {
+        const merchant = infoMatch[1].trim()
+        if (merchant) {
+          return this.cleanMerchantName(merchant)
+        }
+      }
+
       // Check for "to" pattern (e.g., "to merchant@upi")
       const toPattern = /to\s+([^,\s]+(?:@[^\s,]+)?)/i
       const toMatch = message.match(toPattern)
@@ -65,7 +75,7 @@ export class SouthIndianBankParser extends BankParser {
         }
       }
 
-      // Default to UPI transaction
+      // Default to UPI Transaction
       return 'UPI Transaction'
     }
 
@@ -128,8 +138,9 @@ export class SouthIndianBankParser extends BankParser {
   }
 
   protected extractBalance(message: string): number | null {
-    // Pattern for "Bal:Rs.1234.17" or "Balance:Rs.1234.17"
+    // Pattern for "Bal:Rs.1234.17" or "Balance:Rs.1234.17" or "Final balance is Rs.1234.17"
     const patterns = [
+      /Final\s+balance\s+is\s+Rs\.?\s*([\d,]+(?:\.\d{2})?)/i,
       /Bal(?:ance)?[:\s]*Rs\.?\s*([\d,]+(?:\.\d{2})?)/i,
       /Available\s+Bal(?:ance)?[:\s]*Rs\.?\s*([\d,]+(?:\.\d{2})?)/i,
       /Avl\s+Bal[:\s]*Rs\.?\s*([\d,]+(?:\.\d{2})?)/i

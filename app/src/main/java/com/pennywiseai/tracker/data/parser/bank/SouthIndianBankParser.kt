@@ -106,6 +106,15 @@ class SouthIndianBankParser : BankParser() {
     override fun extractMerchant(message: String, sender: String): String? {
         // For UPI transactions, try to extract UPI ID or merchant name
         if (message.contains("UPI", ignoreCase = true)) {
+            // Pattern for "Info:UPI/IPOS/number/MERCHANT NAME on" format
+            val infoPattern = Regex("""Info:UPI/[^/]+/[^/]+/([^/]+?)\s+on""", RegexOption.IGNORE_CASE)
+            infoPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+            
             // Check for "to" pattern (e.g., "to merchant@upi")
             val toPattern = Regex("""to\s+([^,\s]+(?:@[^\s,]+)?)""", RegexOption.IGNORE_CASE)
             toPattern.find(message)?.let { match ->
@@ -126,7 +135,7 @@ class SouthIndianBankParser : BankParser() {
                 }
             }
             
-            // Default to UPI transaction
+            // Default to UPI Transaction
             return "UPI Transaction"
         }
         
@@ -210,8 +219,9 @@ class SouthIndianBankParser : BankParser() {
     }
     
     override fun extractBalance(message: String): BigDecimal? {
-        // Pattern for "Bal:Rs.1234.17" or "Balance:Rs.1234.17"
+        // Pattern for "Bal:Rs.1234.17" or "Balance:Rs.1234.17" or "Final balance is Rs.1234.17"
         val patterns = listOf(
+            Regex("""Final\s+balance\s+is\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             Regex("""Bal(?:ance)?[:\s]*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             Regex("""Available\s+Bal(?:ance)?[:\s]*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             Regex("""Avl\s+Bal[:\s]*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
