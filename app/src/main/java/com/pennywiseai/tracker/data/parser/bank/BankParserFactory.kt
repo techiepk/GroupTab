@@ -28,7 +28,8 @@ object BankParserFactory {
         UnionBankParser(),
         HSBCBankParser(),
         CentralBankOfIndiaParser(),
-        SouthIndianBankParser()
+        SouthIndianBankParser(),
+        JKBankParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.

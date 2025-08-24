@@ -22,6 +22,7 @@ import { UnionBankParser } from './banks/union'
 import { HSBCBankParser } from './banks/hsbc'
 import { CentralBankOfIndiaParser } from './banks/centralbank'
 import { SouthIndianBankParser } from './banks/south-indian-bank'
+import { JKBankParser } from './banks/jkBank'
 import { ParseResult, ParsedTransaction } from './types'
 
 export class BankParserFactory {
@@ -49,6 +50,7 @@ export class BankParserFactory {
     new HSBCBankParser(),
     new CentralBankOfIndiaParser(),
     new SouthIndianBankParser(),
+    new JKBankParser(),
   ]
 
   /**
