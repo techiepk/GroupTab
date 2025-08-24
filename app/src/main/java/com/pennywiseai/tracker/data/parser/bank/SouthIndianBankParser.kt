@@ -71,16 +71,15 @@ class SouthIndianBankParser : BankParser() {
         
         return ParsedTransaction(
             amount = amount,
-            merchant = merchant,
             type = transactionType,
-            bankName = getBankName(),
+            merchant = merchant,
             reference = reference,
             accountLast4 = accountLast4,
             balance = balance,
-            dateTime = dateTime,
-            originalSmsBody = smsBody,
-            smsSender = sender,
-            smsTimestamp = timestamp
+            smsBody = smsBody,
+            sender = sender,
+            timestamp = timestamp,
+            bankName = getBankName()
         )
     }
     

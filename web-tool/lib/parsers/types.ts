@@ -2,7 +2,9 @@
 
 export enum TransactionType {
   INCOME = 'INCOME',
-  EXPENSE = 'EXPENSE'
+  EXPENSE = 'EXPENSE',
+  CREDIT = 'CREDIT', // Credit card transactions
+  INVESTMENT = 'INVESTMENT' // Investment transactions
 }
 
 export interface ParsedTransaction {

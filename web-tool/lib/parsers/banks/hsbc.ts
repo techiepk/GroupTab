@@ -123,9 +123,9 @@ export class HSBCBankParser extends BankParser {
     
     // Credit card transactions
     if (lowerMessage.includes('creditcard') || lowerMessage.includes('credit card')) {
-      // Credit card transactions that say "used at" are expenses (credit type)
-      if (lowerMessage.includes('used at')) return TransactionType.CREDIT
-      return TransactionType.CREDIT
+      // Credit card transactions that say "used at" are expenses
+      if (lowerMessage.includes('used at')) return TransactionType.EXPENSE
+      return TransactionType.EXPENSE
     }
     
     if (lowerMessage.includes('is paid from')) return TransactionType.EXPENSE

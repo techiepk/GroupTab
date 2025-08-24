@@ -41,6 +41,24 @@ export class HDFCBankParser extends BankParser {
   protected extractMerchant(message: string, sender: string): string | null {
     // Try HDFC specific patterns first
 
+    // Pattern for: "Spent Rs.XXX On HDFC Bank Card XXXX At MERCHANT On DATE"
+    // Handles merchants like RSP*INSTAMART (Swiggy Instamart)
+    const spentOnCardPattern = /Spent\s+Rs\.?\d+(?:\.\d{2})?\s+On\s+HDFC\s+Bank\s+Card\s+\d+\s+At\s+([^\s]+)\s+On/i
+    const spentMatch = message.match(spentOnCardPattern)
+    if (spentMatch) {
+      let merchant = spentMatch[1].trim()
+      
+      // Map known merchant codes to full names
+      if (merchant.toUpperCase() === 'RSP*INSTAMART') {
+        merchant = 'Swiggy Instamart'
+      } else if (merchant.startsWith('RSP*')) {
+        // General RSP prefix handling for other Swiggy services
+        merchant = 'Swiggy ' + merchant.substring(4)
+      }
+      
+      return this.cleanMerchantName(merchant)
+    }
+
     // Pattern 1: Salary credit - "for XXXXX-ABC-XYZ MONTH SALARY-COMPANY NAME"
     if (message.toLowerCase().includes('salary') && message.toLowerCase().includes('deposited')) {
       const salaryPattern = /for\s+[^-]+-[^-]+-[^-]+\s+[A-Z]+\s+SALARY-([^.\n]+)/i
@@ -92,8 +110,23 @@ export class HDFCBankParser extends BankParser {
       }
     }
 
-    // Pattern 4: "spent on Card XX1234 at merchant on date"
-    if (message.toLowerCase().includes('spent on card')) {
+    // Pattern 4: "spent on Card XX1234 at merchant on date" or "Spent Rs.X On HDFC Bank Card X At merchant On date"
+    if (message.toLowerCase().includes('spent') && message.toLowerCase().includes('card')) {
+      // More flexible pattern to capture merchant between "At" and "On"
+      const spentAtPattern = /At\s+([^\s]+(?:\*[^\s]+)?)\s+On\s+/i
+      const spentAtMatch = message.match(spentAtPattern)
+      if (spentAtMatch) {
+        let merchant = spentAtMatch[1].trim()
+        // Map known merchant codes
+        if (merchant.toUpperCase() === 'RSP*INSTAMART') {
+          merchant = 'Swiggy Instamart'
+        } else if (merchant.toUpperCase().startsWith('RSP*')) {
+          merchant = 'Swiggy ' + merchant.substring(4)
+        }
+        return this.cleanMerchantName(merchant)
+      }
+      
+      // Original pattern for older format
       const spentPattern = /at\s+([^.\n]+?)\s+on\s+\d{2}/i
       const match = message.match(spentPattern)
       if (match) {
@@ -126,13 +159,91 @@ export class HDFCBankParser extends BankParser {
   protected extractTransactionType(message: string): TransactionType | null {
     const lowerMessage = message.toLowerCase()
 
+    // Check if it's an investment transaction
+    const investmentKeywords = [
+      'indian clearing corporation', // Mutual funds clearing
+      'groww', // Investment platform
+      'zerodha', // Stock broker
+      'upstox', // Stock broker
+      'kite', // Zerodha's platform
+      'kuvera', // Mutual fund platform
+      'paytm money', // Investment platform
+      'etmoney', // Investment platform
+      'coin by zerodha', // Zerodha mutual funds
+      'smallcase', // Investment platform
+      'angel one', // Stock broker (formerly Angel Broking)
+      'angel broking', // Old name
+      '5paisa', // Stock broker
+      'icici securities', // Stock broker
+      'icici direct', // Stock broker
+      'hdfc securities', // Stock broker
+      'kotak securities', // Stock broker
+      'motilal oswal', // Stock broker
+      'sharekhan', // Stock broker
+      'edelweiss', // Stock broker
+      'axis direct', // Stock broker
+      'sbi securities', // Stock broker
+      'nse', // National Stock Exchange
+      'bse', // Bombay Stock Exchange
+      'cdsl', // Central Depository Services
+      'nsdl', // National Securities Depository
+      'mutual fund', // Generic mutual fund
+      'sip', // Systematic Investment Plan
+      'elss', // Tax saving funds
+      'ipo', // Initial Public Offering
+      'stockbroker', // Generic
+      'demat' // Demat account related
+    ]
+
+    if (investmentKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return TransactionType.INVESTMENT
+    }
+
+    // Credit card transactions - ONLY if message contains CC or PCC indicators
+    // Any transaction with BLOCK CC or BLOCK PCC is a credit card transaction
+    if (lowerMessage.includes('block cc') || lowerMessage.includes('block pcc')) {
+      return TransactionType.CREDIT
+    }
+
+    // Legacy pattern for older format that explicitly says "spent on card"
+    if (lowerMessage.includes('spent on card') && !lowerMessage.includes('block dc')) {
+      return TransactionType.CREDIT
+    }
+
+    // Credit card bill payments (these are regular expenses from bank account)
+    if (lowerMessage.includes('payment') && lowerMessage.includes('credit card')) {
+      return TransactionType.EXPENSE
+    }
+    if (lowerMessage.includes('towards') && lowerMessage.includes('credit card')) {
+      return TransactionType.EXPENSE
+    }
+
     // HDFC specific: "Sent Rs.X From HDFC Bank"
     if (lowerMessage.includes('sent') && lowerMessage.includes('from hdfc')) {
       return TransactionType.EXPENSE
     }
 
-    // Use base class logic for standard cases
-    return super.extractTransactionType(message)
+    // HDFC specific: "Spent Rs.X From HDFC Bank Card" (debit card transactions)
+    if (lowerMessage.includes('spent') && lowerMessage.includes('from hdfc bank card')) {
+      return TransactionType.EXPENSE
+    }
+
+    // Standard expense keywords
+    if (lowerMessage.includes('debited')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('withdrawn') && !lowerMessage.includes('block cc')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('spent') && !lowerMessage.includes('card')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('charged')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('paid')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('purchase')) return TransactionType.EXPENSE
+
+    // Income keywords
+    if (lowerMessage.includes('credited')) return TransactionType.INCOME
+    if (lowerMessage.includes('deposited')) return TransactionType.INCOME
+    if (lowerMessage.includes('received')) return TransactionType.INCOME
+    if (lowerMessage.includes('refund')) return TransactionType.INCOME
+    if (lowerMessage.includes('cashback') && !lowerMessage.includes('earn cashback')) return TransactionType.INCOME
+
+    return null
   }
 
   protected extractReference(message: string): string | null {
@@ -251,15 +362,29 @@ export class HDFCBankParser extends BankParser {
       return false
     }
 
-    const lowerMessage = message.toLowerCase()
-
-    // Skip future transaction notifications (reminders)
-    if (lowerMessage.includes('will be')) {
+    // Skip future debit notifications (these are subscription alerts, not transactions)
+    if (message.toLowerCase().includes('will be')) {
       return false
     }
 
-    // Skip credit card blocking notifications
-    if (lowerMessage.includes('block cc')) {
+    const lowerMessage = message.toLowerCase()
+
+    // Check for payment alerts (current transactions)
+    if (lowerMessage.includes('payment alert')) {
+      // Make sure it's not a future debit
+      if (!lowerMessage.includes('will be')) {
+        return true
+      }
+    }
+
+    // Skip payment request messages
+    if (
+      lowerMessage.includes('has requested') ||
+      lowerMessage.includes('payment request') ||
+      lowerMessage.includes('to pay, download') ||
+      lowerMessage.includes('collect request') ||
+      lowerMessage.includes('ignore if already paid')
+    ) {
       return false
     }
 
@@ -273,7 +398,34 @@ export class HDFCBankParser extends BankParser {
       return false
     }
 
-    // Use base class logic for other checks
-    return super.isTransactionMessage(message)
+    // Skip OTP and promotional messages
+    if (
+      lowerMessage.includes('otp') ||
+      lowerMessage.includes('one time password') ||
+      lowerMessage.includes('verification code') ||
+      lowerMessage.includes('offer') ||
+      lowerMessage.includes('discount') ||
+      lowerMessage.includes('cashback offer') ||
+      lowerMessage.includes('win ')
+    ) {
+      return false
+    }
+
+    // HDFC specific transaction keywords
+    const hdfcTransactionKeywords = [
+      'debited',
+      'credited',
+      'withdrawn',
+      'deposited',
+      'spent',
+      'received',
+      'transferred',
+      'paid',
+      'sent', // HDFC uses "Sent Rs.X From HDFC Bank"
+      'deducted', // Add support for "deducted from" pattern
+      'txn' // HDFC uses "Txn Rs.X" for card transactions
+    ]
+
+    return hdfcTransactionKeywords.some(keyword => lowerMessage.includes(keyword))
   }
 }
