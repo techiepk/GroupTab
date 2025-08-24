@@ -301,6 +301,11 @@ class ICICIBankParser : BankParser() {
             return false // Skip this confirmation message
         }
         
+        // Skip payment due reminders
+        if (lowerMessage.contains("is due by")) {
+            return false // Skip payment due reminders
+        }
+        
         // Check for ICICI-specific transaction keywords
         val iciciKeywords = listOf(
             "debited with",
