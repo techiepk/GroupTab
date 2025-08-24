@@ -6,6 +6,7 @@ import { AxisBankParser } from './banks/axis'
 import { FederalBankParser } from './banks/federal'
 import { IndianBankParser } from './banks/indian'
 import { BankOfBarodaParser } from './banks/bob'
+import { BankOfIndiaParser } from './banks/bankOfIndia'
 import { CanaraParser } from './banks/canara'
 import { PNBParser } from './banks/pnb'
 import { IDBIBankParser } from './banks/idbi'
@@ -32,6 +33,7 @@ export class BankParserFactory {
     new FederalBankParser(),
     new IndianBankParser(),
     new BankOfBarodaParser(),
+    new BankOfIndiaParser(),
     new CanaraParser(),
     new PNBParser(),
     new IDBIBankParser(),

@@ -21,6 +21,7 @@ object BankParserFactory {
         PNBBankParser(),
         CanaraBankParser(),
         BankOfBarodaParser(),
+        BankOfIndiaParser(),
         JioPaymentsBankParser(),
         KotakBankParser(),
         IDFCFirstBankParser(),
