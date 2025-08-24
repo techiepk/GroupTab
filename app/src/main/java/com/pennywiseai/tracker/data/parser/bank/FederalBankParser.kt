@@ -48,7 +48,21 @@ class FederalBankParser : BankParser() {
             }
         }
         
-        // Pattern 2: Rs 500.00 credited
+        // Pattern 2: Rs 70.00 sent via UPI
+        val sentPattern = Regex(
+            """Rs\s+([0-9,]+(?:\.\d{2})?)\s+sent""",
+            RegexOption.IGNORE_CASE
+        )
+        sentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern 3: Rs 500.00 credited
         val creditPattern = Regex(
             """Rs\s+([0-9,]+(?:\.\d{2})?)\s+credited""",
             RegexOption.IGNORE_CASE
@@ -62,7 +76,7 @@ class FederalBankParser : BankParser() {
             }
         }
         
-        // Pattern 3: withdrawn Rs 500
+        // Pattern 4: withdrawn Rs 500
         val withdrawnPattern = Regex(
             """withdrawn\s+Rs\s+([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
@@ -200,6 +214,56 @@ class FederalBankParser : BankParser() {
                 parts.firstOrNull { it.length > 3 && !it.all { char -> char.isDigit() } }
                     ?.replaceFirstChar { it.uppercase() } ?: "Merchant"
             }
+        }
+    }
+    
+    override fun isTransactionMessage(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // Skip OTP and promotional messages
+        if (lowerMessage.contains("otp") || 
+            lowerMessage.contains("one time password") ||
+            lowerMessage.contains("verification code")) {
+            return false
+        }
+        
+        // Check for Federal Bank specific transaction keywords
+        val federalKeywords = listOf(
+            "sent via upi",
+            "debited via upi",
+            "credited",
+            "withdrawn",
+            "received",
+            "transferred"
+        )
+        
+        // If any Federal Bank specific pattern is found, it's likely a transaction
+        if (federalKeywords.any { lowerMessage.contains(it) }) {
+            return true
+        }
+        
+        // Fall back to base class for standard checks
+        return super.isTransactionMessage(message)
+    }
+    
+    override fun extractTransactionType(message: String): TransactionType? {
+        val lowerMessage = message.lowercase()
+        
+        return when {
+            // Expense keywords - including "sent"
+            lowerMessage.contains("sent via upi") -> TransactionType.EXPENSE
+            lowerMessage.contains("debited") -> TransactionType.EXPENSE
+            lowerMessage.contains("withdrawn") -> TransactionType.EXPENSE
+            lowerMessage.contains("spent") -> TransactionType.EXPENSE
+            lowerMessage.contains("paid") -> TransactionType.EXPENSE
+            
+            // Income keywords
+            lowerMessage.contains("credited") -> TransactionType.INCOME
+            lowerMessage.contains("received") -> TransactionType.INCOME
+            lowerMessage.contains("deposited") -> TransactionType.INCOME
+            lowerMessage.contains("refund") -> TransactionType.INCOME
+            
+            else -> super.extractTransactionType(message)
         }
     }
 }

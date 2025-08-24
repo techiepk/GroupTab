@@ -44,7 +44,18 @@ export class FederalBankParser extends BankParser {
       }
     }
 
-    // Pattern 2: Rs 500.00 credited
+    // Pattern 2: Rs 70.00 sent via UPI
+    const sentPattern = /Rs\s+([0-9,]+(?:\.\d{2})?)\s+sent/i
+    match = message.match(sentPattern)
+    if (match) {
+      const amount = match[1].replace(/,/g, '')
+      const parsedAmount = parseFloat(amount)
+      if (!isNaN(parsedAmount)) {
+        return parsedAmount
+      }
+    }
+
+    // Pattern 3: Rs 500.00 credited
     const creditPattern = /Rs\s+([0-9,]+(?:\.\d{2})?)\s+credited/i
     match = message.match(creditPattern)
     if (match) {
@@ -55,7 +66,7 @@ export class FederalBankParser extends BankParser {
       }
     }
 
-    // Pattern 3: withdrawn Rs 500
+    // Pattern 4: withdrawn Rs 500
     const withdrawnPattern = /withdrawn\s+Rs\s+([0-9,]+(?:\.\d{2})?)/i
     match = message.match(withdrawnPattern)
     if (match) {
@@ -185,5 +196,55 @@ export class FederalBankParser extends BankParser {
     }
     
     return 'Merchant'
+  }
+
+  protected isTransactionMessage(message: string): boolean {
+    const lowerMessage = message.toLowerCase()
+
+    // Skip OTP and promotional messages
+    if (
+      lowerMessage.includes('otp') ||
+      lowerMessage.includes('one time password') ||
+      lowerMessage.includes('verification code')
+    ) {
+      return false
+    }
+
+    // Check for Federal Bank specific transaction keywords
+    const federalKeywords = [
+      'sent via upi',
+      'debited via upi',
+      'credited',
+      'withdrawn',
+      'received',
+      'transferred'
+    ]
+
+    // If any Federal Bank specific pattern is found, it's likely a transaction
+    if (federalKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return true
+    }
+
+    // Fall back to base class for standard checks
+    return super.isTransactionMessage(message)
+  }
+
+  protected extractTransactionType(message: string): TransactionType | null {
+    const lowerMessage = message.toLowerCase()
+
+    // Expense keywords - including "sent"
+    if (lowerMessage.includes('sent via upi')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('debited')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('withdrawn')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('spent')) return TransactionType.EXPENSE
+    if (lowerMessage.includes('paid')) return TransactionType.EXPENSE
+
+    // Income keywords
+    if (lowerMessage.includes('credited')) return TransactionType.INCOME
+    if (lowerMessage.includes('received')) return TransactionType.INCOME
+    if (lowerMessage.includes('deposited')) return TransactionType.INCOME
+    if (lowerMessage.includes('refund')) return TransactionType.INCOME
+
+    return super.extractTransactionType(message)
   }
 }
