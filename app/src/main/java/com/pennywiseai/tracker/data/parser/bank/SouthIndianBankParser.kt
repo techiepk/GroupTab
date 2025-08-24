@@ -294,6 +294,12 @@ class SouthIndianBankParser : BankParser() {
             return false
         }
         
+        // Skip UPI auto-pay scheduled reminders
+        if (lowerMessage.contains("upi auto pay") && 
+            lowerMessage.contains("is scheduled on")) {
+            return false
+        }
+        
         // Check for transaction keywords
         val transactionKeywords = listOf(
             "debit", "credit", "withdrawn", "deposited",

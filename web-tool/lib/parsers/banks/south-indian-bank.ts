@@ -209,6 +209,12 @@ export class SouthIndianBankParser extends BankParser {
       return false
     }
 
+    // Skip UPI auto-pay scheduled reminders
+    if (lowerMessage.includes('upi auto pay') && 
+        lowerMessage.includes('is scheduled on')) {
+      return false
+    }
+
     // Check for transaction keywords
     const transactionKeywords = [
       'debit',
