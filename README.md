@@ -15,7 +15,7 @@
 Turn bank SMS into a clean, searchable money timeline with on-device AI assistance. 100% private, no cloud processing.
 
 
-⭐ **Star us on GitHub — help us reach 100 stars!**
+⭐ **Star us on GitHub — join 100+ supporters!**
 
 [![Share](https://img.shields.io/badge/share-000000?logo=x&logoColor=white)](https://x.com/intent/tweet?text=Check%20out%20PennyWise%20AI%20-%20Privacy-first%20expense%20tracker%20with%20on-device%20AI:%20https://github.com/sarim2000/pennywiseai-tracker%20%23Android%20%23PrivacyFirst%20%23OnDeviceAI)
 [![Share](https://img.shields.io/badge/share-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/sharing/share-offsite/?url=https://github.com/sarim2000/pennywiseai-tracker)
