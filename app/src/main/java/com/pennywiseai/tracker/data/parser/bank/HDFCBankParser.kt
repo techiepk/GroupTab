@@ -175,6 +175,14 @@ class HDFCBankParser : BankParser() {
         // Check if it's an investment transaction
         val investmentKeywords = listOf(
             "indian clearing corporation",  // Mutual funds clearing
+            "iccl",                         // Indian Clearing Corporation Limited (abbreviated)
+            "umrn",                         // Unique Mandate Reference Number (strong indicator)
+            "nsccl",                        // NSE Clearing Corporation Limited
+            "nse clearing",                 // NSE Clearing Corporation
+            "nach",                         // National Automated Clearing House
+            "folio",                        // Mutual fund folio number
+            "ach",                          // Automated Clearing House
+            "ecs",                          // Electronic Clearing Service
             "groww",                        // Investment platform
             "zerodha",                      // Stock broker
             "upstox",                       // Stock broker

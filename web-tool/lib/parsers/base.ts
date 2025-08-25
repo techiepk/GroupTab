@@ -65,7 +65,7 @@ export abstract class BankParser {
     }
 
     const merchant = this.extractMerchant(smsBody, sender)
-    const category = CategoryMapper.getCategory(merchant, type)
+    const category = CategoryMapper.getCategory(merchant, type as 'INCOME' | 'EXPENSE')
 
     return {
       amount,
