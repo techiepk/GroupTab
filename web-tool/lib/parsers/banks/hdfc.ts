@@ -159,51 +159,8 @@ export class HDFCBankParser extends BankParser {
   protected extractTransactionType(message: string): TransactionType | null {
     const lowerMessage = message.toLowerCase()
 
-    // Check if it's an investment transaction
-    const investmentKeywords = [
-      'indian clearing corporation', // Mutual funds clearing
-      'iccl', // Indian Clearing Corporation Limited (abbreviated)
-      'umrn', // Unique Mandate Reference Number (strong indicator)
-      'nsccl', // NSE Clearing Corporation Limited
-      'nse clearing', // NSE Clearing Corporation
-      'nach', // National Automated Clearing House
-      'folio', // Mutual fund folio number
-      'ach', // Automated Clearing House
-      'ecs', // Electronic Clearing Service
-      'groww', // Investment platform
-      'zerodha', // Stock broker
-      'upstox', // Stock broker
-      'kite', // Zerodha's platform
-      'kuvera', // Mutual fund platform
-      'paytm money', // Investment platform
-      'etmoney', // Investment platform
-      'coin by zerodha', // Zerodha mutual funds
-      'smallcase', // Investment platform
-      'angel one', // Stock broker (formerly Angel Broking)
-      'angel broking', // Old name
-      '5paisa', // Stock broker
-      'icici securities', // Stock broker
-      'icici direct', // Stock broker
-      'hdfc securities', // Stock broker
-      'kotak securities', // Stock broker
-      'motilal oswal', // Stock broker
-      'sharekhan', // Stock broker
-      'edelweiss', // Stock broker
-      'axis direct', // Stock broker
-      'sbi securities', // Stock broker
-      'nse', // National Stock Exchange
-      'bse', // Bombay Stock Exchange
-      'cdsl', // Central Depository Services
-      'nsdl', // National Securities Depository
-      'mutual fund', // Generic mutual fund
-      'sip', // Systematic Investment Plan
-      'elss', // Tax saving funds
-      'ipo', // Initial Public Offering
-      'stockbroker', // Generic
-      'demat' // Demat account related
-    ]
-
-    if (investmentKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    // Use base class investment detection
+    if (this.isInvestmentTransaction(lowerMessage)) {
       return TransactionType.INVESTMENT
     }
 

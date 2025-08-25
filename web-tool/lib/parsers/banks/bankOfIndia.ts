@@ -5,8 +5,8 @@ const BankOfIndiaConfig: BankConfig = {
   bankName: 'Bank of India',
   bankCode: 'boi',
   senders: {
-    exact: ['BOIIND', 'BOIBNK'],
-    contains: [],
+    exact: ['BOIIND', 'BOIBNK', 'BOI UPI', 'BOIUPI'],
+    contains: ['BOI'],
     patterns: [
       /^[A-Z]{2}-BOIIND-[ST]$/,
       /^[A-Z]{2}-BOIBNK-[ST]$/,
@@ -50,7 +50,18 @@ export class BankOfIndiaParser extends BankParser {
       }
     }
 
-    // Pattern 2: INR format
+    // Pattern 2: "debited Rs. 500.00" (with space after Rs.)
+    const debitedRsPattern = /debited\s+Rs\.?\s+(\d+(?:,\d{3})*(?:\.\d{2})?)/i
+    const debitedRsMatch = message.match(debitedRsPattern)
+    if (debitedRsMatch) {
+      const amountStr = debitedRsMatch[1].replace(/,/g, '').trim()
+      const amount = parseFloat(amountStr)
+      if (!isNaN(amount)) {
+        return amount
+      }
+    }
+
+    // Pattern 3: INR format
     const inrPattern = /INR\s*(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:debited|credited)/i
     const inrMatch = message.match(inrPattern)
     if (inrMatch) {
@@ -61,7 +72,7 @@ export class BankOfIndiaParser extends BankParser {
       }
     }
 
-    // Pattern 3: withdrawn Rs 500
+    // Pattern 4: withdrawn Rs 500
     const withdrawnPattern = /withdrawn\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)/i
     const withdrawnMatch = message.match(withdrawnPattern)
     if (withdrawnMatch) {
@@ -79,6 +90,11 @@ export class BankOfIndiaParser extends BankParser {
   protected extractTransactionType(message: string): TransactionType | null {
     const lowerMessage = message.toLowerCase()
 
+    // Use base class investment detection
+    if (this.isInvestmentTransaction(lowerMessage)) {
+      return TransactionType.INVESTMENT
+    }
+
     // BOI specific: "debited A/c... and credited to" pattern indicates expense
     if (lowerMessage.includes('debited') && lowerMessage.includes('and credited to')) {
       return TransactionType.EXPENSE
@@ -94,7 +110,21 @@ export class BankOfIndiaParser extends BankParser {
   }
 
   protected extractMerchant(message: string, sender: string): string | null {
-    // Pattern 1: "credited to MERCHANT via UPI" (for debits)
+    // Pattern 1: "towards MERCHANT for" (for mandate/investment transactions)
+    const towardsPattern = /towards\s+([^.\n]+?)(?:\s+for|\s*,|$)/i
+    const towardsMatch = message.match(towardsPattern)
+    if (towardsMatch) {
+      let merchant = towardsMatch[1].trim()
+      // Clean up ICCL - Mutual Funds patterns
+      merchant = merchant.replace('ICCL - Mutual Funds - Autopa', 'ICCL Mutual Funds')
+                        .replace('ICCL - Mutual Funds', 'ICCL Mutual Funds')
+      const cleanedMerchant = this.cleanMerchantName(merchant)
+      if (this.isValidMerchantName(cleanedMerchant)) {
+        return cleanedMerchant
+      }
+    }
+
+    // Pattern 2: "credited to MERCHANT via UPI" (for debits)
     const creditedToPattern = /credited\s+to\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)/i
     const creditedToMatch = message.match(creditedToPattern)
     if (creditedToMatch) {
@@ -104,7 +134,7 @@ export class BankOfIndiaParser extends BankParser {
       }
     }
 
-    // Pattern 2: "debited from MERCHANT via UPI" (for credits)
+    // Pattern 3: "debited from MERCHANT via UPI" (for credits)
     const debitedFromPattern = /debited\s+from\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)/i
     const debitedFromMatch = message.match(debitedFromPattern)
     if (debitedFromMatch) {
@@ -114,7 +144,7 @@ export class BankOfIndiaParser extends BankParser {
       }
     }
 
-    // Pattern 3: ATM withdrawal
+    // Pattern 4: ATM withdrawal
     if (/ATM/i.test(message) || /withdrawn/i.test(message)) {
       const atmPattern = /(?:ATM|withdrawn)\s+(?:at\s+)?([^.\n]+?)(?:\s+on|\s+Ref|$)/i
       const atmMatch = message.match(atmPattern)
@@ -127,7 +157,7 @@ export class BankOfIndiaParser extends BankParser {
       return 'ATM'
     }
 
-    // Pattern 4: "to MERCHANT" (generic)
+    // Pattern 5: "to MERCHANT" (generic)
     const toPattern = /to\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)/i
     const toMatch = message.match(toPattern)
     if (toMatch) {
@@ -137,7 +167,7 @@ export class BankOfIndiaParser extends BankParser {
       }
     }
 
-    // Pattern 5: "from MERCHANT" (generic)
+    // Pattern 6: "from MERCHANT" (generic)
     const fromPattern = /from\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)/i
     const fromMatch = message.match(fromPattern)
     if (fromMatch) {

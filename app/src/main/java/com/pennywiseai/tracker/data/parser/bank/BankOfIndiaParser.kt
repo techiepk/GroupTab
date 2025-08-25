@@ -20,10 +20,15 @@ class BankOfIndiaParser : BankParser() {
         // Direct sender IDs
         val boiSenders = setOf(
             "BOIIND",
-            "BOIBNK"
+            "BOIBNK",
+            "BOI UPI",  // BOI UPI mandate messages
+            "BOIUPI"
         )
         
         if (normalizedSender in boiSenders) return true
+        
+        // Check if sender contains BOI
+        if (normalizedSender.contains("BOI")) return true
         
         // DLT patterns (XX-BOIIND-S/T or XX-BOIBNK-S/T format)
         return normalizedSender.matches(Regex("^[A-Z]{2}-BOIIND-[ST]$")) ||
@@ -41,6 +46,17 @@ class BankOfIndiaParser : BankParser() {
         val rsPattern = Regex("""Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)\s+(?:debited|credited)""", RegexOption.IGNORE_CASE)
         rsPattern.find(message)?.let { match ->
             val amountStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amountStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern 2: "debited Rs. 500.00" (with space after Rs.)
+        val debitedRsPattern = Regex("""debited\s+Rs\.?\s+(\d+(?:,\d{3})*(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        debitedRsPattern.find(message)?.let { match ->
+            val amountStr = match.groupValues[1].replace(",", "").trim()
             return try {
                 BigDecimal(amountStr)
             } catch (e: NumberFormatException) {
@@ -77,6 +93,11 @@ class BankOfIndiaParser : BankParser() {
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
         
+        // Use base class investment detection
+        if (isInvestmentTransaction(lowerMessage)) {
+            return TransactionType.INVESTMENT
+        }
+        
         // BOI specific: "debited A/c... and credited to" pattern indicates expense
         if (lowerMessage.contains("debited") && lowerMessage.contains("and credited to")) {
             return TransactionType.EXPENSE
@@ -92,7 +113,20 @@ class BankOfIndiaParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: "credited to MERCHANT via UPI" (for debits)
+        // Pattern 1: "towards MERCHANT for" (for mandate/investment transactions)
+        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\s+for|\s*,|$)""", RegexOption.IGNORE_CASE)
+        towardsPattern.find(message)?.let { match ->
+            var merchant = match.groupValues[1].trim()
+            // Clean up ICCL - Mutual Funds patterns
+            merchant = merchant.replace("ICCL - Mutual Funds - Autopa", "ICCL Mutual Funds")
+                              .replace("ICCL - Mutual Funds", "ICCL Mutual Funds")
+            val cleanedMerchant = cleanMerchantName(merchant)
+            if (isValidMerchantName(cleanedMerchant)) {
+                return cleanedMerchant
+            }
+        }
+        
+        // Pattern 2: "credited to MERCHANT via UPI" (for debits)
         val creditedToPattern = Regex("""credited\s+to\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
         creditedToPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
@@ -101,7 +135,7 @@ class BankOfIndiaParser : BankParser() {
             }
         }
         
-        // Pattern 2: "debited from MERCHANT via UPI" (for credits)
+        // Pattern 3: "debited from MERCHANT via UPI" (for credits)
         val debitedFromPattern = Regex("""debited\s+from\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
         debitedFromPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
