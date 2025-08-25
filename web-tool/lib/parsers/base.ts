@@ -128,19 +128,13 @@ export abstract class BankParser {
   }
 
   /**
-   * Extract transaction type (INCOME/EXPENSE/INVESTMENT)
+   * Extract transaction type (INCOME/EXPENSE)
    */
   protected extractTransactionType(message: string): TransactionType | null {
     const lowerMessage = message.toLowerCase()
 
-    // Check for investment transactions first (highest priority)
-    if (this.isInvestmentTransaction(lowerMessage)) {
-      return TransactionType.INVESTMENT
-    }
-
-    // Check expense keywords (add 'deducted' to the check)
-    if (this.config.transactionType.expense.some(keyword => lowerMessage.includes(keyword)) ||
-        lowerMessage.includes('deducted')) {
+    // Check expense keywords
+    if (this.config.transactionType.expense.some(keyword => lowerMessage.includes(keyword))) {
       return TransactionType.EXPENSE
     }
 
@@ -150,68 +144,6 @@ export abstract class BankParser {
     }
 
     return null
-  }
-
-  /**
-   * Check if the message is for an investment transaction
-   * Can be overridden by specific bank parsers for custom logic
-   */
-  protected isInvestmentTransaction(lowerMessage: string): boolean {
-    const investmentKeywords = [
-      // Clearing corporations
-      'iccl',                         // Indian Clearing Corporation Limited
-      'indian clearing corporation',
-      'nsccl',                        // NSE Clearing Corporation
-      'nse clearing',
-      'clearing corporation',
-      
-      // Mandate/Auto-pay indicators
-      'mandate',
-      'umrn',                         // Unique Mandate Reference Number
-      'nach',                         // National Automated Clearing House
-      'ach',                          // Automated Clearing House
-      'ecs',                          // Electronic Clearing Service
-      
-      // Investment platforms
-      'groww',
-      'zerodha',
-      'upstox',
-      'kite',
-      'kuvera',
-      'paytm money',
-      'etmoney',
-      'coin by zerodha',
-      'smallcase',
-      'angel one',
-      'angel broking',
-      '5paisa',
-      'icici securities',
-      'icici direct',
-      'hdfc securities',
-      'kotak securities',
-      'motilal oswal',
-      'sharekhan',
-      'edelweiss',
-      'axis direct',
-      'sbi securities',
-      
-      // Investment types
-      'mutual fund',
-      'sip',                          // Systematic Investment Plan
-      'elss',                         // Tax saving funds
-      'ipo',                          // Initial Public Offering
-      'folio',                        // Mutual fund folio
-      'demat',
-      'stockbroker',
-      
-      // Stock exchanges
-      'nse',                          // National Stock Exchange
-      'bse',                          // Bombay Stock Exchange
-      'cdsl',                         // Central Depository Services
-      'nsdl'                          // National Securities Depository
-    ]
-    
-    return investmentKeywords.some(keyword => lowerMessage.includes(keyword))
   }
 
   /**

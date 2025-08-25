@@ -118,15 +118,10 @@ abstract class BankParser {
     }
     
     /**
-     * Extracts the transaction type (INCOME/EXPENSE/INVESTMENT).
+     * Extracts the transaction type (INCOME/EXPENSE).
      */
     protected open fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
-        
-        // Check for investment transactions first (highest priority)
-        if (isInvestmentTransaction(lowerMessage)) {
-            return TransactionType.INVESTMENT
-        }
         
         return when {
             lowerMessage.contains("debited") -> TransactionType.EXPENSE
@@ -135,7 +130,6 @@ abstract class BankParser {
             lowerMessage.contains("charged") -> TransactionType.EXPENSE
             lowerMessage.contains("paid") -> TransactionType.EXPENSE
             lowerMessage.contains("purchase") -> TransactionType.EXPENSE
-            lowerMessage.contains("deducted") -> TransactionType.EXPENSE
             
             lowerMessage.contains("credited") -> TransactionType.INCOME
             lowerMessage.contains("deposited") -> TransactionType.INCOME
@@ -145,68 +139,6 @@ abstract class BankParser {
             
             else -> null
         }
-    }
-    
-    /**
-     * Checks if the message is for an investment transaction.
-     * Can be overridden by specific bank parsers for custom logic.
-     */
-    protected open fun isInvestmentTransaction(lowerMessage: String): Boolean {
-        val investmentKeywords = listOf(
-            // Clearing corporations
-            "iccl",                         // Indian Clearing Corporation Limited
-            "indian clearing corporation",
-            "nsccl",                        // NSE Clearing Corporation
-            "nse clearing",
-            "clearing corporation",
-            
-            // Mandate/Auto-pay indicators
-            "mandate",
-            "umrn",                         // Unique Mandate Reference Number
-            "nach",                         // National Automated Clearing House
-            "ach",                          // Automated Clearing House
-            "ecs",                          // Electronic Clearing Service
-            
-            // Investment platforms
-            "groww",
-            "zerodha",
-            "upstox",
-            "kite",
-            "kuvera",
-            "paytm money",
-            "etmoney",
-            "coin by zerodha",
-            "smallcase",
-            "angel one",
-            "angel broking",
-            "5paisa",
-            "icici securities",
-            "icici direct",
-            "hdfc securities",
-            "kotak securities",
-            "motilal oswal",
-            "sharekhan",
-            "edelweiss",
-            "axis direct",
-            "sbi securities",
-            
-            // Investment types
-            "mutual fund",
-            "sip",                          // Systematic Investment Plan
-            "elss",                         // Tax saving funds
-            "ipo",                          // Initial Public Offering
-            "folio",                        // Mutual fund folio
-            "demat",
-            "stockbroker",
-            
-            // Stock exchanges
-            "nse",                          // National Stock Exchange
-            "bse",                          // Bombay Stock Exchange
-            "cdsl",                         // Central Depository Services
-            "nsdl"                          // National Securities Depository
-        )
-        
-        return investmentKeywords.any { lowerMessage.contains(it) }
     }
     
     /**
