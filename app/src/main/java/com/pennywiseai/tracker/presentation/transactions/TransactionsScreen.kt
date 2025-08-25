@@ -441,7 +441,7 @@ private fun TransactionSearchBar(
         placeholder = { 
             Text(
                 if (categoryFilter != null) "Search in $categoryFilter..." 
-                else "Search transactions..."
+                else "Search by merchant, amount..."
             ) 
         },
         leadingIcon = {

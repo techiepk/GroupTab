@@ -185,8 +185,30 @@ class TransactionsViewModel @Inject constructor(
         } else {
             typeFilteredFlow.map { transactions ->
                 transactions.filter { transaction ->
-                    transaction.merchantName.contains(searchQuery, ignoreCase = true) ||
-                    transaction.description?.contains(searchQuery, ignoreCase = true) == true
+                    // Check merchant name and description
+                    val matchesMerchant = transaction.merchantName.contains(searchQuery, ignoreCase = true)
+                    val matchesDescription = transaction.description?.contains(searchQuery, ignoreCase = true) == true
+                    
+                    // Check if search query matches amount
+                    val matchesAmount = try {
+                        // Remove commas and spaces from search query for number parsing
+                        val cleanedQuery = searchQuery.replace(",", "").replace(" ", "").trim()
+                        
+                        // Check if it's a valid number and matches the amount
+                        if (cleanedQuery.isNotEmpty() && cleanedQuery.all { it.isDigit() || it == '.' }) {
+                            val amountString = transaction.amount.toPlainString()
+                            // Support both exact and partial matches
+                            amountString.contains(cleanedQuery) || 
+                            // Also match formatted amount (e.g., "1,000" matches "1000")
+                            amountString.replace(",", "").contains(cleanedQuery)
+                        } else {
+                            false
+                        }
+                    } catch (e: Exception) {
+                        false
+                    }
+                    
+                    matchesMerchant || matchesDescription || matchesAmount
                 }
             }
         }
