@@ -4,13 +4,10 @@ import android.content.Context
 import android.net.Uri
 import android.provider.Telephony
 import android.util.Log
-import org.json.JSONArray
-import org.json.JSONObject
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pennywiseai.tracker.core.Constants
-import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
@@ -23,6 +20,7 @@ import com.pennywiseai.tracker.data.repository.TransactionRepository
 import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
 import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
+import com.pennywiseai.tracker.utils.CurrencyFormatter
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -231,6 +229,7 @@ class SmsReaderWorker @AssistedInject constructor(
                             Reference: ${parsedTransaction.reference}
                             Account: ${parsedTransaction.accountLast4}
                             Balance: ${parsedTransaction.balance}
+                            Credit Limit: ${parsedTransaction.creditLimit}
                             ID: ${parsedTransaction.generateTransactionId()}
                         """.trimIndent())
                         
@@ -270,22 +269,41 @@ class SmsReaderWorker @AssistedInject constructor(
                             if (rowId != -1L) {
                                 savedCount++
                                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
-                                
-                                // Save balance information if available
-                                if (parsedTransaction.balance != null && 
-                                    parsedTransaction.bankName != null && 
-                                    parsedTransaction.accountLast4 != null) {
-                                    accountBalanceRepository.insertBalanceFromTransaction(
-                                        bankName = parsedTransaction.bankName,
-                                        accountLast4 = parsedTransaction.accountLast4,
-                                        balance = parsedTransaction.balance,
-                                        timestamp = finalEntity.dateTime,
-                                        transactionId = rowId
-                                    )
-                                    Log.d(TAG, "Saved balance update for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}")
-                                }
                             } else {
-                                Log.d(TAG, "Transaction already exists (duplicate), skipping: ${entity.transactionHash}")
+                                Log.d(TAG, "Transaction already exists (duplicate), skipping transaction: ${entity.transactionHash}")
+                            }
+                            
+                            // ALWAYS save balance/credit limit information, even for duplicate transactions
+                            // This ensures credit limits and balances are always up-to-date
+                            if ((parsedTransaction.balance != null || parsedTransaction.creditLimit != null) && 
+                                parsedTransaction.bankName != null && 
+                                parsedTransaction.accountLast4 != null) {
+                                
+                                Log.d(TAG, """
+                                    Saving account balance/credit info:
+                                    - Bank: ${parsedTransaction.bankName}
+                                    - Account: **${parsedTransaction.accountLast4}
+                                    - Balance: ${parsedTransaction.balance}
+                                    - Credit Limit: ${parsedTransaction.creditLimit}
+                                    - Is Duplicate: ${rowId == -1L}
+                                    - Transaction ID: ${if (rowId != -1L) rowId else "N/A (duplicate)"}
+                                """.trimIndent())
+                                
+                                accountBalanceRepository.insertBalanceFromTransaction(
+                                    bankName = parsedTransaction.bankName,
+                                    accountLast4 = parsedTransaction.accountLast4,
+                                    balance = parsedTransaction.balance,
+                                    creditLimit = parsedTransaction.creditLimit,
+                                    timestamp = finalEntity.dateTime,
+                                    transactionId = if (rowId != -1L) rowId else null
+                                )
+                                
+                                val logMsg = if (parsedTransaction.creditLimit != null) {
+                                    "Saved balance/credit limit (${CurrencyFormatter.formatCurrency(parsedTransaction.creditLimit)}) for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}"
+                                } else {
+                                    "Saved balance update for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}"
+                                }
+                                Log.d(TAG, logMsg)
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error saving transaction: ${e.message}")

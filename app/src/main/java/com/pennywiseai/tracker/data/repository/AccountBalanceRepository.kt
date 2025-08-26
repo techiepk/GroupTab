@@ -65,16 +65,18 @@ class AccountBalanceRepository @Inject constructor(
         bankName: String?,
         accountLast4: String?,
         balance: BigDecimal?,
+        creditLimit: BigDecimal? = null,
         timestamp: LocalDateTime,
-        transactionId: Long
+        transactionId: Long?
     ) {
-        if (bankName != null && accountLast4 != null && balance != null) {
+        if (bankName != null && accountLast4 != null && (balance != null || creditLimit != null)) {
             val balanceEntity = AccountBalanceEntity(
                 bankName = bankName,
                 accountLast4 = accountLast4,
-                balance = balance,
+                balance = balance ?: BigDecimal.ZERO,
                 timestamp = timestamp,
-                transactionId = transactionId
+                transactionId = transactionId,
+                creditLimit = creditLimit
             )
             insertBalance(balanceEntity)
         }

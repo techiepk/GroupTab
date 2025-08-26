@@ -48,6 +48,7 @@ import com.pennywiseai.tracker.ui.components.ListItemCard
 import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import com.pennywiseai.tracker.ui.components.AccountBalancesCard
+import com.pennywiseai.tracker.ui.components.CreditCardsCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
@@ -127,6 +128,25 @@ fun HomeScreen(
             // Transaction Summary Cards with HorizontalPager
             item {
                 TransactionSummaryCards(uiState = uiState)
+            }
+            
+            // Credit Cards Section
+            if (uiState.creditCards.isNotEmpty()) {
+                item {
+                    CreditCardsCard(
+                        creditCards = uiState.creditCards,
+                        totalAvailableCredit = uiState.totalAvailableCredit,
+                        onViewAllClick = { /* TODO: Navigate to credit cards screen */ },
+                        onCardClick = { bankName, accountLast4 ->
+                            navController.navigate(
+                                com.pennywiseai.tracker.navigation.AccountDetail(
+                                    bankName = bankName,
+                                    accountLast4 = accountLast4
+                                )
+                            )
+                        }
+                    )
+                }
             }
             
             // Account Balances Section

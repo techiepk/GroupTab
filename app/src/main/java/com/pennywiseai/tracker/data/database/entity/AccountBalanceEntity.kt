@@ -35,6 +35,9 @@ data class AccountBalanceEntity(
     @ColumnInfo(name = "transaction_id")
     val transactionId: Long? = null,
     
+    @ColumnInfo(name = "credit_limit")
+    val creditLimit: BigDecimal? = null,
+    
     @ColumnInfo(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.presentation.home
 
 import android.content.Context
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,9 +63,42 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load account balances
             accountBalanceRepository.getAllLatestBalances().collect { balances ->
+                // Separate credit cards from regular accounts
+                val regularAccounts = balances.filter { it.creditLimit == null }
+                val creditCards = balances.filter { it.creditLimit != null }
+                
+                // Log all accounts for debugging
+                Log.d("HomeViewModel", "========================================")
+                Log.d("HomeViewModel", "Loading ${balances.size} account(s) total:")
+                Log.d("HomeViewModel", "- Regular accounts: ${regularAccounts.size}")
+                Log.d("HomeViewModel", "- Credit cards: ${creditCards.size}")
+                
+                regularAccounts.forEach { account ->
+                    Log.d("HomeViewModel", """
+                        Regular Account: ${account.bankName} **${account.accountLast4}
+                        - Balance: ${account.balance}
+                        - Timestamp: ${account.timestamp}
+                    """.trimIndent())
+                }
+                
+                creditCards.forEach { card ->
+                    Log.d("HomeViewModel", """
+                        Credit Card: ${card.bankName} **${card.accountLast4}
+                        - Available Credit: ${card.creditLimit}
+                        - Outstanding: ${card.balance}
+                        - Timestamp: ${card.timestamp}
+                    """.trimIndent())
+                }
+                
+                Log.d("HomeViewModel", "Total Balance (regular accounts): ${regularAccounts.sumOf { it.balance }}")
+                Log.d("HomeViewModel", "Total Available Credit: ${creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }}")
+                Log.d("HomeViewModel", "========================================")
+                
                 _uiState.value = _uiState.value.copy(
-                    accountBalances = balances,
-                    totalBalance = balances.sumOf { it.balance }
+                    accountBalances = balances,  // Keep all for now, will be filtered in UI
+                    creditCards = creditCards,
+                    totalBalance = regularAccounts.sumOf { it.balance },
+                    totalAvailableCredit = creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }
                 )
             }
         }
@@ -241,7 +275,9 @@ data class HomeUiState(
     val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
     val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
     val accountBalances: List<AccountBalanceEntity> = emptyList(),
+    val creditCards: List<AccountBalanceEntity> = emptyList(),
     val totalBalance: BigDecimal = BigDecimal.ZERO,
+    val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,
     val isLoading: Boolean = true,
     val isScanning: Boolean = false,
     val showBreakdownDialog: Boolean = false

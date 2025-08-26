@@ -20,6 +20,7 @@ data class ParsedTransaction(
     val reference: String?,
     val accountLast4: String?,
     val balance: BigDecimal?,
+    val creditLimit: BigDecimal? = null,
     val smsBody: String,
     val sender: String,
     val timestamp: Long,

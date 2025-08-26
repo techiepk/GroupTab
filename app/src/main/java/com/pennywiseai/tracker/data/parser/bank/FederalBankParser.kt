@@ -294,23 +294,13 @@ class FederalBankParser : BankParser() {
     }
     
     override fun extractBalance(message: String): BigDecimal? {
-        // Pattern for credit card available limit: "Available limit Rs.111,111.89"
-        val availableLimitPattern = Regex(
-            """Available\s+limit\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
-            RegexOption.IGNORE_CASE
-        )
-        availableLimitPattern.find(message)?.let { match ->
-            val balanceStr = match.groupValues[1].replace(",", "")
-            return try {
-                BigDecimal(balanceStr)
-            } catch (e: NumberFormatException) {
-                null
-            }
-        }
-        
-        // Fall back to base class patterns
+        // Don't extract credit limit as balance - that's handled separately
+        // Fall back to base class patterns for actual account balances
         return super.extractBalance(message)
     }
+    
+    // The base class now handles credit limit extraction for credit card transactions
+    // No need to override parse() or extractCreditLimit() as the base implementation covers our patterns
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()

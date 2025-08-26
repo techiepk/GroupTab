@@ -1,7 +1,10 @@
 package com.pennywiseai.tracker.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,10 +25,31 @@ fun AccountBalancesCard(
     onAccountClick: (bankName: String, accountLast4: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    val displayBalances = if (accountBalances.size <= 5) {
-        accountBalances
+    // Filter out credit cards (those with creditLimit)
+    val regularAccounts = accountBalances.filter { it.creditLimit == null }
+    
+    // Log accounts being displayed in UI
+    LaunchedEffect(regularAccounts) {
+        Log.d("AccountBalancesCard", "========================================")
+        Log.d("AccountBalancesCard", "Displaying ${regularAccounts.size} regular account(s) in UI:")
+        regularAccounts.forEach { account ->
+            Log.d("AccountBalancesCard", """
+                Account - ${account.bankName} **${account.accountLast4}
+                - Balance: ${account.balance}
+            """.trimIndent())
+        }
+        Log.d("AccountBalancesCard", "========================================")
+    }
+    
+    if (regularAccounts.isEmpty()) {
+        // Don't show the card if there are no regular accounts
+        return
+    }
+    
+    val displayBalances = if (regularAccounts.size <= 5) {
+        regularAccounts
     } else {
-        accountBalances.take(4)
+        regularAccounts.take(4)
     }
 
     PennyWiseCard(
@@ -42,12 +66,12 @@ fun AccountBalancesCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "${accountBalances.size} ${if (accountBalances.size == 1) "account" else "accounts"}",
+                text = "${regularAccounts.size} ${if (regularAccounts.size == 1) "account" else "accounts"}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (accountBalances.isNotEmpty()) {
+            if (regularAccounts.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 HorizontalDivider(
                     thickness = 0.5.dp,
@@ -66,10 +90,10 @@ fun AccountBalancesCard(
                 }
 
                 // View all link - only if more than 5 accounts
-                if (accountBalances.size > 5) {
+                if (regularAccounts.size > 5) {
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = "View all ${accountBalances.size} accounts →",
+                        text = "View all ${regularAccounts.size} accounts →",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier

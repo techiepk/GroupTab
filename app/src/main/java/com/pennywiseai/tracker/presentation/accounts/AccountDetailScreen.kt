@@ -61,6 +61,7 @@ fun AccountDetailScreen(
             item {
                 CurrentBalanceCard(
                     balance = uiState.currentBalance?.balance ?: BigDecimal.ZERO,
+                    creditLimit = uiState.currentBalance?.creditLimit,
                     bankName = uiState.bankName,
                     accountLast4 = uiState.accountLast4
                 )
@@ -214,9 +215,12 @@ private fun ExpandableBalanceChart(
 @Composable
 private fun CurrentBalanceCard(
     balance: BigDecimal,
+    creditLimit: BigDecimal? = null,
     bankName: String,
     accountLast4: String
 ) {
+    val isCreditCard = creditLimit != null
+    
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -226,25 +230,52 @@ private fun CurrentBalanceCard(
                 .padding(Dimensions.Padding.content),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Current Balance",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(Spacing.xs))
-            Text(
-                text = CurrencyFormatter.formatCurrency(balance),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (isCreditCard) {
+                // Credit card layout
+                Text(
+                    text = "Available Credit",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = CurrencyFormatter.formatCurrency(creditLimit),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                // Show outstanding balance if any
+                if (balance > BigDecimal.ZERO) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = "Outstanding: ${CurrencyFormatter.formatCurrency(balance)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                // Regular account layout
+                Text(
+                    text = "Current Balance",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = CurrencyFormatter.formatCurrency(balance),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
             Spacer(modifier = Modifier.height(Spacing.xs))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.AccountBalance,
+                    imageVector = if (isCreditCard) Icons.Default.CreditCard else Icons.Default.AccountBalance,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

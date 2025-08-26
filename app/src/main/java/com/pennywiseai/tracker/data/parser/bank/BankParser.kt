@@ -45,6 +45,15 @@ abstract class BankParser {
             return null
         }
         
+        // Extract credit limit for credit card transactions
+        val creditLimit = if (type == TransactionType.CREDIT) {
+            val limit = extractCreditLimit(smsBody)
+            android.util.Log.d("BankParser", "Credit card transaction detected. Extracted credit limit: $limit from message: ${smsBody.take(100)}")
+            limit
+        } else {
+            null
+        }
+        
         return ParsedTransaction(
             amount = amount,
             type = type,
@@ -52,6 +61,7 @@ abstract class BankParser {
             reference = extractReference(smsBody),
             accountLast4 = extractAccountLast4(smsBody),
             balance = extractBalance(smsBody),
+            creditLimit = creditLimit,
             smsBody = smsBody,
             sender = sender,
             timestamp = timestamp,
@@ -264,6 +274,48 @@ abstract class BankParser {
             }
         }
         
+        return null
+    }
+    
+    /**
+     * Extracts credit card available limit from the message.
+     * This is different from balance - it represents the available credit limit.
+     */
+    protected open fun extractCreditLimit(message: String): BigDecimal? {
+        android.util.Log.d("BankParser", "Attempting to extract credit limit from: ${message.take(150)}")
+        
+        // Common patterns for credit limit across banks
+        val creditLimitPatterns = listOf(
+            // "Available limit Rs.111,111.89" - Federal Bank format (no space after Rs.)
+            Regex("""Available\s+limit\s+Rs\.([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // "Available limit Rs. 111,111.89" or "Available limit: Rs 111,111.89"
+            Regex("""Available\s+limit:?\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // "Avl Lmt Rs.111,111.89" or "Avl Lmt: Rs 111,111.89" (ICICI and others)
+            Regex("""Avl\s+Lmt:?\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // "Avail Limit Rs.111,111.89"
+            Regex("""Avail\s+Limit:?\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // "Available Credit Limit: Rs.111,111.89"
+            Regex("""Available\s+Credit\s+Limit:?\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // "Limit: Rs.111,111.89" (generic, but only for credit card messages)
+            Regex("""(?:^|\s)Limit:?\s*Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        )
+        
+        for ((index, pattern) in creditLimitPatterns.withIndex()) {
+            pattern.find(message)?.let { match ->
+                val limitStr = match.groupValues[1].replace(",", "")
+                android.util.Log.d("BankParser", "Pattern $index matched! Found credit limit string: $limitStr")
+                return try {
+                    val limit = BigDecimal(limitStr)
+                    android.util.Log.d("BankParser", "Successfully parsed credit limit: $limit")
+                    limit
+                } catch (e: NumberFormatException) {
+                    android.util.Log.e("BankParser", "Failed to parse credit limit: $limitStr", e)
+                    null
+                }
+            }
+        }
+        
+        android.util.Log.d("BankParser", "No credit limit pattern matched")
         return null
     }
     
