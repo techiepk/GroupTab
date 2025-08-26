@@ -27,7 +27,7 @@ fun AccountBalancesCard(
     } else {
         accountBalances.take(4)
     }
-    
+
     PennyWiseCard(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -46,7 +46,7 @@ fun AccountBalancesCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             if (accountBalances.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 HorizontalDivider(
@@ -54,15 +54,17 @@ fun AccountBalancesCard(
                     color = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Spacer(modifier = Modifier.height(Spacing.sm))
-                
+
                 // Individual account balances - compact list
                 displayBalances.forEach { balance ->
                     AccountBalanceItem(
-                        balance = balance,
-                        onClick = { onAccountClick(balance.bankName, balance.accountLast4) }
-                    )
+                        balance = balance, onClick = {
+                            onAccountClick(
+                                balance.bankName, balance.accountLast4
+                            )
+                        })
                 }
-                
+
                 // View all link - only if more than 5 accounts
                 if (accountBalances.size > 5) {
                     Spacer(modifier = Modifier.height(Spacing.xs))
@@ -73,8 +75,7 @@ fun AccountBalancesCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onViewAllClick() }
-                            .padding(vertical = Spacing.xs)
-                    )
+                            .padding(vertical = Spacing.xs))
                 }
             }
         }
@@ -87,14 +88,12 @@ private fun AccountBalanceItem(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = Spacing.xs),
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .clickable { onClick() }
+        .padding(vertical = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+        verticalAlignment = Alignment.CenterVertically) {
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -113,7 +112,7 @@ private fun AccountBalanceItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        
+
         Text(
             text = CurrencyFormatter.formatCurrency(balance.balance),
             style = MaterialTheme.typography.bodyMedium,

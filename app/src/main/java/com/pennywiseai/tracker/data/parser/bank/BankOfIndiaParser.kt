@@ -77,6 +77,22 @@ class BankOfIndiaParser : BankParser() {
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
         
+        // Check for investment transactions first (including UPI Mandate for mutual funds)
+        if (isInvestmentTransaction(lowerMessage)) {
+            return TransactionType.INVESTMENT
+        }
+        
+        // UPI Mandate for mutual funds/investments
+        if (lowerMessage.contains("mandate") && 
+            (lowerMessage.contains("mutual fund") || 
+             lowerMessage.contains("iccl") || 
+             lowerMessage.contains("groww") ||
+             lowerMessage.contains("zerodha") ||
+             lowerMessage.contains("kuvera") ||
+             lowerMessage.contains("paytm money"))) {
+            return TransactionType.INVESTMENT
+        }
+        
         // BOI specific: "debited A/c... and credited to" pattern indicates expense
         if (lowerMessage.contains("debited") && lowerMessage.contains("and credited to")) {
             return TransactionType.EXPENSE
@@ -92,6 +108,31 @@ class BankOfIndiaParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
+        // Pattern for UPI Mandate execution: "towards MERCHANT for Mandate Created via PLATFORM"
+        if (message.contains("Mandate", ignoreCase = true) && message.contains("towards", ignoreCase = true)) {
+            // Try to extract platform first (e.g., "via GROWW")
+            val viaPattern = Regex("""via\s+([A-Za-z0-9]+)""", RegexOption.IGNORE_CASE)
+            viaPattern.find(message)?.let { match ->
+                val platform = cleanMerchantName(match.groupValues[1].trim())
+                if (isValidMerchantName(platform)) {
+                    return platform
+                }
+            }
+            
+            // If no platform found, extract merchant from "towards MERCHANT for"
+            val towardsPattern = Regex("""towards\s+([^,\n]+?)(?:\s+for|\s*,|$)""", RegexOption.IGNORE_CASE)
+            towardsPattern.find(message)?.let { match ->
+                val merchantInfo = match.groupValues[1].trim()
+                // Clean up the merchant name (e.g., "ICCL - Mutual Funds - Autopa" -> "ICCL - Mutual Funds")
+                val cleanedMerchant = merchantInfo
+                    .replace(Regex("""\s*-\s*Autopa.*$""", RegexOption.IGNORE_CASE), "")
+                    .trim()
+                if (isValidMerchantName(cleanedMerchant)) {
+                    return cleanMerchantName(cleanedMerchant)
+                }
+            }
+        }
+        
         // Pattern 1: "credited to MERCHANT via UPI" (for debits)
         val creditedToPattern = Regex("""credited\s+to\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
         creditedToPattern.find(message)?.let { match ->
@@ -122,7 +163,18 @@ class BankOfIndiaParser : BankParser() {
             return "ATM"
         }
         
-        // Pattern 4: "to MERCHANT" (generic)
+        // Pattern 4: "towards MERCHANT" (generic, but not for Mandate messages which are handled above)
+        if (!message.contains("Mandate", ignoreCase = true)) {
+            val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
+            towardsPattern.find(message)?.let { match ->
+                val merchant = cleanMerchantName(match.groupValues[1].trim())
+                if (isValidMerchantName(merchant)) {
+                    return merchant
+                }
+            }
+        }
+        
+        // Pattern 5: "to MERCHANT" (generic)
         val toPattern = Regex("""to\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
         toPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
@@ -131,7 +183,7 @@ class BankOfIndiaParser : BankParser() {
             }
         }
         
-        // Pattern 5: "from MERCHANT" (generic)
+        // Pattern 6: "from MERCHANT" (generic)
         val fromPattern = Regex("""from\s+([^.\n]+?)(?:\s+via|\s+Ref|\s+on|$)""", RegexOption.IGNORE_CASE)
         fromPattern.find(message)?.let { match ->
             val merchant = cleanMerchantName(match.groupValues[1].trim())
@@ -236,6 +288,11 @@ class BankOfIndiaParser : BankParser() {
     
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
+
+        // Skip future debit notifications
+        if (lowerMessage.contains("will be")) {
+            return false
+        }
         
         // Skip if it contains the customer care message but ensure it's a transaction
         if (lowerMessage.contains("call") && lowerMessage.contains("if not done by you")) {
