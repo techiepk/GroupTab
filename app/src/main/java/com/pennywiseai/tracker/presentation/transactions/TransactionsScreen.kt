@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -440,8 +441,10 @@ private fun TransactionSearchBar(
         onValueChange = onQueryChange,
         placeholder = { 
             Text(
-                if (categoryFilter != null) "Search in $categoryFilter..." 
-                else "Search by merchant, amount..."
+                text = if (categoryFilter != null) "Search in $categoryFilter..." 
+                else "Search transactions...",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             ) 
         },
         leadingIcon = {
