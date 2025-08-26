@@ -397,11 +397,10 @@ fun TransactionsScreen(
                                 items = transactions,
                                 key = { it.id }
                             ) { transaction ->
-                                SwipeableTransactionItem(
+                                TransactionItem(
                                     transaction = transaction,
                                     categoriesMap = categoriesMap,
                                     showDate = dateGroup == DateGroup.EARLIER,
-                                    onDelete = { viewModel.deleteTransaction(transaction) },
                                     onClick = { onTransactionClick(transaction.id) }
                                 )
                                 if (transaction != transactions.last()) {
@@ -475,63 +474,6 @@ private fun TransactionSearchBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SwipeableTransactionItem(
-    transaction: TransactionEntity,
-    categoriesMap: Map<String, CategoryEntity>,
-    showDate: Boolean,
-    onDelete: () -> Unit,
-    onClick: () -> Unit = {}
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDelete()
-                    true
-                }
-                else -> false
-            }
-        }
-    )
-    
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            val color by animateColorAsState(
-                when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
-                    else -> Color.Transparent
-                },
-                label = "background color"
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color)
-                    .padding(horizontal = Dimensions.Padding.content),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.onError
-                    )
-                }
-            }
-        },
-        content = {
-            TransactionItem(
-                transaction = transaction,
-                categoriesMap = categoriesMap,
-                showDate = showDate,
-                onClick = onClick
-            )
-        }
-    )
-}
 
 @Composable
 private fun TransactionItem(

@@ -59,6 +59,9 @@ fun TransactionDetailScreen(
     val applyToAllFromMerchant by viewModel.applyToAllFromMerchant.collectAsStateWithLifecycle()
     val updateExistingTransactions by viewModel.updateExistingTransactions.collectAsStateWithLifecycle()
     val existingTransactionCount by viewModel.existingTransactionCount.collectAsStateWithLifecycle()
+    val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
+    val isDeleting by viewModel.isDeleting.collectAsStateWithLifecycle()
+    val deleteSuccess by viewModel.deleteSuccess.collectAsStateWithLifecycle()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -86,32 +89,56 @@ fun TransactionDetailScreen(
         viewModel.loadTransaction(transactionId)
     }
     
+    // Handle delete success
+    LaunchedEffect(deleteSuccess) {
+        if (deleteSuccess) {
+            onNavigateBack()
+        }
+    }
+    
     val context = LocalContext.current
     
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            // Show Report Issue FAB only when not in edit mode and transaction exists
+            // Show FABs only when not in edit mode and transaction exists
             if (!isEditMode && transaction != null) {
-                FloatingActionButton(
-                    onClick = {
-                        val reportUrl = viewModel.getReportUrl()
-                        android.util.Log.d("TransactionDetail", "Report FAB clicked, opening URL: ${reportUrl.take(200)}...")
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl))
-                        try {
-                            context.startActivity(intent)
-                            android.util.Log.d("TransactionDetail", "Successfully launched browser intent")
-                        } catch (e: Exception) {
-                            android.util.Log.e("TransactionDetail", "Error launching browser", e)
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.BugReport,
-                        contentDescription = "Report Issue"
-                    )
+                    // Delete FAB
+                    SmallFloatingActionButton(
+                        onClick = { viewModel.showDeleteDialog() },
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Transaction"
+                        )
+                    }
+                    
+                    // Report Issue FAB
+                    FloatingActionButton(
+                        onClick = {
+                            val reportUrl = viewModel.getReportUrl()
+                            android.util.Log.d("TransactionDetail", "Report FAB clicked, opening URL: ${reportUrl.take(200)}...")
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl))
+                            try {
+                                context.startActivity(intent)
+                                android.util.Log.d("TransactionDetail", "Successfully launched browser intent")
+                            } catch (e: Exception) {
+                                android.util.Log.e("TransactionDetail", "Error launching browser", e)
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = "Report Issue"
+                        )
+                    }
                 }
             }
         },
@@ -171,6 +198,40 @@ fun TransactionDetailScreen(
                 modifier = Modifier.padding(paddingValues)
             )
         }
+    }
+    
+    // Delete Confirmation Dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.hideDeleteDialog() },
+            title = { Text("Delete Transaction") },
+            text = { 
+                Text("Are you sure you want to delete this transaction? This action cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.deleteTransaction() },
+                    enabled = !isDeleting
+                ) {
+                    if (isDeleting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            "Delete",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.hideDeleteDialog() }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -776,7 +837,7 @@ private fun EditableExtractedInfoCard(
                 }
             }
         }
-    }
+    }   
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

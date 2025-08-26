@@ -226,9 +226,8 @@ fun HomeScreen(
                     items = uiState.recentTransactions,
                     key = { it.id }
                 ) { transaction ->
-                    SwipeableTransactionItem(
+                    SimpleTransactionItem(
                         transaction = transaction,
-                        onDelete = { viewModel.deleteTransaction(transaction) },
                         onClick = { onTransactionClick(transaction.id) }
                     )
                 }
@@ -324,53 +323,32 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeableTransactionItem(
+private fun SimpleTransactionItem(
     transaction: TransactionEntity,
-    onDelete: () -> Unit,
     onClick: () -> Unit = {}
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { dismissValue ->
-            when (dismissValue) {
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDelete()
-                    true
-                }
-                else -> false
-            }
-        }
-    )
+    val amountColor = when (transaction.transactionType) {
+        TransactionType.INCOME -> if (!isSystemInDarkTheme()) income_light else income_dark
+        TransactionType.EXPENSE -> if (!isSystemInDarkTheme()) expense_light else expense_dark
+        TransactionType.CREDIT -> if (!isSystemInDarkTheme()) credit_light else credit_dark
+        TransactionType.TRANSFER -> if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+        TransactionType.INVESTMENT -> if (!isSystemInDarkTheme()) investment_light else investment_dark
+    }
     
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            val color by animateColorAsState(
-                when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
-                    else -> Color.Transparent
-                },
-                label = "background color"
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color)
-                    .padding(horizontal = Dimensions.Padding.content),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.onError
-                    )
-                }
-            }
-        },
-        content = {
-            TransactionItem(
-                transaction = transaction,
-                onClick = onClick
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("MMM d • h:mm a")
+    val dateTimeText = transaction.dateTime.format(dateTimeFormatter)
+    
+    ListItemCard(
+        title = transaction.merchantName,
+        subtitle = dateTimeText,
+        amount = CurrencyFormatter.formatCurrency(transaction.amount),
+        amountColor = amountColor,
+        onClick = onClick,
+        leadingContent = {
+            BrandIcon(
+                merchantName = transaction.merchantName,
+                size = 40.dp,
+                showBackground = true
             )
         }
     )

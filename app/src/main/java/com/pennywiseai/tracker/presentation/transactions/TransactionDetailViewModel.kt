@@ -48,6 +48,15 @@ class TransactionDetailViewModel @Inject constructor(
     val updateExistingTransactions: StateFlow<Boolean> = _updateExistingTransactions.asStateFlow()
     
     private val _existingTransactionCount = MutableStateFlow(0)
+    
+    private val _showDeleteDialog = MutableStateFlow(false)
+    val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
+    
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+    
+    private val _deleteSuccess = MutableStateFlow(false)
+    val deleteSuccess: StateFlow<Boolean> = _deleteSuccess.asStateFlow()
     val existingTransactionCount: StateFlow<Int> = _existingTransactionCount.asStateFlow()
     
     // Categories should be based on transaction type
@@ -279,5 +288,31 @@ class TransactionDetailViewModel @Inject constructor(
         android.util.Log.d("TransactionDetailVM", "Report URL: ${url.take(200)}...")
         
         return url
+    }
+    
+    fun showDeleteDialog() {
+        _showDeleteDialog.value = true
+    }
+    
+    fun hideDeleteDialog() {
+        _showDeleteDialog.value = false
+    }
+    
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            _transaction.value?.let { txn ->
+                _isDeleting.value = true
+                _showDeleteDialog.value = false
+                
+                try {
+                    transactionRepository.deleteTransaction(txn)
+                    _deleteSuccess.value = true
+                } catch (e: Exception) {
+                    _errorMessage.value = "Failed to delete transaction"
+                } finally {
+                    _isDeleting.value = false
+                }
+            }
+        }
     }
 }
