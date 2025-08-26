@@ -42,7 +42,28 @@ class JKBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Check for UPI transactions without specific merchant
+        // Pattern 1: "via UPI from SENDER NAME on" (for credits)
+        if (message.contains("via UPI from", ignoreCase = true)) {
+            val fromPattern = Regex("""via\s+UPI\s+from\s+([^.\n]+?)\s+on""", RegexOption.IGNORE_CASE)
+            fromPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (isValidMerchantName(merchant)) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+        
+        // Pattern 2: "by mTFR/962211111/SENDER NAME" (mPay transfer)
+        // mTFR = mPay transfer, followed by mobile number, then sender name
+        val mtfrPattern = Regex("""mTFR/\d+/([^.\n]+?)(?:\.|A/C|$)""", RegexOption.IGNORE_CASE)
+        mtfrPattern.find(message)?.let { match ->
+            val merchant = match.groupValues[1].trim()
+            if (isValidMerchantName(merchant)) {
+                return cleanMerchantName(merchant)
+            }
+        }
+        
+        // Pattern 3: UPI transactions to merchant
         if (message.contains("via UPI", ignoreCase = true)) {
             // Look for UPI VPA pattern
             val vpaPattern = Regex("""to\s+([^@\s]+@[^\s]+)""", RegexOption.IGNORE_CASE)
@@ -64,9 +85,8 @@ class JKBankParser : BankParser() {
                 }
             }
             
-            // If no specific merchant found in UPI transaction, return "upi" as merchant
-            // This matches the expected output from the sample
-            return "upi"
+            // Default to "UPI" if no specific merchant found
+            return "UPI"
         }
         
         // Check for ATM withdrawals
@@ -156,6 +176,10 @@ class JKBankParser : BankParser() {
         val jkBankPatterns = listOf(
             // Your A/c XXXXXXXX1111
             Regex("""Your\s+A\/c\s+[X]+(\d{4})""", RegexOption.IGNORE_CASE),
+            // JK Bank A/c no. XXXXXXXX9651
+            Regex("""JK\s+Bank\s+A\/c\s+no\.\s+[X]+(\d{4})""", RegexOption.IGNORE_CASE),
+            // A/c XXX8953 (3 X's followed by 4 digits)
+            Regex("""A\/c\s+X{3}(\d{4})""", RegexOption.IGNORE_CASE),
             // A/c XXXXXXXX1111 or A/c XX1111
             Regex("""A\/c\s+[X]*(\d{4})""", RegexOption.IGNORE_CASE),
             // Account XXXXXXXX1111
