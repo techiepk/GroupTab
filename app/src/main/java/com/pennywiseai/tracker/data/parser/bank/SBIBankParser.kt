@@ -326,6 +326,11 @@ class SBIBankParser : BankParser() {
             return false
         }
         
+        // Skip future/pending transactions
+        if (lowerMessage.contains("is due for")) {
+            return false
+        }
+        
         // Skip UPI-Mandate creation notifications
         if (isUPIMandateNotification(message)) {
             return false
