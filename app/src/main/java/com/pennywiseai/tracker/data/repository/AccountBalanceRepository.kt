@@ -100,4 +100,20 @@ class AccountBalanceRepository @Inject constructor(
         )
         insertBalance(balanceEntity)
     }
+    
+    suspend fun getBalanceHistoryForAccount(bankName: String, accountLast4: String): List<AccountBalanceEntity> {
+        return accountBalanceDao.getBalanceHistoryForAccount(bankName, accountLast4)
+    }
+    
+    suspend fun deleteBalanceById(id: Long) {
+        accountBalanceDao.deleteBalanceById(id)
+    }
+    
+    suspend fun updateBalanceById(id: Long, newBalance: BigDecimal) {
+        accountBalanceDao.updateBalanceById(id, newBalance)
+    }
+    
+    suspend fun getBalanceCountForAccount(bankName: String, accountLast4: String): Int {
+        return accountBalanceDao.getBalanceCountForAccount(bankName, accountLast4)
+    }
 }

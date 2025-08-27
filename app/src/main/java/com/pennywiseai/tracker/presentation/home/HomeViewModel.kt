@@ -22,6 +22,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -37,6 +38,7 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
+    private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     
@@ -62,7 +64,15 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load account balances
-            accountBalanceRepository.getAllLatestBalances().collect { balances ->
+            accountBalanceRepository.getAllLatestBalances().collect { allBalances ->
+                // Get hidden accounts from SharedPreferences
+                val hiddenAccounts = sharedPrefs.getStringSet("hidden_accounts", emptySet()) ?: emptySet()
+                
+                // Filter out hidden accounts
+                val balances = allBalances.filter { account ->
+                    val key = "${account.bankName}_${account.accountLast4}"
+                    !hiddenAccounts.contains(key)
+                }
                 // Separate credit cards from regular accounts
                 val regularAccounts = balances.filter { it.creditLimit == null }
                 val creditCards = balances.filter { it.creditLimit != null }
@@ -179,6 +189,33 @@ class HomeViewModel @Inject constructor(
             monthlyChange = totalChange,
             monthlyChangePercent = 0 // We're not using percentage anymore
         )
+    }
+    
+    fun refreshHiddenAccounts() {
+        viewModelScope.launch {
+            // Force re-read of hidden accounts from SharedPreferences
+            val hiddenAccounts = sharedPrefs.getStringSet("hidden_accounts", emptySet()) ?: emptySet()
+            
+            // Re-fetch all accounts and filter
+            accountBalanceRepository.getAllLatestBalances().first().let { allBalances ->
+                val visibleBalances = allBalances.filter { account ->
+                    val key = "${account.bankName}_${account.accountLast4}"
+                    !hiddenAccounts.contains(key)
+                }
+                
+                // Separate credit cards from regular accounts
+                val regularAccounts = visibleBalances.filter { it.creditLimit == null }
+                val creditCards = visibleBalances.filter { it.creditLimit != null }
+                
+                // Update UI state
+                _uiState.value = _uiState.value.copy(
+                    accountBalances = regularAccounts,
+                    creditCards = creditCards,
+                    totalBalance = regularAccounts.sumOf { it.balance },
+                    totalAvailableCredit = creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }
+                )
+            }
+        }
     }
     
     fun scanSmsMessages() {

@@ -86,6 +86,13 @@ fun HomeScreen(
         }
     }
     
+    // Refresh hidden accounts whenever this screen becomes visible
+    // This ensures changes from ManageAccountsScreen are reflected immediately
+    DisposableEffect(Unit) {
+        viewModel.refreshHiddenAccounts()
+        onDispose { }
+    }
+    
     // Handle delete undo snackbar
     LaunchedEffect(deletedTransaction) {
         deletedTransaction?.let { transaction ->

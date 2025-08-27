@@ -75,11 +75,13 @@ fun MainScreen(
                     "settings" -> "Settings"
                     "categories" -> "Categories"
                     "unrecognized_sms" -> "Unrecognized Messages"
+                    "manage_accounts" -> "Manage Accounts"
+                    "add_account" -> "Add Account"
                     else -> "PennyWise"
                 },
-                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms"),
-                showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms"),
-                showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms"), // Hide on settings, categories and unrecognized_sms
+                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms", "manage_accounts", "add_account"),
+                showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account"),
+                showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account"), // Hide on these screens
                 onBackClick = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate("settings") },
                 onDiscordClick = {
@@ -244,6 +246,9 @@ fun MainScreen(
                     },
                     onNavigateToUnrecognizedSms = {
                         navController.navigate("unrecognized_sms")
+                    },
+                    onNavigateToManageAccounts = {
+                        navController.navigate("manage_accounts")
                     }
                 )
             }
@@ -258,6 +263,25 @@ fun MainScreen(
             
             composable("unrecognized_sms") {
                 com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            
+            composable("manage_accounts") {
+                com.pennywiseai.tracker.presentation.accounts.ManageAccountsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToAddAccount = {
+                        navController.navigate("add_account")
+                    }
+                )
+            }
+            
+            composable("add_account") {
+                com.pennywiseai.tracker.presentation.accounts.AddAccountScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

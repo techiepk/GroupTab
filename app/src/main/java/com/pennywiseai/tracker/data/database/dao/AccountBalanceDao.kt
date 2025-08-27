@@ -118,4 +118,19 @@ interface AccountBalanceDao {
     
     @Delete
     suspend fun deleteBalance(balance: AccountBalanceEntity)
+    
+    @Query("""SELECT * FROM account_balances 
+        WHERE bank_name = :bankName AND account_last4 = :accountLast4
+        ORDER BY timestamp DESC""")
+    suspend fun getBalanceHistoryForAccount(bankName: String, accountLast4: String): List<AccountBalanceEntity>
+    
+    @Query("DELETE FROM account_balances WHERE id = :id")
+    suspend fun deleteBalanceById(id: Long)
+    
+    @Query("UPDATE account_balances SET balance = :newBalance WHERE id = :id")
+    suspend fun updateBalanceById(id: Long, newBalance: BigDecimal)
+    
+    @Query("""SELECT COUNT(*) FROM account_balances 
+        WHERE bank_name = :bankName AND account_last4 = :accountLast4""")
+    suspend fun getBalanceCountForAccount(bankName: String, accountLast4: String): Int
 }
