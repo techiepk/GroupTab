@@ -32,6 +32,25 @@ class UnionBankParser : BankParser() {
                normalizedSender.matches(Regex("^[A-Z]{2}-UNIONBANK$"))
     }
     
+    override fun isTransactionMessage(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // Union Bank includes "Never Share OTP/PIN/CVV" warning in transaction messages
+        // Check if it's actually a transaction first before rejecting due to OTP keyword
+        val transactionKeywords = listOf(
+            "debited", "credited", "withdrawn", "deposited",
+            "spent", "received", "transferred", "paid"
+        )
+        
+        if (transactionKeywords.any { lowerMessage.contains(it) }) {
+            // It's a transaction message, even if it contains OTP in warning text
+            return true
+        }
+        
+        // Fall back to parent logic for non-transaction messages
+        return super.isTransactionMessage(message)
+    }
+    
     override fun extractAmount(message: String): BigDecimal? {
         // Pattern 1: "Rs:100.00" or "Rs.100.00" (Union Bank format with colon)
         val amountPattern1 = Regex("""Rs[:.]?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
