@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -65,6 +66,7 @@ fun HomeScreen(
     navController: NavController,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
+    onNavigateToTransactionsWithSearch: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
     onNavigateToAddScreen: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
@@ -168,8 +170,26 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Recent Transactions",
                     action = {
-                        TextButton(onClick = onNavigateToTransactions) {
-                            Text("View All")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Search button
+                            IconButton(
+                                onClick = onNavigateToTransactionsWithSearch,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search transactions",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // View All button
+                            TextButton(onClick = onNavigateToTransactions) {
+                                Text("View All")
+                            }
                         }
                     }
                 )

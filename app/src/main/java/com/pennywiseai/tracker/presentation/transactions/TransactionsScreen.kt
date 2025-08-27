@@ -24,6 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
@@ -44,6 +47,7 @@ fun TransactionsScreen(
     initialCategory: String? = null,
     initialMerchant: String? = null,
     initialPeriod: String? = null,
+    focusSearch: Boolean = false,
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
@@ -64,6 +68,10 @@ fun TransactionsScreen(
     var showExportDialog by remember { mutableStateOf(false) }
     var showAdvancedFilters by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    
+    // Focus management for search field
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     
     // Calculate active filter count for advanced filters
     val activeFilterCount = listOf(
@@ -121,6 +129,14 @@ fun TransactionsScreen(
                     viewModel.undoDeleteTransaction(transaction)
                 }
             }
+        }
+    }
+    
+    // Focus search field if requested
+    LaunchedEffect(focusSearch) {
+        if (focusSearch) {
+            searchFocusRequester.requestFocus()
+            keyboardController?.show()
         }
     }
     
@@ -183,6 +199,7 @@ fun TransactionsScreen(
                 query = searchQuery,
                 onQueryChange = viewModel::updateSearchQuery,
                 categoryFilter = categoryFilter,
+                focusRequester = searchFocusRequester,
                 modifier = Modifier.weight(1f)
             )
             
@@ -451,6 +468,7 @@ private fun TransactionSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     categoryFilter: String? = null,
+    focusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier
 ) {
     TextField(
@@ -488,7 +506,9 @@ private fun TransactionSearchBar(
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         shape = MaterialTheme.shapes.medium,
-        modifier = modifier
+        modifier = modifier.then(
+            focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier
+        )
     )
 }
 

@@ -115,6 +115,9 @@ fun MainScreen(
                     onNavigateToTransactions = {
                         navController.navigate("transactions")
                     },
+                    onNavigateToTransactionsWithSearch = {
+                        navController.navigate("transactions?focusSearch=true")
+                    },
                     onNavigateToSubscriptions = {
                         navController.navigate("subscriptions")
                     },
@@ -135,7 +138,7 @@ fun MainScreen(
             }
             
             composable(
-                route = "transactions?category={category}&merchant={merchant}&period={period}",
+                route = "transactions?category={category}&merchant={merchant}&period={period}&focusSearch={focusSearch}",
                 arguments = listOf(
                     navArgument("category") { 
                         type = NavType.StringType
@@ -151,17 +154,23 @@ fun MainScreen(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument("focusSearch") {
+                        type = NavType.BoolType
+                        defaultValue = false
                     }
                 )
             ) { backStackEntry ->
                 val category = backStackEntry.arguments?.getString("category")
                 val merchant = backStackEntry.arguments?.getString("merchant")
                 val period = backStackEntry.arguments?.getString("period")
+                val focusSearch = backStackEntry.arguments?.getBoolean("focusSearch") ?: false
                 
                 TransactionsScreen(
                     initialCategory = category,
                     initialMerchant = merchant,
                     initialPeriod = period,
+                    focusSearch = focusSearch,
                     onNavigateBack = {
                         navController.popBackStack()
                     },
