@@ -152,11 +152,11 @@ fun TransactionsScreen(
                     }
                 }
                 
-                // Add Transaction FAB (primary action)
-                FloatingActionButton(
+                // Add Transaction FAB (consistent with Home screen)
+                SmallFloatingActionButton(
                     onClick = onAddTransactionClick,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,

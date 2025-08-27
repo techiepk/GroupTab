@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
@@ -65,7 +66,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
     onNavigateToSubscriptions: () -> Unit = {},
-    onNavigateToChat: () -> Unit = {},
+    onNavigateToAddScreen: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
     onFabPositioned: (Rect) -> Unit = {}
 ) {
@@ -217,28 +218,31 @@ fun HomeScreen(
             }
         }
         
-        // FABs
+        // FABs - Direct access (no speed dial)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(Dimensions.Padding.content),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.End
         ) {
-            // Chat FAB
+            // Add FAB (top, small)
             SmallFloatingActionButton(
-                onClick = onNavigateToChat,
+                onClick = onNavigateToAddScreen,
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Chat,
-                    contentDescription = "Open AI Assistant"
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Transaction or Subscription"
                 )
             }
             
-            // Sync FAB
+            // Sync FAB (bottom, primary)
             FloatingActionButton(
                 onClick = { viewModel.scanSmsMessages() },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.spotlightTarget(onFabPositioned)
             ) {
                 Icon(

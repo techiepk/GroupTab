@@ -90,7 +90,7 @@ fun MainScreen(
         },
         bottomBar = {
             // Show bottom navigation only for main screens
-            if (currentRoute in listOf("home", "analytics")) {
+            if (currentRoute in listOf("home", "analytics", "chat")) {
                 PennyWiseBottomNavigation(navController = navController)
             }
         }
@@ -118,8 +118,10 @@ fun MainScreen(
                     onNavigateToSubscriptions = {
                         navController.navigate("subscriptions")
                     },
-                    onNavigateToChat = {
-                        navController.navigate("chat")
+                    onNavigateToAddScreen = {
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.AddTransaction
+                        )
                     },
                     onTransactionClick = { transactionId ->
                         rootNavController?.navigate(
@@ -180,6 +182,11 @@ fun MainScreen(
                 SubscriptionsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onAddSubscriptionClick = {
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.AddTransaction
+                        )
                     }
                 )
             }

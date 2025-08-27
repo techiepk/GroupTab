@@ -37,7 +37,8 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun SubscriptionsScreen(
     viewModel: SubscriptionsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onAddSubscriptionClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -103,6 +104,21 @@ fun SubscriptionsScreen(
                 }
             }
         }
+        }
+        
+        // Add Subscription FAB (consistent with other screens)
+        SmallFloatingActionButton(
+            onClick = onAddSubscriptionClick,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(Dimensions.Padding.content)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Subscription"
+            )
         }
         
         SnackbarHost(
