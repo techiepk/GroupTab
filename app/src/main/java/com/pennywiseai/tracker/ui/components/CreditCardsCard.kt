@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -157,23 +158,40 @@ private fun CreditCardItem(
         Column(
             horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = CurrencyFormatter.formatCurrency(card.creditLimit ?: BigDecimal.ZERO),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            if (card.balance > BigDecimal.ZERO) {
+            // Show available credit limit with label
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
                 Text(
-                    text = "Outstanding: ${CurrencyFormatter.formatCurrency(card.balance)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
+                    text = CurrencyFormatter.formatCurrency(card.creditLimit ?: BigDecimal.ZERO),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
                 )
-            } else {
                 Text(
-                    text = "Available",
+                    text = "Available Limit",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            // Show outstanding if present with utilization
+            if (card.balance > BigDecimal.ZERO) {
+                val utilization = if (card.creditLimit != null && card.creditLimit > BigDecimal.ZERO) {
+                    ((card.balance.toDouble() / card.creditLimit.toDouble()) * 100).toInt()
+                } else {
+                    0
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Used: ${CurrencyFormatter.formatCurrency(card.balance)} ($utilization%)",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = when {
+                        utilization > 80 -> MaterialTheme.colorScheme.error
+                        utilization > 50 -> Color(0xFFFF9800) // Orange
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
             }
         }

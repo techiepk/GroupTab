@@ -95,8 +95,8 @@ class HomeViewModel @Inject constructor(
                 Log.d("HomeViewModel", "========================================")
                 
                 _uiState.value = _uiState.value.copy(
-                    accountBalances = balances,  // Keep all for now, will be filtered in UI
-                    creditCards = creditCards,
+                    accountBalances = regularAccounts,  // Only regular bank accounts
+                    creditCards = creditCards,           // Only credit cards
                     totalBalance = regularAccounts.sumOf { it.balance },
                     totalAvailableCredit = creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }
                 )

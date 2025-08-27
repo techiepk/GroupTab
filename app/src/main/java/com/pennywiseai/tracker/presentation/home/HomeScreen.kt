@@ -49,6 +49,7 @@ import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
 import com.pennywiseai.tracker.ui.components.AccountBalancesCard
 import com.pennywiseai.tracker.ui.components.CreditCardsCard
+import com.pennywiseai.tracker.ui.components.UnifiedAccountsCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
@@ -130,32 +131,14 @@ fun HomeScreen(
                 TransactionSummaryCards(uiState = uiState)
             }
             
-            // Credit Cards Section
-            if (uiState.creditCards.isNotEmpty()) {
+            // Unified Accounts Section (Credit Cards + Bank Accounts)
+            if (uiState.creditCards.isNotEmpty() || uiState.accountBalances.isNotEmpty()) {
                 item {
-                    CreditCardsCard(
+                    UnifiedAccountsCard(
                         creditCards = uiState.creditCards,
-                        totalAvailableCredit = uiState.totalAvailableCredit,
-                        onViewAllClick = { /* TODO: Navigate to credit cards screen */ },
-                        onCardClick = { bankName, accountLast4 ->
-                            navController.navigate(
-                                com.pennywiseai.tracker.navigation.AccountDetail(
-                                    bankName = bankName,
-                                    accountLast4 = accountLast4
-                                )
-                            )
-                        }
-                    )
-                }
-            }
-            
-            // Account Balances Section
-            if (uiState.accountBalances.isNotEmpty()) {
-                item {
-                    AccountBalancesCard(
-                        accountBalances = uiState.accountBalances,
+                        bankAccounts = uiState.accountBalances,
                         totalBalance = uiState.totalBalance,
-                        onViewAllClick = { /* TODO: Navigate to account balances screen */ },
+                        totalAvailableCredit = uiState.totalAvailableCredit,
                         onAccountClick = { bankName, accountLast4 ->
                             navController.navigate(
                                 com.pennywiseai.tracker.navigation.AccountDetail(
