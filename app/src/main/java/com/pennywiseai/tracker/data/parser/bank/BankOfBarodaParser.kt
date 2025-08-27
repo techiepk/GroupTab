@@ -16,16 +16,32 @@ class BankOfBarodaParser : BankParser() {
                normalizedSender.contains("BARODA") ||
                normalizedSender.contains("BOBSMS") ||
                normalizedSender.contains("BOBTXN") ||
+               normalizedSender.contains("BOBCRD") ||  // Credit card messages
                // DLT patterns
                normalizedSender.matches(Regex("^[A-Z]{2}-BOBSMS-[A-Z]$")) ||
                normalizedSender.matches(Regex("^[A-Z]{2}-BOBTXN-[A-Z]$")) ||
                normalizedSender.matches(Regex("^[A-Z]{2}-BOB-[A-Z]$")) ||
+               normalizedSender.matches(Regex("^[A-Z]{2}-BOBCRD-[A-Z]$")) ||  // Credit card DLT pattern
                // Direct sender IDs
                normalizedSender == "BOB" ||
                normalizedSender == "BANKOFBARODA"
     }
     
     override fun extractAmount(message: String): BigDecimal? {
+        // Pattern 0: ALERT: INR XXX.XX is spent (Credit card pattern - check first)
+        val alertSpentPattern = Regex(
+            """ALERT:\s*INR\s*([\d,]+(?:\.\d{2})?)\s+is\s+spent""",
+            RegexOption.IGNORE_CASE
+        )
+        alertSpentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
         // Pattern 1: Rs.80.00 Dr. from
         val drPattern = Regex(
             """Rs\.?\s*([\d,]+(?:\.\d{2})?)\s+Dr\.?\s+from""",
@@ -153,6 +169,15 @@ class BankOfBarodaParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
+        // Pattern 0: BOBCARD ending 1234 (Credit card format)
+        val bobCardPattern = Regex(
+            """BOBCARD\s+ending\s+(\d{4})""",
+            RegexOption.IGNORE_CASE
+        )
+        bobCardPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
         // Pattern 1: A/C XXXXXX (6 digits shown)
         val sixDigitPattern = Regex(
             """A/C\s+X*(\d{6})""",
@@ -260,12 +285,32 @@ class BankOfBarodaParser : BankParser() {
             // Credit card transactions - BOBCARD
             lowerMessage.contains("spent on your bobcard") -> TransactionType.CREDIT
             lowerMessage.contains("bobcard") && lowerMessage.contains("spent") -> TransactionType.CREDIT
+            lowerMessage.contains("bobcard") && lowerMessage.contains("is spent") -> TransactionType.CREDIT
             
             lowerMessage.contains("dr.") || lowerMessage.contains("debited") -> TransactionType.EXPENSE
             lowerMessage.contains("cr.") || lowerMessage.contains("credited") -> TransactionType.INCOME
             lowerMessage.contains("deposited") -> TransactionType.INCOME
             else -> super.extractTransactionType(message)
         }
+    }
+    
+    override fun extractCreditLimit(message: String): BigDecimal? {
+        // Pattern for "Available credit limit is Rs 42,981.46"
+        val creditLimitPattern = Regex(
+            """Available\s+credit\s+limit\s+is\s+Rs\.?\s*([\d,]+(?:\.\d{2})?)""",
+            RegexOption.IGNORE_CASE
+        )
+        creditLimitPattern.find(message)?.let { match ->
+            val limitStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(limitStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Fall back to base class patterns
+        return super.extractCreditLimit(message)
     }
     
     override fun isTransactionMessage(message: String): Boolean {
@@ -276,7 +321,8 @@ class BankOfBarodaParser : BankParser() {
             lowerMessage.contains("cr. to") ||
             lowerMessage.contains("credited to a/c") ||
             lowerMessage.contains("credited with inr") ||
-            lowerMessage.contains("deposited in cash")) {
+            lowerMessage.contains("deposited in cash") ||
+            lowerMessage.contains("is spent")) {  // Credit card transactions
             return true
         }
         

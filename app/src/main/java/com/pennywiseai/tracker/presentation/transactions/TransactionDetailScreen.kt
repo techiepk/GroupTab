@@ -837,7 +837,7 @@ private fun EditableExtractedInfoCard(
                 }
             }
         }
-    }   
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
