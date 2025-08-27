@@ -24,7 +24,8 @@ const SBIConfig: BankConfig = {
     'verification code',
     'offer',
     'discount',
-    'e-statement of sbi credit card'
+    'e-statement of sbi credit card',
+    'is due for'
   ]
 }
 

@@ -40,7 +40,29 @@ export class JKBankParser extends BankParser {
   }
 
   protected extractMerchant(message: string, sender: string): string | null {
-    // Check for UPI transactions without specific merchant
+    // Pattern 1: "via UPI from SENDER NAME on" (for credits)
+    if (message.toLowerCase().includes('via upi from')) {
+      const fromPattern = /via\s+UPI\s+from\s+([^.\n]+?)\s+on/i
+      const fromMatch = message.match(fromPattern)
+      if (fromMatch) {
+        const merchant = fromMatch[1].trim()
+        if (this.isValidMerchantName(merchant)) {
+          return this.cleanMerchantName(merchant)
+        }
+      }
+    }
+
+    // Pattern 2: "by mTFR/962211111/SENDER NAME" (mPay transfer)
+    const mtfrPattern = /mTFR\/\d+\/([^.\n]+?)(?:\.|A\/c|$)/i
+    const mtfrMatch = message.match(mtfrPattern)
+    if (mtfrMatch) {
+      const merchant = mtfrMatch[1].trim()
+      if (this.isValidMerchantName(merchant)) {
+        return this.cleanMerchantName(merchant)
+      }
+    }
+
+    // Pattern 3: UPI transactions to merchant
     if (message.toLowerCase().includes('via upi')) {
       // Look for UPI VPA pattern
       const vpaPattern = /to\s+([^@\s]+@[^\s]+)/i
@@ -64,9 +86,8 @@ export class JKBankParser extends BankParser {
         }
       }
 
-      // If no specific merchant found in UPI transaction, return "upi" as merchant
-      // This matches the expected output from the sample
-      return 'upi'
+      // Default to "UPI" if no specific merchant found
+      return 'UPI'
     }
 
     // Check for ATM withdrawals

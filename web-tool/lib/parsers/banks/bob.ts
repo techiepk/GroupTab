@@ -6,11 +6,12 @@ const BankOfBarodaConfig: BankConfig = {
   bankCode: 'bob',
   senders: {
     exact: ['BOB', 'BANKOFBARODA'],
-    contains: ['BOB', 'BARODA', 'BOBSMS', 'BOBTXN'],
+    contains: ['BOB', 'BARODA', 'BOBSMS', 'BOBTXN', 'BOBCRD'],
     patterns: [
       /^[A-Z]{2}-BOBSMS-[A-Z]$/,
       /^[A-Z]{2}-BOBTXN-[A-Z]$/,
-      /^[A-Z]{2}-BOB-[A-Z]$/
+      /^[A-Z]{2}-BOB-[A-Z]$/,
+      /^[A-Z]{2}-BOBCRD-[A-Z]$/
     ]
   },
   transactionType: {
@@ -32,9 +33,20 @@ export class BankOfBarodaParser extends BankParser {
   }
 
   protected extractAmount(message: string): number | null {
+    // Pattern 0: ALERT: INR XXX.XX is spent (Credit card pattern - check first)
+    const alertSpentPattern = /ALERT:\s*INR\s*([\d,]+(?:\.\d{2})?)\s+is\s+spent/i
+    let match = message.match(alertSpentPattern)
+    if (match) {
+      const amount = match[1].replace(/,/g, '')
+      const parsedAmount = parseFloat(amount)
+      if (!isNaN(parsedAmount)) {
+        return parsedAmount
+      }
+    }
+
     // Pattern 1: Rs.80.00 Dr. from
     const drPattern = /Rs\.?\s*([\d,]+(?:\.\d{2})?)\s+Dr\.?\s+from/i
-    let match = message.match(drPattern)
+    match = message.match(drPattern)
     if (match) {
       const amount = match[1].replace(/,/g, '')
       const parsedAmount = parseFloat(amount)
@@ -140,9 +152,16 @@ export class BankOfBarodaParser extends BankParser {
   }
 
   protected extractAccountLast4(message: string): string | null {
+    // Pattern 0: BOBCARD ending 1234 (Credit card format)
+    const bobCardPattern = /BOBCARD\s+ending\s+(\d{4})/i
+    let match = message.match(bobCardPattern)
+    if (match) {
+      return match[1]
+    }
+
     // Pattern 1: A/C XXXXXX (6 digits shown)
     const sixDigitPattern = /A\/C\s+X*(\d{6})/i
-    let match = message.match(sixDigitPattern)
+    match = message.match(sixDigitPattern)
     if (match) {
       const digits = match[1]
       // Return last 4 of the 6 digits shown
@@ -224,6 +243,17 @@ export class BankOfBarodaParser extends BankParser {
   protected extractTransactionType(message: string): TransactionType | null {
     const lowerMessage = message.toLowerCase()
 
+    // Credit card transactions - BOBCARD
+    if (lowerMessage.includes('spent on your bobcard')) {
+      return TransactionType.CREDIT
+    }
+    if (lowerMessage.includes('bobcard') && lowerMessage.includes('spent')) {
+      return TransactionType.CREDIT
+    }
+    if (lowerMessage.includes('bobcard') && lowerMessage.includes('is spent')) {
+      return TransactionType.CREDIT
+    }
+
     if (lowerMessage.includes('dr.') || lowerMessage.includes('debited')) {
       return TransactionType.EXPENSE
     }
@@ -245,7 +275,8 @@ export class BankOfBarodaParser extends BankParser {
         lowerMessage.includes('cr. to') ||
         lowerMessage.includes('credited to a/c') ||
         lowerMessage.includes('credited with inr') ||
-        lowerMessage.includes('deposited in cash')) {
+        lowerMessage.includes('deposited in cash') ||
+        lowerMessage.includes('is spent')) {  // Credit card transactions
       return true
     }
 

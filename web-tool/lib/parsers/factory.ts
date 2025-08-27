@@ -23,6 +23,8 @@ import { HSBCBankParser } from './banks/hsbc'
 import { CentralBankOfIndiaParser } from './banks/centralbank'
 import { SouthIndianBankParser } from './banks/south-indian-bank'
 import { JKBankParser } from './banks/jkBank'
+import { IPPBParser } from './banks/ippb'
+import { JioPayParser } from './banks/jiopay'
 import { ParseResult, ParsedTransaction } from './types'
 
 export class BankParserFactory {
@@ -51,6 +53,8 @@ export class BankParserFactory {
     new CentralBankOfIndiaParser(),
     new SouthIndianBankParser(),
     new JKBankParser(),
+    new IPPBParser(),
+    new JioPayParser(),
   ]
 
   /**
