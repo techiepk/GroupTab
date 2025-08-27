@@ -46,7 +46,8 @@ fun TransactionsScreen(
     initialPeriod: String? = null,
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onTransactionClick: (Long) -> Unit = {}
+    onTransactionClick: (Long) -> Unit = {},
+    onAddTransactionClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -133,16 +134,33 @@ fun TransactionsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
-            // Export FAB (only show if transactions exist)
-            if (uiState.transactions.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                // Export FAB (only show if transactions exist)
+                if (uiState.transactions.isNotEmpty()) {
+                    SmallFloatingActionButton(
+                        onClick = { showExportDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Export to CSV",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                
+                // Add Transaction FAB (primary action)
                 FloatingActionButton(
-                    onClick = { showExportDialog = true },
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    onClick = onAddTransactionClick,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FileDownload,
-                        contentDescription = "Export to CSV"
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Transaction"
                     )
                 }
             }

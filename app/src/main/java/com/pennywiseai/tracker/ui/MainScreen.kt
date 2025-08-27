@@ -167,6 +167,11 @@ fun MainScreen(
                         rootNavController?.navigate(
                             com.pennywiseai.tracker.navigation.TransactionDetail(transactionId)
                         )
+                    },
+                    onAddTransactionClick = {
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.AddTransaction
+                        )
                     }
                 )
             }

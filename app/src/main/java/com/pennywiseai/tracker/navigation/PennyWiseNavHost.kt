@@ -110,6 +110,19 @@ fun PennyWiseNavHost(
             )
         }
         
+        composable<AddTransaction>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            com.pennywiseai.tracker.presentation.add.AddScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
         composable<UnrecognizedSms>(
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },

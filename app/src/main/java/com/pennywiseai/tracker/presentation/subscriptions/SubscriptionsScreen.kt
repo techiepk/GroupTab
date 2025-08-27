@@ -193,20 +193,17 @@ private fun SwipeableSubscriptionItem(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Dimensions.Padding.content),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                    // Brand Icon
-                    BrandIcon(
-                        merchantName = subscription.merchantName,
-                        size = 48.dp,
-                        showBackground = true
-                    )
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
+                        // Brand Icon
+                        BrandIcon(
+                            merchantName = subscription.merchantName,
+                            size = 48.dp,
+                            showBackground = true
+                        )
+                        
+                        // Content
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -286,58 +283,57 @@ private fun SwipeableSubscriptionItem(
                         )
                     }
                 }
-            }
-            
-            // SMS Body Display (expandable)
-            if (showSmsBody && !subscription.smsBody.isNullOrBlank()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(Dimensions.Padding.content)
+                
+                // SMS Body Display (expandable)
+                if (showSmsBody && !subscription.smsBody.isNullOrBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Dimensions.Padding.content)
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Chat,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(Spacing.sm))
-                            Text(
-                                text = "Original SMS",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        
-                        // SMS text in monospace font
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = subscription.smsBody,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace
-                                ),
-                                modifier = Modifier.padding(Spacing.md)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Chat,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.sm))
+                                Text(
+                                    text = if (subscription.bankName == "Manual Entry") "Notes" else "Original SMS",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            
+                            // SMS text in monospace font
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = subscription.smsBody,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    modifier = Modifier.padding(Spacing.md)
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
         }
     )
 }
