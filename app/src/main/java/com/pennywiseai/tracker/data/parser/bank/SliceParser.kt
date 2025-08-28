@@ -18,8 +18,28 @@ class SliceParser : BankParser() {
                normalizedSender.contains("SLICEIT")
     }
     
+    override fun isTransactionMessage(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // Slice uses "sent" for UPI transfers
+        if (lowerMessage.contains("sent")) {
+            return true
+        }
+        
+        return super.isTransactionMessage(message)
+    }
+    
     override fun extractMerchant(message: String, sender: String): String? {
         val lowerMessage = message.lowercase()
+        
+        // Look for "sent to NAME" pattern for UPI transfers
+        val sentToPattern = Regex("""sent.*to\s+([A-Z][A-Z\s]+?)\s*\(""", RegexOption.IGNORE_CASE)
+        sentToPattern.find(message)?.let { match ->
+            val merchant = match.groupValues[1].trim()
+            if (merchant.isNotEmpty()) {
+                return cleanMerchantName(merchant)
+            }
+        }
         
         // Look for "from MERCHANT" pattern
         val fromPattern = Regex("""from\s+([A-Z][A-Z0-9\s]+?)(?:\s+on|\s+\(|$)""", RegexOption.IGNORE_CASE)
@@ -52,6 +72,7 @@ class SliceParser : BankParser() {
             lowerMessage.contains("debited") -> TransactionType.CREDIT
             lowerMessage.contains("spent") -> TransactionType.CREDIT
             lowerMessage.contains("paid") -> TransactionType.CREDIT
+            lowerMessage.contains("sent") -> TransactionType.CREDIT  // UPI transfers
             lowerMessage.contains("payment") && !lowerMessage.contains("received") -> TransactionType.CREDIT
             
             else -> super.extractTransactionType(message)

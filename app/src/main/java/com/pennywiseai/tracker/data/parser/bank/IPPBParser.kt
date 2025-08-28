@@ -101,7 +101,7 @@ class IPPBParser : BankParser() {
         // Pattern 2: "from john doe thru IPPB" (Credit)
         if (lowerMessage.contains("received a payment")) {
             val fromPattern = Regex(
-                """from\s+([^thru]+)\s+thru""",
+                """from\s+(.+?)\s+thru""",
                 RegexOption.IGNORE_CASE
             )
             fromPattern.find(message)?.let { match ->
