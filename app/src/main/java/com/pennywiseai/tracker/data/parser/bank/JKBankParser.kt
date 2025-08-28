@@ -1,7 +1,10 @@
 package com.pennywiseai.tracker.data.parser.bank
 
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.data.parser.ParsedTransaction
 import java.math.BigDecimal
+import java.math.RoundingMode
+import java.security.MessageDigest
 
 /**
  * Jammu & Kashmir Bank (JK Bank) specific parser.
@@ -39,6 +42,81 @@ class JKBankParser : BankParser() {
         )
         
         return dltPatterns.any { it.matches(upperSender) }
+    }
+    
+    override fun parse(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        val parsedTransaction = super.parse(smsBody, sender, timestamp) ?: return null
+        
+        // Generate JK Bank specific transaction hash
+        val customHash = generateJKBankHash(parsedTransaction, smsBody, sender)
+        
+        // Return with custom hash
+        return parsedTransaction.copy(
+            transactionHash = customHash
+        )
+    }
+    
+    private fun generateJKBankHash(
+        transaction: ParsedTransaction, 
+        smsBody: String,
+        sender: String
+    ): String {
+        val normalizedAmount = transaction.amount.setScale(2, RoundingMode.HALF_UP)
+        
+        // Extract JK Bank specific reference
+        val reference = extractJKBankReference(smsBody)
+        
+        // Build hash based on what's available
+        val hashData = when {
+            // BEST CASE: Amount + UTR/Ref (unique per transaction)
+            reference != null -> {
+                "JKBANK|${normalizedAmount}|REF:${reference}"
+            }
+            
+            // FALLBACK: Amount + Sender + Closing Balance
+            // Balance helps differentiate multiple transactions of same amount
+            transaction.balance != null -> {
+                val normalizedBalance = transaction.balance.setScale(2, RoundingMode.HALF_UP)
+                "JKBANK|${normalizedAmount}|${sender}|BAL:${normalizedBalance}"
+            }
+            
+            // LAST RESORT: Original method (Amount + Sender + Timestamp)
+            else -> {
+                "${sender}|${normalizedAmount}|${transaction.timestamp}"
+            }
+        }
+        
+        return MessageDigest.getInstance("MD5")
+            .digest(hashData.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+    }
+    
+    private fun extractJKBankReference(message: String): String? {
+        val patterns = listOf(
+            // RTGS-JAKAH25085024027
+            Regex("""RTGS-([A-Z0-9]+)"""),
+            // NEFT/IMPS references
+            Regex("""NEFT-([A-Z0-9]+)"""),
+            Regex("""IMPS-([A-Z0-9]+)"""),
+            // UTR/TRN numbers
+            Regex("""UTR\s+([A-Z0-9]+)"""),
+            Regex("""TRN\s+([A-Z0-9]+)"""),
+            // CHRGS/RTGS/BWY - unique charge reference
+            Regex("""by\s+(CHRGS/[^.]+)"""),
+            // eTFR/mTFR references
+            Regex("""by\s+(eTFR/[^.]+)"""),
+            Regex("""by\s+(mTFR/\d+/[^.]+)"""),
+            // UPI reference
+            Regex("""UPI\s+Ref[:\s]+(\d+)""", RegexOption.IGNORE_CASE)
+        )
+        
+        for (pattern in patterns) {
+            pattern.find(message)?.let { match ->
+                return match.groupValues[1].trim()
+            }
+        }
+        
+        return null
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
