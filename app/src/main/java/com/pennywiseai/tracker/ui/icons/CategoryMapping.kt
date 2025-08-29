@@ -106,6 +106,24 @@ object CategoryMapping {
             color = Color(0xFF0066CC), // LIC blue
             fallbackIcon = Icons.Default.Security
         ),
+        "Tax" to CategoryInfo(
+            displayName = "Tax",
+            icon = Icons.Default.AccountBalanceWallet,
+            color = Color(0xFF795548), // Brown for tax
+            fallbackIcon = Icons.Default.Receipt
+        ),
+        "Bank Charges" to CategoryInfo(
+            displayName = "Bank Charges",
+            icon = Icons.Default.MoneyOff,
+            color = Color(0xFF9E9E9E), // Grey for charges
+            fallbackIcon = Icons.Default.RemoveCircle
+        ),
+        "Credit Card Payment" to CategoryInfo(
+            displayName = "Credit Card Payment",
+            icon = Icons.Default.CreditCard,
+            color = Color(0xFF1976D2), // Blue for credit card
+            fallbackIcon = Icons.Default.Payment
+        ),
         "Salary" to CategoryInfo(
             displayName = "Salary",
             icon = Icons.Default.Payments,
@@ -133,6 +151,15 @@ object CategoryMapping {
         val merchantLower = merchantName.lowercase()
         
         return when {
+            // Tax payments (high priority)
+            isTaxMerchant(merchantLower) -> "Tax"
+            
+            // Bank charges and fees (high priority)
+            isBankChargeMerchant(merchantLower) -> "Bank Charges"
+            
+            // Credit card payments
+            isCreditCardPaymentMerchant(merchantLower) -> "Credit Card Payment"
+            
             // Food & Dining
             isFoodMerchant(merchantLower) -> "Food & Dining"
             
@@ -296,6 +323,28 @@ object CategoryMapping {
         merchant.contains("max life") || merchant.contains("bajaj allianz") ||
         merchant.contains("policybazaar") || merchant.contains("acko") ||
         merchant.contains("digit")
+    
+    private fun isTaxMerchant(merchant: String) = 
+        merchant.contains("tin") || merchant.contains("tax information") ||
+        merchant.contains("income tax") || merchant.contains("gst") ||
+        merchant.contains("tax payment") || merchant.contains("challan") ||
+        merchant.contains("direct tax") || merchant.contains("indirect tax") ||
+        merchant.contains("tax deducted") || merchant.contains("tds") ||
+        merchant.contains("advance tax") || merchant.contains("self assessment")
+    
+    private fun isBankChargeMerchant(merchant: String) = 
+        merchant.contains("recovery") || merchant.contains("charge") ||
+        merchant.contains("fee") || merchant.contains("penalty") ||
+        merchant.contains("maintenance") || merchant.contains("non-maintenance") ||
+        merchant.contains("minimum balance") || merchant.contains("sms charge") ||
+        merchant.contains("atm recovery") || merchant.contains("service charge") ||
+        merchant.contains("annual fee") || merchant.contains("processing fee") ||
+        merchant.contains("convenience fee") || merchant.contains("late payment")
+    
+    private fun isCreditCardPaymentMerchant(merchant: String) = 
+        merchant.contains("bbps") || merchant.contains("bill payment") ||
+        merchant.contains("credit card payment") || merchant.contains("cc payment") ||
+        merchant.contains("card payment")
 }
 
 /**
