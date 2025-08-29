@@ -63,14 +63,33 @@ class JKBankParser : BankParser() {
     ): String {
         val normalizedAmount = transaction.amount.setScale(2, RoundingMode.HALF_UP)
         
-        // Extract JK Bank specific reference
+        // Extract JK Bank specific reference and transaction time
         val reference = extractJKBankReference(smsBody)
+        val transactionTime = extractTransactionTime(smsBody)
         
-        // Build hash based on what's available
+        // Build hash based on what's available (in order of preference)
         val hashData = when {
-            // BEST CASE: Amount + UTR/Ref (unique per transaction)
+            // BEST CASE: Amount + UTR/Ref + Transaction Time
+            // This uniquely identifies the transaction even if SMS is sent multiple times
+            reference != null && transactionTime != null -> {
+                "JKBANK|${normalizedAmount}|REF:${reference}|TIME:${transactionTime}"
+            }
+            
+            // GOOD: Amount + UTR/Ref (unique per transaction)
             reference != null -> {
                 "JKBANK|${normalizedAmount}|REF:${reference}"
+            }
+            
+            // GOOD: Amount + Transaction Time + Balance
+            // Transaction time helps identify the actual transaction, not SMS time
+            transactionTime != null && transaction.balance != null -> {
+                val normalizedBalance = transaction.balance.setScale(2, RoundingMode.HALF_UP)
+                "JKBANK|${normalizedAmount}|TIME:${transactionTime}|BAL:${normalizedBalance}"
+            }
+            
+            // FALLBACK: Amount + Transaction Time
+            transactionTime != null -> {
+                "JKBANK|${normalizedAmount}|TIME:${transactionTime}"
             }
             
             // FALLBACK: Amount + Sender + Closing Balance
@@ -80,7 +99,8 @@ class JKBankParser : BankParser() {
                 "JKBANK|${normalizedAmount}|${sender}|BAL:${normalizedBalance}"
             }
             
-            // LAST RESORT: Original method (Amount + Sender + Timestamp)
+            // LAST RESORT: Original method (Amount + Sender + SMS Timestamp)
+            // Only used if no transaction-specific data is available
             else -> {
                 "${sender}|${normalizedAmount}|${transaction.timestamp}"
             }
@@ -119,7 +139,84 @@ class JKBankParser : BankParser() {
         return null
     }
     
+    private fun extractTransactionTime(message: String): String? {
+        // Extract transaction time from JK Bank messages
+        // Pattern: "at 10:43 by" or "on 17-Sep-24 at 10:43"
+        val patterns = listOf(
+            // Time only: "at 10:43"
+            Regex("""at\s+(\d{1,2}:\d{2}(?::\d{2})?)""", RegexOption.IGNORE_CASE),
+            // Date and time: "on 17-Sep-24 at 10:43"
+            Regex("""on\s+(\d{1,2}-\w{3}-\d{2,4})\s+at\s+(\d{1,2}:\d{2})""", RegexOption.IGNORE_CASE),
+            // Date only: "on 17-Sep-24"
+            Regex("""on\s+(\d{1,2}-\w{3}-\d{2,4})""", RegexOption.IGNORE_CASE)
+        )
+        
+        for (pattern in patterns) {
+            pattern.find(message)?.let { match ->
+                return when (match.groupValues.size) {
+                    2 -> match.groupValues[1] // Time only
+                    3 -> "${match.groupValues[1]} ${match.groupValues[2]}" // Date and time
+                    else -> null
+                }
+            }
+        }
+        
+        return null
+    }
+    
     override fun extractMerchant(message: String, sender: String): String? {
+        // Check for TIN/Tax Information Network
+        if (message.contains("TIN/Tax Information", ignoreCase = true)) {
+            return "Tax Information Network"
+        }
+        
+        // Check for ATM Recovery and other charges
+        if (message.contains("ATM RECOVERY", ignoreCase = true)) {
+            return "ATM Recovery Charge"
+        }
+        
+        // Check for specific charge patterns with "towards"
+        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.|Available|$)""", RegexOption.IGNORE_CASE)
+        towardsPattern.find(message)?.let { match ->
+            val charge = match.groupValues[1].trim()
+            if (charge.contains("RECOVERY", ignoreCase = true) || 
+                charge.contains("CHA", ignoreCase = true) ||
+                charge.contains("FEE", ignoreCase = true)) {
+                return cleanMerchantName(charge)
+            }
+        }
+        
+        // Check for transaction patterns "by XXX" but skip the amount part
+        // Pattern: "Debited by INR 402393 at 10:43 by RTGS-..."
+        val transactionByPattern = Regex(
+            """(?:Debited|Credited)\s+by\s+INR\s+[\d,]+(?:\.\d{2})?\s+at\s+[\d:]+\s+by\s+([^.\n]+?)(?:\.|Available|$)""",
+            RegexOption.IGNORE_CASE
+        )
+        transactionByPattern.find(message)?.let { match ->
+            val merchant = match.groupValues[1].trim()
+            
+            return when {
+                merchant.contains("RTGS", ignoreCase = true) -> "RTGS Transfer"
+                merchant.contains("NEFT", ignoreCase = true) -> "NEFT Transfer"
+                merchant.contains("IMPS", ignoreCase = true) -> "IMPS Transfer"
+                merchant.contains("eTFR", ignoreCase = true) -> "Transfer"
+                merchant.contains("mTFR", ignoreCase = true) -> "Mobile Transfer"
+                merchant.contains("TIN", ignoreCase = true) -> "Tax Information Network"
+                merchant.contains("CHRGS", ignoreCase = true) -> "Bank Charges"
+                else -> cleanMerchantName(merchant.substringBefore("/"))
+            }
+        }
+        
+        // Fallback pattern for simpler "by XXX" format
+        val simpleByPattern = Regex("""by\s+([^.\n]+?)(?:\.|Available|$)""", RegexOption.IGNORE_CASE)
+        simpleByPattern.find(message)?.let { match ->
+            val merchant = match.groupValues[1].trim()
+            // Skip if it starts with INR (amount)
+            if (!merchant.startsWith("INR", ignoreCase = true)) {
+                return cleanMerchantName(merchant)
+            }
+        }
+        
         // Pattern 1: "via UPI from SENDER NAME on" (for credits)
         if (message.contains("via UPI from", ignoreCase = true)) {
             val fromPattern = Regex("""via\s+UPI\s+from\s+([^.\n]+?)\s+on""", RegexOption.IGNORE_CASE)
@@ -279,11 +376,15 @@ class JKBankParser : BankParser() {
     override fun extractBalance(message: String): BigDecimal? {
         // JK Bank specific balance patterns
         val balancePatterns = listOf(
-            // Avl Bal: Rs.1234.56
+            // Available Bal is INR XXXX  
+            Regex("""Available\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // A/C Bal is INR XXXX
+            Regex("""A/C\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // Avl Bal: Rs.XXXX
             Regex("""Avl\s+Bal[:\s]+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            // Balance: Rs.1234.56
+            // Balance: Rs.XXXX
             Regex("""Balance[:\s]+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            // Bal Rs.1234.56
+            // Bal Rs.XXXX
             Regex("""Bal\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         )
         
