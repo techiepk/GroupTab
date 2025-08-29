@@ -1,6 +1,7 @@
 package com.pennywiseai.tracker.data.parser.bank
 
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.data.parser.ParsedTransaction
 import java.math.BigDecimal
 
 /**
@@ -29,7 +30,108 @@ class SBIBankParser : BankParser() {
                normalizedSender.matches(Regex("^[A-Z]{2}-SBI$"))
     }
     
+    // Check if this is a credit card message
+    private fun isCreditCardMessage(sender: String): Boolean {
+        return sender.uppercase().contains("SBICRD")
+    }
+    
+    // Extract credit card last 4 digits
+    private fun extractCreditCardLast4(message: String): String? {
+        // Pattern: "ending with 1234"
+        val pattern = Regex("""ending\s+with\s+(\d{4})""", RegexOption.IGNORE_CASE)
+        pattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        return null
+    }
+    
+    override fun parse(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        val parsed = super.parse(smsBody, sender, timestamp) ?: return null
+        
+        // Handle credit card messages
+        if (isCreditCardMessage(sender)) {
+            // Extract credit card last 4 digits
+            val cardLast4 = extractCreditCardLast4(smsBody) ?: parsed.accountLast4
+            
+            // Extract credit limit for credit card messages
+            val creditLimit = extractCreditLimit(smsBody) ?: parsed.creditLimit
+            
+            // Determine transaction type based on message content
+            val transactionType = when {
+                // Payment TO credit card (reducing debt)
+                smsBody.contains("payment of", ignoreCase = true) && 
+                smsBody.contains("credited to your SBI Credit Card", ignoreCase = true) -> {
+                    TransactionType.INCOME  // Payment received by credit card
+                }
+                // Credit card spending
+                smsBody.contains("spent on", ignoreCase = true) -> {
+                    TransactionType.CREDIT  // Credit card expense
+                }
+                // Default for other credit card transactions
+                else -> TransactionType.CREDIT
+            }
+            
+            // Extract merchant for BBPS payments
+            val merchant = when {
+                smsBody.contains("via BBPS", ignoreCase = true) -> "BBPS Payment"
+                else -> parsed.merchant
+            }
+            
+            return parsed.copy(
+                accountLast4 = cardLast4,
+                type = transactionType,
+                merchant = merchant ?: parsed.merchant,
+                creditLimit = creditLimit
+            )
+        }
+        
+        return parsed
+    }
+    
+    override fun extractCreditLimit(message: String): BigDecimal? {
+        // Pattern: "available limit is Rs.1,235.00"
+        val patterns = listOf(
+            Regex("""available\s+limit\s+is\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            Regex("""Your\s+available\s+limit\s+is\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        )
+        
+        for (pattern in patterns) {
+            pattern.find(message)?.let { match ->
+                val limitStr = match.groupValues[1].replace(",", "")
+                return try {
+                    BigDecimal(limitStr)
+                } catch (e: NumberFormatException) {
+                    null
+                }
+            }
+        }
+        
+        return super.extractCreditLimit(message)
+    }
+    
     override fun extractAmount(message: String): BigDecimal? {
+        // Pattern for credit card payment: "payment of Rs.1,644.55"
+        val paymentPattern = Regex("""payment\s+of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        paymentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern for credit card spending: "Rs.259.00 spent"
+        val spentPattern = Regex("""Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+spent""", RegexOption.IGNORE_CASE)
+        spentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
         // Pattern 0: A/C debited by 20.0 (UPI format)
         val upiDebitPattern = Regex("""debited\s+by\s+(\d+(?:,\d{3})*(?:\.\d{1,2})?)""", RegexOption.IGNORE_CASE)
         upiDebitPattern.find(message)?.let { match ->
