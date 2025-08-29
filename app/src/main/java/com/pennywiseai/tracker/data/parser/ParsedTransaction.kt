@@ -24,7 +24,8 @@ data class ParsedTransaction(
     val smsBody: String,
     val sender: String,
     val timestamp: Long,
-    val bankName: String
+    val bankName: String,
+    val transactionHash: String? = null
 ) {
     /**
      * Generates a unique transaction ID based on sender, amount, and timestamp.
@@ -64,7 +65,7 @@ data class ParsedTransaction(
             smsSender = sender,
             accountNumber = accountLast4,
             balanceAfter = balance,
-            transactionHash = generateTransactionId(),
+            transactionHash = transactionHash?.takeIf { it.isNotBlank() } ?: generateTransactionId(),
             isRecurring = false, // Will be determined later
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now()
