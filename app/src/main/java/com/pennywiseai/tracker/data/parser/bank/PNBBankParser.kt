@@ -1,7 +1,9 @@
 package com.pennywiseai.tracker.data.parser.bank
 
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.data.parser.ParsedTransaction
 import java.math.BigDecimal
+import java.text.Normalizer
 
 /**
  * Parser for Punjab National Bank (PNB) SMS messages
@@ -21,6 +23,21 @@ class PNBBankParser : BankParser() {
                normalizedSender.matches(Regex("^[A-Z]{2}-PNB$")) ||
                normalizedSender == "PNBBNK" ||
                normalizedSender == "PNB"
+    }
+    
+    override fun parse(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        // Normalize Unicode text for RCS messages
+        val normalizedBody = normalizeUnicodeText(smsBody)
+        
+        // Use normalized body for parsing
+        return super.parse(normalizedBody, sender, timestamp)
+    }
+    
+    private fun normalizeUnicodeText(text: String): String {
+        // Use Java's built-in normalizer to decompose Unicode
+        // NFKD = Compatibility Decomposition
+        return Normalizer.normalize(text, Normalizer.Form.NFKD)
+            .replace(Regex("[^\\p{ASCII}]"), "") // Keep only ASCII
     }
     
     override fun extractAmount(message: String): BigDecimal? {
