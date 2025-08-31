@@ -97,9 +97,9 @@ class HDFCBankParser : BankParser() {
         
         // Pattern 3: "VPA merchant@bank (Merchant Name)" format
         if (message.contains("VPA", ignoreCase = true)) {
-            // Special case for UPI credit: "from VPA username@provider (UPI reference)"
+            // Special case for UPI credit: "from VPA username@provider (UPI reference)" or "from VPA username@provider (UPI reference)"
             if (message.contains("from VPA", ignoreCase = true) && message.contains("credited", ignoreCase = true)) {
-                val fromVpaPattern = Regex("""from\s+VPA\s+([^@\s]+)@[^\s]+\s+\(UPI\s+\d+\)""", RegexOption.IGNORE_CASE)
+                val fromVpaPattern = Regex("""from\s+VPA\s*([^@\s]+)@[^\s]+\s*\(UPI\s+\d+\)""", RegexOption.IGNORE_CASE)
                 fromVpaPattern.find(message)?.let { match ->
                     val vpaUsername = match.groupValues[1].trim()
                     if (vpaUsername.isNotEmpty()) {
