@@ -30,12 +30,14 @@ fun PermissionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     
-    // Permission launcher using AndroidX APIs (best practice)
+    // Permission launcher for multiple permissions
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        viewModel.onPermissionResult(isGranted)
-        if (isGranted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        // Check if both permissions are granted
+        val allGranted = permissions.all { it.value }
+        viewModel.onPermissionResult(allGranted)
+        if (allGranted) {
             onPermissionGranted()
         } else {
             viewModel.onPermissionDenied()
@@ -132,7 +134,13 @@ fun PermissionScreen(
         // Primary action button
         Button(
             onClick = {
-                permissionLauncher.launch(Manifest.permission.READ_SMS)
+                // Request both READ_SMS and RECEIVE_SMS permissions
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.READ_SMS,
+                        Manifest.permission.RECEIVE_SMS
+                    )
+                )
             },
             modifier = Modifier.fillMaxWidth()
         ) {
