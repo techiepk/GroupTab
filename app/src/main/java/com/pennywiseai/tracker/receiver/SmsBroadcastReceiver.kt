@@ -11,7 +11,9 @@ import android.provider.Telephony
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
 import com.pennywiseai.tracker.MainActivity
+import com.pennywiseai.tracker.PennyWiseApplication
 import com.pennywiseai.tracker.R
 import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -107,22 +109,36 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                 // Convert to entity
                 val entity = parsedTransaction.toEntity()
                 
+                Log.d(TAG, "Attempting to insert transaction with hash: ${entity.transactionHash}")
+                
                 // Use INSERT OR IGNORE strategy (same as SmsReaderWorker)
                 val rowId = transactionRepository.insertTransaction(entity)
+                
+                Log.d(TAG, "Insert result - rowId: $rowId")
                 
                 if (rowId != -1L) {
                     Log.i(TAG, "New transaction added by SmsBroadcastReceiver: ${entity.merchantName} - ${entity.amount}")
                     
-                    // Show notification with quick edit action
-                    showTransactionNotification(
-                        context = context,
-                        transactionId = rowId,
-                        merchant = entity.merchantName ?: "Unknown",
-                        amount = entity.amount,
-                        type = entity.transactionType.name
-                    )
+                    // Check if app is in foreground
+                    if (PennyWiseApplication.isAppInForeground) {
+                        Log.d(TAG, "App is in foreground, skipping notification for transaction ID: $rowId")
+                    } else {
+                        // Show notification with quick edit action
+                        Log.d(TAG, "Showing notification for transaction ID: $rowId")
+                        showTransactionNotification(
+                            context = context,
+                            transactionId = rowId,
+                            merchant = entity.merchantName ?: "Unknown",
+                            amount = entity.amount,
+                            type = entity.transactionType.name,
+                            category = entity.category,
+                            bankName = entity.bankName,
+                            accountLast4 = entity.accountNumber,
+                            balance = entity.balanceAfter
+                        )
+                    }
                 } else {
-                    Log.d(TAG, "Transaction already exists (duplicate), skipping. Hash: $transactionHash")
+                    Log.d(TAG, "Transaction already exists (duplicate), skipping notification. Hash: $transactionHash")
                 }
                 
             } catch (e: Exception) {
@@ -136,47 +152,190 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         transactionId: Long,
         merchant: String,
         amount: java.math.BigDecimal,
-        type: String
+        type: String,
+        category: String? = null,
+        bankName: String? = null,
+        accountLast4: String? = null,
+        balance: java.math.BigDecimal? = null
     ) {
+        Log.d(TAG, "showTransactionNotification called - ID: $transactionId, Merchant: $merchant, Amount: $amount")
+        
         // Create notification channel for Android O and above
         createNotificationChannel(context)
         
         // Format amount
         val formattedAmount = CurrencyFormatter.formatCurrency(amount)
+        val notificationId = NOTIFICATION_ID_BASE + transactionId.toInt()
         
-        // Create intent for editing transaction
-        val editIntent = Intent(context, MainActivity::class.java).apply {
-            action = ACTION_EDIT_TRANSACTION
-            putExtra(EXTRA_TRANSACTION_ID, transactionId)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // Create RemoteInput for merchant name editing
+        val remoteInput = RemoteInput.Builder(NotificationActionReceiver.KEY_MERCHANT_REPLY)
+            .setLabel("Enter merchant name")
+            .setChoices(arrayOf(merchant)) // Provide current name as suggestion
+            .build()
+        
+        // Create PendingIntent for merchant update with RemoteInput
+        val merchantUpdateIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_UPDATE_MERCHANT
+            putExtra(NotificationActionReceiver.EXTRA_TRANSACTION_ID, transactionId)
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
         }
-        
-        val editPendingIntent = PendingIntent.getActivity(
+        val merchantUpdatePendingIntent = PendingIntent.getBroadcast(
             context,
-            transactionId.toInt(),
-            editIntent,
+            transactionId.toInt() + 1000,
+            merchantUpdateIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE // Mutable for RemoteInput
+        )
+        
+        // Create action with RemoteInput for merchant editing
+        val editMerchantAction = NotificationCompat.Action.Builder(
+            android.R.drawable.ic_menu_edit,
+            "✏️ Edit Name",
+            merchantUpdatePendingIntent
+        )
+            .addRemoteInput(remoteInput)
+            .build()
+        
+        // Create category actions for quick selection
+        val foodCategoryAction = createCategoryAction(context, transactionId, notificationId, "Food & Dining", "🍕")
+        val transportCategoryAction = createCategoryAction(context, transactionId, notificationId, "Transportation", "🚗")
+        val shoppingCategoryAction = createCategoryAction(context, transactionId, notificationId, "Shopping", "🛍️")
+        
+        // Create confirm action
+        val confirmIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_CONFIRM_TRANSACTION
+            putExtra(NotificationActionReceiver.EXTRA_TRANSACTION_ID, transactionId)
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+        }
+        val confirmPendingIntent = PendingIntent.getBroadcast(
+            context,
+            transactionId.toInt() + 4000,
+            confirmIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Build notification
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // TODO: Add proper icon
-            .setContentTitle("Transaction Added")
-            .setContentText("$merchant: $formattedAmount")
-            .setSubText(type)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(editPendingIntent)
-            .addAction(
-                R.drawable.ic_launcher_foreground, // TODO: Add edit icon
-                "Edit",
-                editPendingIntent
+        // Determine action verb based on transaction type
+        val actionVerb = when (type) {
+            "INCOME" -> "Received"
+            "EXPENSE" -> "Spent"
+            "TRANSFER" -> "Transfer"
+            else -> "Transaction"
+        }
+        
+        // Build clean title
+        val title = "$formattedAmount • $actionVerb"
+        
+        // Build content with merchant and category (show checkmark on selected)
+        val autoCategory = category ?: "Others"
+        val contentText = buildString {
+            append(merchant)
+            append(" • ")
+            append(autoCategory)
+            append(" ✓")  // Show checkmark to indicate this is selected
+        }
+        
+        // Build subtext with bank details
+        val subtextParts = mutableListOf<String>()
+        if (!bankName.isNullOrBlank()) {
+            if (!accountLast4.isNullOrBlank()) {
+                subtextParts.add("$bankName ••••$accountLast4")
+            } else {
+                subtextParts.add(bankName)
+            }
+        }
+        if (balance != null) {
+            subtextParts.add("Balance: ${CurrencyFormatter.formatCurrency(balance)}")
+        }
+        val subtext = if (subtextParts.isNotEmpty()) subtextParts.joinToString(" • ") else ""
+        
+        // Create category actions based on transaction type
+        // For income, show income-related categories
+        // For expense, show expense-related categories
+        val categoryActions = if (type == "INCOME") {
+            listOf(
+                createCategoryAction(
+                    context, transactionId, notificationId, "Salary",
+                    if (autoCategory == "Salary") "💼 Salary ✓" else "💼 Salary"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Income",
+                    if (autoCategory == "Income") "💰 Income ✓" else "💰 Income"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Refunds",
+                    if (autoCategory == "Refunds") "↩️ Refund ✓" else "↩️ Refund"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Others",
+                    if (autoCategory == "Others") "📂 Other ✓" else "📂 Other"
+                )
             )
+        } else {
+            // Expense, Transfer, or other types
+            listOf(
+                createCategoryAction(
+                    context, transactionId, notificationId, "Food & Dining",
+                    if (autoCategory == "Food & Dining") "🍕 Food ✓" else "🍕 Food"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Transportation",
+                    if (autoCategory == "Transportation") "🚗 Transport ✓" else "🚗 Transport"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Shopping",
+                    if (autoCategory == "Shopping") "🛍️ Shop ✓" else "🛍️ Shop"
+                ),
+                createCategoryAction(
+                    context, transactionId, notificationId, "Others",
+                    if (autoCategory == "Others") "📂 Other ✓" else "📂 Other"
+                )
+            )
+        }
+        
+        // Build expanded text for BigTextStyle - cleaner format
+        val expandedText = buildString {
+            append(contentText)
+            if (subtext.isNotEmpty()) {
+                append("\n")
+                append(subtext)
+            }
+        }
+        
+        // Build notification
+        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(contentText)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(false) // Don't auto-cancel so actions work properly
+            .setOnlyAlertOnce(true)
+            .addAction(editMerchantAction)
+        
+        // Add all category actions
+        categoryActions.forEach { action ->
+            notificationBuilder.addAction(action)
+        }
+        
+        notificationBuilder
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$merchant\n$formattedAmount\nTap to edit or swipe to dismiss")
+                    .bigText(expandedText)
+                    .setBigContentTitle(title)
             )
-            .build()
+            .setTimeoutAfter(600000) // Auto-dismiss after 10 minutes
+        
+        // Add subtext only if not empty
+        if (subtext.isNotEmpty()) {
+            notificationBuilder.setSubText(subtext)
+        }
+        
+        // Set color based on transaction type
+        if (type == "INCOME") {
+            notificationBuilder.setColor(context.getColor(android.R.color.holo_green_dark))
+        } else if (type == "EXPENSE") {
+            notificationBuilder.setColor(context.getColor(android.R.color.holo_red_dark))
+        }
+        
+        val notification = notificationBuilder.build()
         
         // Show notification
         try {
@@ -187,6 +346,33 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         } catch (e: SecurityException) {
             Log.e(TAG, "Missing notification permission", e)
         }
+    }
+    
+    private fun createCategoryAction(
+        context: Context,
+        transactionId: Long,
+        notificationId: Int,
+        category: String,
+        label: String
+    ): NotificationCompat.Action {
+        val intent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_UPDATE_CATEGORY
+            putExtra(NotificationActionReceiver.EXTRA_TRANSACTION_ID, transactionId)
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(NotificationActionReceiver.EXTRA_CATEGORY, category)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            transactionId.toInt() + category.hashCode(), // Unique request code
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        return NotificationCompat.Action.Builder(
+            android.R.drawable.ic_menu_compass,
+            label,
+            pendingIntent
+        ).build()
     }
     
     private fun getTimestampFromContentProvider(context: Context, sender: String, body: String): Long? {
