@@ -49,6 +49,18 @@
             </intent-filter>
         </receiver>
         
+        <!-- Notification Action Receiver for handling notification actions -->
+        <receiver
+            android:name=".receiver.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.pennywiseai.tracker.UPDATE_MERCHANT" />
+                <action android:name="com.pennywiseai.tracker.UPDATE_CATEGORY" />
+                <action android:name="com.pennywiseai.tracker.CONFIRM_TRANSACTION" />
+                <action android:name="com.pennywiseai.tracker.DELETE_TRANSACTION" />
+            </intent-filter>
+        </receiver>
+        
         <!-- Disable default WorkManager initialization -->
         <provider
             android:name="androidx.startup.InitializationProvider"
