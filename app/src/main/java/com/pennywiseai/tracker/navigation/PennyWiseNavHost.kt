@@ -15,6 +15,7 @@ import com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen
 import com.pennywiseai.tracker.ui.MainScreen
 import com.pennywiseai.tracker.ui.screens.PermissionScreen
 import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
+import com.pennywiseai.tracker.ui.screens.settings.FAQScreen
 import com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
@@ -78,6 +79,9 @@ fun PennyWiseNavHost(
                 },
                 onNavigateToUnrecognizedSms = {
                     navController.navigate(UnrecognizedSms)
+                },
+                onNavigateToFaq = {
+                    navController.navigate(Faq)
                 }
             )
         }
@@ -130,6 +134,19 @@ fun PennyWiseNavHost(
             popExitTransition = { ExitTransition.None }
         ) {
             UnrecognizedSmsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable<Faq>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            FAQScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

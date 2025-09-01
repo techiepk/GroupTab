@@ -77,11 +77,12 @@ fun MainScreen(
                     "unrecognized_sms" -> "Unrecognized Messages"
                     "manage_accounts" -> "Manage Accounts"
                     "add_account" -> "Add Account"
+                    "faq" -> "Help & FAQ"
                     else -> "PennyWise"
                 },
-                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms", "manage_accounts", "add_account"),
-                showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account"),
-                showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account"), // Hide on these screens
+                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"),
+                showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"),
+                showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"), // Hide on these screens
                 onBackClick = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate("settings") },
                 onDiscordClick = {
@@ -249,6 +250,9 @@ fun MainScreen(
                     },
                     onNavigateToManageAccounts = {
                         navController.navigate("manage_accounts")
+                    },
+                    onNavigateToFaq = {
+                        navController.navigate("faq")
                     }
                 )
             }
@@ -263,6 +267,14 @@ fun MainScreen(
             
             composable("unrecognized_sms") {
                 com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            
+            composable("faq") {
+                com.pennywiseai.tracker.ui.screens.settings.FAQScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

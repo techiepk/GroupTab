@@ -38,6 +38,7 @@ fun SettingsScreen(
     onNavigateToCategories: () -> Unit = {},
     onNavigateToUnrecognizedSms: () -> Unit = {},
     onNavigateToManageAccounts: () -> Unit = {},
+    onNavigateToFaq: () -> Unit = {},
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
@@ -490,6 +491,36 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
+                // Help & FAQ
+                ListItem(
+                    headlineContent = { 
+                        Text(
+                            text = "Help & FAQ",
+                            fontWeight = FontWeight.Medium
+                        )
+                    },
+                    supportingContent = { 
+                        Text("Frequently asked questions and help")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.Help,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.clickable { onNavigateToFaq() }
+                )
+                
+                HorizontalDivider()
+                
                 // GitHub Issues
                 ListItem(
                     headlineContent = { 

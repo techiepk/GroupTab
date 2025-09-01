@@ -35,3 +35,6 @@ data class AccountDetail(val bankName: String, val accountLast4: String)
 
 @Serializable
 object UnrecognizedSms
+
+@Serializable
+object Faq
