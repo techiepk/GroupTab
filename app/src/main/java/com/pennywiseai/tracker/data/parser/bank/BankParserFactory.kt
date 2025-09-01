@@ -35,7 +35,8 @@ object BankParserFactory {
         JioPayParser(),
         IPPBParser(),
         CityUnionBankParser(),
-        IndianOverseasBankParser()
+        IndianOverseasBankParser(),
+        AirtelPaymentsBankParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
