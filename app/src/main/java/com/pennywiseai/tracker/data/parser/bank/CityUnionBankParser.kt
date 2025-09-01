@@ -19,8 +19,9 @@ class CityUnionBankParser : BankParser() {
     
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
-        return normalizedSender.contains("CUB") || 
-               normalizedSender.contains("CUBLTD")
+        return normalizedSender.contains("CUBANK") || 
+               normalizedSender.contains("CUBLTD") ||
+               normalizedSender.contains("CUB")
     }
     
     override fun extractAmount(message: String): BigDecimal? {
