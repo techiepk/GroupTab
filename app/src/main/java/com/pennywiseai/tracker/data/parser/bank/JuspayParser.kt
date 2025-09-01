@@ -36,4 +36,26 @@ class JuspayParser : BankParser() {
         // charged to credit cards, so we treat them as credit transactions
         return TransactionType.CREDIT
     }
+    
+    override fun extractReference(message: String): String? {
+        // Pattern: "Transaction Reference Number is 1234567890"
+        val refPattern = Regex(
+            """Transaction\s+Reference\s+Number\s+is\s+(\d+)""",
+            RegexOption.IGNORE_CASE
+        )
+        refPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        // Alternative pattern: "Reference Number: 1234567890"
+        val altRefPattern = Regex(
+            """Reference\s+(?:Number|No)[:\s]+(\d+)""",
+            RegexOption.IGNORE_CASE
+        )
+        altRefPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        return super.extractReference(message)
+    }
 }
