@@ -259,9 +259,16 @@ class HomeViewModel @Inject constructor(
     /**
      * Checks for app updates using Google Play In-App Updates.
      * Should be called with the current activity context.
+     * @param activity The activity context
+     * @param snackbarHostState Optional SnackbarHostState for showing restart prompt
+     * @param scope Optional CoroutineScope for launching the snackbar
      */
-    fun checkForAppUpdate(activity: ComponentActivity) {
-        inAppUpdateManager.checkForUpdate(activity)
+    fun checkForAppUpdate(
+        activity: ComponentActivity,
+        snackbarHostState: androidx.compose.material3.SnackbarHostState? = null,
+        scope: kotlinx.coroutines.CoroutineScope? = null
+    ) {
+        inAppUpdateManager.checkForUpdate(activity, snackbarHostState, scope)
     }
     
     fun deleteTransaction(transaction: TransactionEntity) {

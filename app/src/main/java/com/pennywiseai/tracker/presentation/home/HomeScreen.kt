@@ -82,7 +82,11 @@ fun HomeScreen(
     // Check for app updates when the screen is first displayed
     LaunchedEffect(Unit) {
         activity?.let {
-            viewModel.checkForAppUpdate(it as ComponentActivity)
+            viewModel.checkForAppUpdate(
+                activity = it as ComponentActivity,
+                snackbarHostState = snackbarHostState,
+                scope = scope
+            )
         }
     }
     

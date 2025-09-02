@@ -3,6 +3,9 @@ package com.pennywiseai.tracker.data.manager
 import android.content.Context
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -13,6 +16,8 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,12 +31,23 @@ class InAppUpdateManager @Inject constructor(
 ) {
     private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(context)
     private var updateListener: InstallStateUpdatedListener? = null
+    private var snackbarHostState: SnackbarHostState? = null
+    private var coroutineScope: CoroutineScope? = null
     
     /**
      * Checks for available updates and starts the update flow if available.
      * Google Play handles all the UI - showing update dialog, progress, etc.
+     * @param activity The activity to start the update flow from
+     * @param snackbarHostState The SnackbarHostState to show restart prompt
+     * @param scope The CoroutineScope to launch the snackbar in
      */
-    fun checkForUpdate(activity: ComponentActivity) {
+    fun checkForUpdate(
+        activity: ComponentActivity,
+        snackbarHostState: SnackbarHostState? = null,
+        scope: CoroutineScope? = null
+    ) {
+        this.snackbarHostState = snackbarHostState
+        this.coroutineScope = scope
         val appUpdateInfoTask = appUpdateManager.appUpdateInfo
         
         appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
@@ -109,14 +125,31 @@ class InAppUpdateManager @Inject constructor(
     }
     
     /**
-     * Shows notification to complete the update.
-     * In a real app, this would show a Snackbar or notification.
-     * For now, we'll just complete the update automatically.
+     * Shows a Snackbar notification to complete the update.
+     * Prompts the user to restart the app to apply the update.
      */
     private fun popupSnackbarForCompleteUpdate() {
-        // In production, you'd show a Snackbar here asking user to restart
-        // For simplicity, we'll log and user will get the update on next app restart
-        Log.i(TAG, "Update downloaded. App will be updated on next restart.")
+        // If we have both SnackbarHostState and CoroutineScope, show the Snackbar
+        val hostState = snackbarHostState
+        val scope = coroutineScope
+        
+        if (hostState != null && scope != null) {
+            scope.launch {
+                val result = hostState.showSnackbar(
+                    message = "Update ready! Restart the app to apply changes.",
+                    actionLabel = "Restart",
+                    duration = SnackbarDuration.Indefinite
+                )
+                
+                if (result == SnackbarResult.ActionPerformed) {
+                    // User clicked restart, complete the update
+                    completeUpdate()
+                }
+            }
+        } else {
+            // Fallback to logging if Snackbar components aren't available
+            Log.i(TAG, "Update downloaded. App will be updated on next restart.")
+        }
     }
     
     /**

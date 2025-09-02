@@ -3,7 +3,9 @@ package com.pennywiseai.tracker.data.manager
 import android.app.Activity
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.SnackbarHostState
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -26,8 +28,13 @@ class InAppUpdateManager @Inject constructor(
     private val _updateState = MutableStateFlow(UpdateState.IDLE)
     val updateState: StateFlow<UpdateState> = _updateState
 
-    fun checkForUpdate(activity: ComponentActivity) {
-        // F-Droid handles updates
+    fun checkForUpdate(
+        activity: ComponentActivity,
+        snackbarHostState: SnackbarHostState? = null,
+        scope: CoroutineScope? = null
+    ) {
+        // F-Droid handles updates through its own system
+        // No Google Play Services available
     }
 
     fun startUpdate(activity: Activity) {
