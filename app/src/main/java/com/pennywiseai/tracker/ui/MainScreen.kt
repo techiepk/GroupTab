@@ -93,7 +93,7 @@ fun MainScreen(
         },
         bottomBar = {
             // Show bottom navigation only for main screens
-            if (currentRoute in listOf("home", "analytics", "chat")) {
+            if (currentRoute in listOf("home", "analytics")) {
                 PennyWiseBottomNavigation(navController = navController)
             }
         }
@@ -299,7 +299,13 @@ fun MainScreen(
                     }
                 )
             }
+            
+            // Chat is handled separately above, but we need this empty composable for navigation
+            composable("chat") {
+                // Empty - handled by ChatScreenWrapper
+            }
         }
+    }
     }
             
             // Spotlight Tutorial overlay - outside Scaffold to overlay everything
@@ -321,7 +327,6 @@ fun MainScreen(
             }
         }
     }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -335,6 +340,7 @@ private fun ChatScreenWrapper(
                 title = "PennyWise AI",
                 showBackButton = true,
                 showSettingsButton = true,
+                showDiscordButton = true,
                 onBackClick = { navController.popBackStack() },
                 onSettingsClick = { navController.navigate("settings") },
                 onDiscordClick = {
