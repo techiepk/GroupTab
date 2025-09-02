@@ -15,7 +15,8 @@ class SliceParser : BankParser() {
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
         return normalizedSender.contains("SLICE") || 
-               normalizedSender.contains("SLICEIT")
+               normalizedSender.contains("SLICEIT") ||
+               normalizedSender.contains("SLCEIT")  // Matches JD-SLCEIT-S and similar
     }
     
     override fun isTransactionMessage(message: String): Boolean {
