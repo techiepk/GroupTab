@@ -174,6 +174,20 @@ class ManageAccountsViewModel @Inject constructor(
         }
     }
     
+    fun updateCreditCard(bankName: String, accountLast4: String, newBalance: BigDecimal, newLimit: BigDecimal) {
+        viewModelScope.launch {
+            accountBalanceRepository.insertBalance(
+                AccountBalanceEntity(
+                    bankName = bankName,
+                    accountLast4 = accountLast4,
+                    balance = newBalance,
+                    creditLimit = newLimit,
+                    timestamp = LocalDateTime.now()
+                )
+            )
+        }
+    }
+    
     fun toggleAccountVisibility(bankName: String, accountLast4: String) {
         val key = "${bankName}_${accountLast4}"
         val hidden = _uiState.value.hiddenAccounts.toMutableSet()
