@@ -12,6 +12,7 @@ import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.manager.InAppUpdateManager
+import com.pennywiseai.tracker.data.manager.InAppReviewManager
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
@@ -35,6 +36,7 @@ class HomeViewModel @Inject constructor(
     private val accountBalanceRepository: AccountBalanceRepository,
     private val llmRepository: LlmRepository,
     private val inAppUpdateManager: InAppUpdateManager,
+    private val inAppReviewManager: InAppReviewManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
@@ -295,6 +297,18 @@ class HomeViewModel @Inject constructor(
     
     fun clearDeletedTransaction() {
         _deletedTransaction.value = null
+    }
+    
+    /**
+     * Checks if eligible for in-app review and shows if appropriate.
+     * Should be called with the current activity context.
+     */
+    fun checkForInAppReview(activity: ComponentActivity) {
+        viewModelScope.launch {
+            // Get current transaction count as additional eligibility factor
+            val transactionCount = transactionRepository.getAllTransactions().first().size
+            inAppReviewManager.checkAndShowReviewIfEligible(activity, transactionCount)
+        }
     }
     
     override fun onCleared() {

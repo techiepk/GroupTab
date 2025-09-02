@@ -200,6 +200,10 @@ dependencies {
     "standardImplementation"("com.google.android.play:app-update:2.1.0")
     "standardImplementation"("com.google.android.play:app-update-ktx:2.1.0")
     
+    // Google Play In-App Reviews (only for standard flavor)
+    "standardImplementation"("com.google.android.play:review:2.0.2")
+    "standardImplementation"("com.google.android.play:review-ktx:2.0.2")
+    
     testImplementation(libs.junit)
     testImplementation("androidx.room:room-testing:$roomVersion")
     androidTestImplementation("androidx.work:work-testing:$workVersion")

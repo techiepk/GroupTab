@@ -31,6 +31,11 @@ class UserPreferencesRepository @Inject constructor(
         val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
         val ACTIVE_DOWNLOAD_ID = longPreferencesKey("active_download_id")
         val SMS_SCAN_MONTHS = intPreferencesKey("sms_scan_months")
+        
+        // In-App Review preferences
+        val FIRST_LAUNCH_TIME = longPreferencesKey("first_launch_time")
+        val HAS_SHOWN_REVIEW_PROMPT = booleanPreferencesKey("has_shown_review_prompt")
+        val LAST_REVIEW_PROMPT_TIME = longPreferencesKey("last_review_prompt_time")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data
@@ -128,6 +133,32 @@ class UserPreferencesRepository @Inject constructor(
         return context.dataStore.data
             .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 }
             .first()
+    }
+    
+    // In-App Review methods
+    suspend fun getFirstLaunchTime(): Long? {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.FIRST_LAUNCH_TIME] }
+            .first()
+    }
+    
+    suspend fun setFirstLaunchTime(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.FIRST_LAUNCH_TIME] = timestamp
+        }
+    }
+    
+    suspend fun hasShownReviewPrompt(): Boolean {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.HAS_SHOWN_REVIEW_PROMPT] ?: false }
+            .first()
+    }
+    
+    suspend fun markReviewPromptShown() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_SHOWN_REVIEW_PROMPT] = true
+            preferences[PreferencesKeys.LAST_REVIEW_PROMPT_TIME] = System.currentTimeMillis()
+        }
     }
 }
 

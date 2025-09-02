@@ -79,14 +79,20 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
-    // Check for app updates when the screen is first displayed
+    // Check for app updates and reviews when the screen is first displayed
     LaunchedEffect(Unit) {
         activity?.let {
+            val componentActivity = it as ComponentActivity
+            
+            // Check for app updates
             viewModel.checkForAppUpdate(
-                activity = it as ComponentActivity,
+                activity = componentActivity,
                 snackbarHostState = snackbarHostState,
                 scope = scope
             )
+            
+            // Check for in-app review eligibility
+            viewModel.checkForInAppReview(componentActivity)
         }
     }
     
