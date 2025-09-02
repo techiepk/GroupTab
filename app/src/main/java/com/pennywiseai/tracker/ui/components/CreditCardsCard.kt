@@ -158,39 +158,46 @@ private fun CreditCardItem(
         Column(
             horizontalAlignment = Alignment.End
         ) {
-            // Show available credit limit with label
+            // Calculate available credit
+            val available = (card.creditLimit ?: BigDecimal.ZERO) - card.balance
+            val utilization = if (card.creditLimit != null && card.creditLimit > BigDecimal.ZERO) {
+                ((card.balance.toDouble() / card.creditLimit.toDouble()) * 100).toInt()
+            } else {
+                0
+            }
+            
+            // Show outstanding balance (what you owe)
             Column(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = CurrencyFormatter.formatCurrency(card.creditLimit ?: BigDecimal.ZERO),
+                    text = CurrencyFormatter.formatCurrency(card.balance),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (card.balance > BigDecimal.ZERO) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
                 Text(
-                    text = "Available Limit",
+                    text = "Outstanding",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
-            // Show outstanding if present with utilization
-            if (card.balance > BigDecimal.ZERO) {
-                val utilization = if (card.creditLimit != null && card.creditLimit > BigDecimal.ZERO) {
-                    ((card.balance.toDouble() / card.creditLimit.toDouble()) * 100).toInt()
-                } else {
-                    0
-                }
+            // Show available credit and utilization
+            if (card.creditLimit != null && card.creditLimit > BigDecimal.ZERO) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Used: ${CurrencyFormatter.formatCurrency(card.balance)} ($utilization%)",
+                    text = "${CurrencyFormatter.formatCurrency(available)} available ($utilization% used)",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = when {
                         utilization > 80 -> MaterialTheme.colorScheme.error
                         utilization > 50 -> Color(0xFFFF9800) // Orange
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.primary
                     }
                 )
             }

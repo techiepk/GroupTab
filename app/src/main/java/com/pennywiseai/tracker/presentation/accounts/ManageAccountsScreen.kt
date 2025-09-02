@@ -104,8 +104,8 @@ fun ManageAccountsScreen(
                 }
                 
                 // Separate regular accounts and credit cards
-                val regularAccounts = uiState.accounts.filter { it.creditLimit == null }
-                val creditCards = uiState.accounts.filter { it.creditLimit != null }
+                val regularAccounts = uiState.accounts.filter { !it.isCreditCard }
+                val creditCards = uiState.accounts.filter { it.isCreditCard }
                 
                 // Regular Bank Accounts Section
                 if (regularAccounts.isNotEmpty()) {
@@ -190,13 +190,13 @@ fun ManageAccountsScreen(
     
     // Update Balance Dialog
     if (showUpdateDialog && selectedAccount != null && selectedAccountEntity != null) {
-        if (selectedAccountEntity!!.creditLimit != null) {
+        if (selectedAccountEntity!!.isCreditCard) {
             // Credit Card Update Dialog
             UpdateCreditCardDialog(
                 bankName = selectedAccount!!.first,
                 accountLast4 = selectedAccount!!.second,
                 currentOutstanding = selectedAccountEntity!!.balance,
-                currentLimit = selectedAccountEntity!!.creditLimit!!,
+                currentLimit = selectedAccountEntity!!.creditLimit ?: BigDecimal.ZERO,
                 onDismiss = {
                     showUpdateDialog = false
                     selectedAccount = null

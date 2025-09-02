@@ -299,8 +299,8 @@ class FederalBankParser : BankParser() {
         return super.extractBalance(message)
     }
     
-    // The base class now handles credit limit extraction for credit card transactions
-    // No need to override parse() or extractCreditLimit() as the base implementation covers our patterns
+    // The base class now handles available limit extraction for credit card transactions
+    // No need to override parse() or extractAvailableLimit() as the base implementation covers our patterns
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()

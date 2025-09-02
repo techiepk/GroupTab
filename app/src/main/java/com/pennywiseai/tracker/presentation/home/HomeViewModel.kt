@@ -76,8 +76,8 @@ class HomeViewModel @Inject constructor(
                     !hiddenAccounts.contains(key)
                 }
                 // Separate credit cards from regular accounts
-                val regularAccounts = balances.filter { it.creditLimit == null }
-                val creditCards = balances.filter { it.creditLimit != null }
+                val regularAccounts = balances.filter { !it.isCreditCard }
+                val creditCards = balances.filter { it.isCreditCard }
                 
                 // Log all accounts for debugging
                 Log.d("HomeViewModel", "========================================")
@@ -110,7 +110,10 @@ class HomeViewModel @Inject constructor(
                     accountBalances = regularAccounts,  // Only regular bank accounts
                     creditCards = creditCards,           // Only credit cards
                     totalBalance = regularAccounts.sumOf { it.balance },
-                    totalAvailableCredit = creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }
+                    totalAvailableCredit = creditCards.sumOf { 
+                        // Available = Credit Limit - Outstanding Balance
+                        (it.creditLimit ?: BigDecimal.ZERO) - it.balance
+                    }
                 )
             }
         }
@@ -206,15 +209,18 @@ class HomeViewModel @Inject constructor(
                 }
                 
                 // Separate credit cards from regular accounts
-                val regularAccounts = visibleBalances.filter { it.creditLimit == null }
-                val creditCards = visibleBalances.filter { it.creditLimit != null }
+                val regularAccounts = visibleBalances.filter { !it.isCreditCard }
+                val creditCards = visibleBalances.filter { it.isCreditCard }
                 
                 // Update UI state
                 _uiState.value = _uiState.value.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
                     totalBalance = regularAccounts.sumOf { it.balance },
-                    totalAvailableCredit = creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }
+                    totalAvailableCredit = creditCards.sumOf { 
+                        // Available = Credit Limit - Outstanding Balance
+                        (it.creditLimit ?: BigDecimal.ZERO) - it.balance
+                    }
                 )
             }
         }

@@ -53,8 +53,8 @@ class SBIBankParser : BankParser() {
             // Extract credit card last 4 digits
             val cardLast4 = extractCreditCardLast4(smsBody) ?: parsed.accountLast4
             
-            // Extract credit limit for credit card messages
-            val creditLimit = extractCreditLimit(smsBody) ?: parsed.creditLimit
+            // Extract available limit for credit card messages
+            val creditLimit = extractAvailableLimit(smsBody) ?: parsed.creditLimit
             
             // Determine transaction type based on message content
             val transactionType = when {
@@ -88,7 +88,7 @@ class SBIBankParser : BankParser() {
         return parsed
     }
     
-    override fun extractCreditLimit(message: String): BigDecimal? {
+    override fun extractAvailableLimit(message: String): BigDecimal? {
         // Pattern: "available limit is Rs.1,235.00"
         val patterns = listOf(
             Regex("""available\s+limit\s+is\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
@@ -106,7 +106,7 @@ class SBIBankParser : BankParser() {
             }
         }
         
-        return super.extractCreditLimit(message)
+        return super.extractAvailableLimit(message)
     }
     
     override fun extractAmount(message: String): BigDecimal? {

@@ -294,7 +294,7 @@ class BankOfBarodaParser : BankParser() {
         }
     }
     
-    override fun extractCreditLimit(message: String): BigDecimal? {
+    override fun extractAvailableLimit(message: String): BigDecimal? {
         // Pattern for "Available credit limit is Rs 42,981.46"
         val creditLimitPattern = Regex(
             """Available\s+credit\s+limit\s+is\s+Rs\.?\s*([\d,]+(?:\.\d{2})?)""",
@@ -310,7 +310,7 @@ class BankOfBarodaParser : BankParser() {
         }
         
         // Fall back to base class patterns
-        return super.extractCreditLimit(message)
+        return super.extractAvailableLimit(message)
     }
     
     override fun isTransactionMessage(message: String): Boolean {

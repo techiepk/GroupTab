@@ -148,7 +148,8 @@ class ManageAccountsViewModel @Inject constructor(
                     accountLast4 = state.accountLast4,
                     balance = BigDecimal(state.balance),
                     creditLimit = creditLimit,
-                    timestamp = LocalDateTime.now()
+                    timestamp = LocalDateTime.now(),
+                    isCreditCard = (state.accountType == AccountType.CREDIT)
                 )
             )
             
@@ -182,7 +183,8 @@ class ManageAccountsViewModel @Inject constructor(
                     accountLast4 = accountLast4,
                     balance = newBalance,
                     creditLimit = newLimit,
-                    timestamp = LocalDateTime.now()
+                    timestamp = LocalDateTime.now(),
+                    isCreditCard = true
                 )
             )
         }

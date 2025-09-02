@@ -45,10 +45,10 @@ abstract class BankParser {
             return null
         }
         
-        // Extract credit limit for credit card transactions
-        val creditLimit = if (type == TransactionType.CREDIT) {
-            val limit = extractCreditLimit(smsBody)
-            android.util.Log.d("BankParser", "Credit card transaction detected. Extracted credit limit: $limit from message: ${smsBody.take(100)}")
+        // Extract available limit for credit card transactions
+        val availableLimit = if (type == TransactionType.CREDIT) {
+            val limit = extractAvailableLimit(smsBody)
+            android.util.Log.d("BankParser", "Credit card transaction detected. Extracted available limit: $limit from message: ${smsBody.take(100)}")
             limit
         } else {
             null
@@ -61,7 +61,7 @@ abstract class BankParser {
             reference = extractReference(smsBody),
             accountLast4 = extractAccountLast4(smsBody),
             balance = extractBalance(smsBody),
-            creditLimit = creditLimit,
+            creditLimit = availableLimit,  // TODO: This is actually available limit, will be fixed in SmsReaderWorker
             smsBody = smsBody,
             sender = sender,
             timestamp = timestamp,
@@ -279,9 +279,9 @@ abstract class BankParser {
     
     /**
      * Extracts credit card available limit from the message.
-     * This is different from balance - it represents the available credit limit.
+     * This is the remaining credit available to spend, NOT the total credit limit.
      */
-    protected open fun extractCreditLimit(message: String): BigDecimal? {
+    protected open fun extractAvailableLimit(message: String): BigDecimal? {
         android.util.Log.d("BankParser", "Attempting to extract credit limit from: ${message.take(150)}")
         
         // Common patterns for credit limit across banks

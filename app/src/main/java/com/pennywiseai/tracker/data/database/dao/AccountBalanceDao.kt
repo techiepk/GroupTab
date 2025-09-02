@@ -37,7 +37,8 @@ interface AccountBalanceDao {
             ab1.timestamp,
             ab1.transaction_id,
             ab1.created_at,
-            ab1.credit_limit
+            ab1.credit_limit,
+            ab1.is_credit_card
         FROM account_balances ab1
         INNER JOIN (
             SELECT bank_name, account_last4, MAX(timestamp) as max_timestamp
@@ -60,7 +61,8 @@ interface AccountBalanceDao {
             ab1.timestamp,
             ab1.transaction_id,
             ab1.created_at,
-            ab1.credit_limit
+            ab1.credit_limit,
+            ab1.is_credit_card
         FROM account_balances ab1
         INNER JOIN (
             SELECT bank_name, account_last4, MAX(timestamp) as max_timestamp

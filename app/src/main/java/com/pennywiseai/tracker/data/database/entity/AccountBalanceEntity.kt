@@ -38,6 +38,9 @@ data class AccountBalanceEntity(
     @ColumnInfo(name = "credit_limit")
     val creditLimit: BigDecimal? = null,
     
+    @ColumnInfo(name = "is_credit_card", defaultValue = "0")
+    val isCreditCard: Boolean = false,
+    
     @ColumnInfo(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
