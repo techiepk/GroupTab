@@ -56,13 +56,7 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
     val spotlightState by spotlightViewModel.spotlightState.collectAsState()
     
-    // Handle chat screen separately to avoid keyboard issues
-    if (currentRoute == "chat") {
-        ChatScreenWrapper(
-            navController = navController
-        )
-    } else {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
             topBar = {
             val context = LocalContext.current
@@ -72,6 +66,7 @@ fun MainScreen(
                     "transactions" -> "Transactions"
                     "subscriptions" -> "Subscriptions"
                     "analytics" -> "Analytics"
+                    "chat" -> "PennyWise AI"
                     "settings" -> "Settings"
                     "categories" -> "Categories"
                     "unrecognized_sms" -> "Unrecognized Messages"
@@ -80,7 +75,7 @@ fun MainScreen(
                     "faq" -> "Help & FAQ"
                     else -> "PennyWise"
                 },
-                showBackButton = currentRoute in listOf("settings", "subscriptions", "transactions", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"),
+                showBackButton = currentRoute in listOf("chat", "settings", "subscriptions", "transactions", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"),
                 showSettingsButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"),
                 showDiscordButton = currentRoute !in listOf("settings", "categories", "unrecognized_sms", "manage_accounts", "add_account", "faq"), // Hide on these screens
                 onBackClick = { navController.popBackStack() },
@@ -232,8 +227,12 @@ fun MainScreen(
             }
             
             composable("chat") {
-                // Empty composable - chat screen is rendered separately in ChatScreenWrapper
-                // to avoid keyboard handling issues with edge-to-edge display
+                com.pennywiseai.tracker.ui.screens.chat.ChatScreen(
+                    modifier = Modifier.imePadding(),
+                    onNavigateToSettings = {
+                        navController.navigate("settings")
+                    }
+                )
             }
             
             composable("settings") {
@@ -299,71 +298,26 @@ fun MainScreen(
                     }
                 )
             }
-            
-            // Chat is handled separately above, but we need this empty composable for navigation
-            composable("chat") {
-                // Empty - handled by ChatScreenWrapper
+        }
+    }
+    
+    // Spotlight Tutorial overlay - outside Scaffold to overlay everything
+    if (currentRoute == "home" && spotlightState.showTutorial && spotlightState.fabPosition != null) {
+        val homeViewModel: com.pennywiseai.tracker.presentation.home.HomeViewModel? = 
+            navController.currentBackStackEntry?.let { hiltViewModel(it) }
+        
+        SpotlightTutorial(
+            isVisible = true,
+            targetPosition = spotlightState.fabPosition,
+            message = "Tap here to scan your SMS messages for transactions",
+            onDismiss = {
+                spotlightViewModel.dismissTutorial()
+            },
+            onTargetClick = {
+                homeViewModel?.scanSmsMessages()
             }
-        }
+        )
     }
-    }
-            
-            // Spotlight Tutorial overlay - outside Scaffold to overlay everything
-            if (currentRoute == "home" && spotlightState.showTutorial && spotlightState.fabPosition != null) {
-                val homeViewModel: com.pennywiseai.tracker.presentation.home.HomeViewModel? = 
-                    navController.currentBackStackEntry?.let { hiltViewModel(it) }
-                
-                SpotlightTutorial(
-                    isVisible = true,
-                    targetPosition = spotlightState.fabPosition,
-                    message = "Tap here to scan your SMS messages for transactions",
-                    onDismiss = {
-                        spotlightViewModel.dismissTutorial()
-                    },
-                    onTargetClick = {
-                        homeViewModel?.scanSmsMessages()
-                    }
-                )
-            }
-        }
-    }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChatScreenWrapper(
-    navController: NavHostController
-) {
-    val context = LocalContext.current
-    Scaffold(
-        topBar = {
-            PennyWiseTopAppBar(
-                title = "PennyWise AI",
-                showBackButton = true,
-                showSettingsButton = true,
-                showDiscordButton = true,
-                onBackClick = { navController.popBackStack() },
-                onSettingsClick = { navController.navigate("settings") },
-                onDiscordClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/H3xWeMWjKQ"))
-                    context.startActivity(intent)
-                }
-            )
-        },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .consumeWindowInsets(paddingValues)
-                .imePadding()
-        ) {
-            com.pennywiseai.tracker.ui.screens.chat.ChatScreen(
-                onNavigateToSettings = {
-                    navController.navigate("settings")
-                }
-            )
-        }
     }
 }
 
