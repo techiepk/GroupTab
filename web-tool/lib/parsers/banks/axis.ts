@@ -25,11 +25,7 @@ const AxisConfig: BankConfig = {
     'verification code',
     'has requested money',
     'will be debited',
-    'on approval',
-    'due',
-    'overdue',
-    'bill',
-    'credit card'
+    'on approval'
   ]
 }
 
@@ -138,27 +134,14 @@ export class AxisBankParser extends BankParser {
   protected isTransactionMessage(message: string): boolean {
     const lowerMessage = message.toLowerCase()
 
-    // Skip credit card payment confirmation messages
+    // Skip Axis-specific payment confirmation messages (payment TO card, not spending)
     if (lowerMessage.includes('payment') && 
         lowerMessage.includes('has been received') && 
-        lowerMessage.includes('towards your axis bank credit card')) {
+        lowerMessage.includes('towards your axis bank')) {
       return false
     }
 
-    // Skip UPI payment request messages (not actual transactions)
-    if (lowerMessage.includes('has requested money') ||
-        lowerMessage.includes('will be debited') ||
-        lowerMessage.includes('on approval')) {
-      return false
-    }
-
-    // Skip credit card bill due/overdue reminder messages
-    if ((lowerMessage.includes(' due ') || lowerMessage.includes(' overdue')) &&
-        (lowerMessage.includes('bill') || lowerMessage.includes('payment')) &&
-        (lowerMessage.includes('credit card') || lowerMessage.includes(' cc '))) {
-      return false
-    }
-
+    // Base class handles common payment reminders and other non-transaction messages
     return super.isTransactionMessage(message)
   }
 }

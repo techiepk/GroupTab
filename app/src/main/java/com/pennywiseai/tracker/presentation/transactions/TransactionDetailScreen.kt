@@ -800,6 +800,15 @@ private fun EditableExtractedInfoCard(
             
             Spacer(modifier = Modifier.height(Spacing.sm))
             
+            // Account Number
+            AccountNumberField(
+                accountNumber = transaction.accountNumber,
+                onAccountNumberChange = { viewModel.updateAccountNumber(it) },
+                viewModel = viewModel
+            )
+            
+            Spacer(modifier = Modifier.height(Spacing.sm))
+            
             // Recurring checkbox
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1004,5 +1013,109 @@ private fun DateTimeField(
                 }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AccountNumberField(
+    accountNumber: String?,
+    onAccountNumberChange: (String?) -> Unit,
+    viewModel: TransactionDetailViewModel
+) {
+    val availableAccounts by viewModel.availableAccounts.collectAsStateWithLifecycle()
+    var expanded by remember { mutableStateOf(false) }
+    var selectedAccount by remember(accountNumber) { 
+        mutableStateOf(
+            availableAccounts.find { 
+                accountNumber?.endsWith(it.accountLast4) == true 
+            }?.displayName ?: accountNumber ?: ""
+        )
+    }
+    
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedAccount,
+            onValueChange = { newValue ->
+                selectedAccount = newValue
+                // If manually typing, update the account number directly
+                if (!availableAccounts.any { it.displayName == newValue }) {
+                    onAccountNumberChange(newValue.ifEmpty { null })
+                }
+            },
+            label = { Text("Account (Optional)") },
+            leadingIcon = {
+                Icon(
+                    if (availableAccounts.any { it.displayName == selectedAccount && it.isCreditCard }) {
+                        Icons.Default.CreditCard
+                    } else {
+                        Icons.Default.AccountBalance
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            trailingIcon = { 
+                Row {
+                    // Clear button if there's text
+                    if (selectedAccount.isNotEmpty()) {
+                        IconButton(
+                            onClick = { 
+                                selectedAccount = ""
+                                onAccountNumberChange(null)
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryEditable),
+            singleLine = true,
+            placeholder = { Text("Select or enter account number") }
+        )
+        
+        if (availableAccounts.isNotEmpty()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                availableAccounts.forEach { account ->
+                    DropdownMenuItem(
+                        text = { 
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    if (account.isCreditCard) Icons.Default.CreditCard 
+                                    else Icons.Default.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(account.displayName)
+                            }
+                        },
+                        onClick = {
+                            selectedAccount = account.displayName
+                            onAccountNumberChange(account.accountLast4)
+                            expanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
     }
 }

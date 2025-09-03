@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.CategoryRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
@@ -20,6 +21,7 @@ class TransactionDetailViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val merchantMappingRepository: MerchantMappingRepository,
     private val categoryRepository: CategoryRepository,
+    private val accountBalanceRepository: AccountBalanceRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     
@@ -76,6 +78,31 @@ class TransactionDetailViewModel @Inject constructor(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+    
+    // Available accounts for linking
+    val availableAccounts = accountBalanceRepository.getAllLatestBalances()
+        .map { balances ->
+            balances.map { balance ->
+                AccountInfo(
+                    bankName = balance.bankName,
+                    accountLast4 = balance.accountLast4,
+                    displayName = "${balance.bankName} ••••${balance.accountLast4}",
+                    isCreditCard = balance.isCreditCard
+                )
+            }.distinctBy { "${it.bankName}_${it.accountLast4}" }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
+    data class AccountInfo(
+        val bankName: String,
+        val accountLast4: String,
+        val displayName: String,
+        val isCreditCard: Boolean
     )
     
     fun loadTransaction(transactionId: Long) {
@@ -164,6 +191,12 @@ class TransactionDetailViewModel @Inject constructor(
     fun updateRecurringStatus(isRecurring: Boolean) {
         _editableTransaction.update { current ->
             current?.copy(isRecurring = isRecurring)
+        }
+    }
+    
+    fun updateAccountNumber(accountNumber: String?) {
+        _editableTransaction.update { current ->
+            current?.copy(accountNumber = if (accountNumber.isNullOrEmpty()) null else accountNumber)
         }
     }
     

@@ -160,27 +160,14 @@ class AxisBankParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
         
-        // Skip credit card payment confirmation messages (payment TO credit card, not spending)
+        // Skip Axis-specific payment confirmation messages (payment TO card, not spending)
         if (lowerMessage.contains("payment") && 
             lowerMessage.contains("has been received") && 
-            lowerMessage.contains("towards your axis bank credit card")) {
+            lowerMessage.contains("towards your axis bank")) {
             return false
         }
         
-        // Skip UPI payment request messages (not actual transactions)
-        if (lowerMessage.contains("has requested money") ||
-            lowerMessage.contains("will be debited") ||
-            lowerMessage.contains("on approval")) {
-            return false
-        }
-        
-        // Skip credit card bill due/overdue reminder messages
-        if ((lowerMessage.contains(" due ") || lowerMessage.contains(" overdue")) &&
-            (lowerMessage.contains("bill") || lowerMessage.contains("payment")) &&
-            (lowerMessage.contains("credit card") || lowerMessage.contains(" cc "))) {
-            return false
-        }
-        
+        // Base class handles common payment reminders and other non-transaction messages
         return super.isTransactionMessage(message)
     }
     

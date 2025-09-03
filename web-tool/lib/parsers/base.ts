@@ -93,6 +93,17 @@ export abstract class BankParser {
       return false
     }
 
+    // Skip payment reminder/due messages (common across all banks)
+    if (lowerMessage.includes('is due') ||
+        lowerMessage.includes('min amount due') ||
+        lowerMessage.includes('minimum amount due') ||
+        lowerMessage.includes('in arrears') ||
+        lowerMessage.includes('is overdue') ||
+        lowerMessage.includes('ignore if paid') ||
+        (lowerMessage.includes('pls pay') && lowerMessage.includes('min of'))) {
+      return false
+    }
+
     // Must contain transaction keywords
     const transactionKeywords = [
       ...this.config.transactionType.expense,

@@ -100,6 +100,17 @@ abstract class BankParser {
             return false
         }
         
+        // Skip payment reminder/due messages
+        if (lowerMessage.contains("is due") ||
+            lowerMessage.contains("min amount due") ||
+            lowerMessage.contains("minimum amount due") ||
+            lowerMessage.contains("in arrears") ||
+            lowerMessage.contains("is overdue") ||
+            lowerMessage.contains("ignore if paid") ||
+            (lowerMessage.contains("pls pay") && lowerMessage.contains("min of"))) {
+            return false
+        }
+        
         // Must contain transaction keywords
         val transactionKeywords = listOf(
             "debited", "credited", "withdrawn", "deposited",
