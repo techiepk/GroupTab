@@ -37,9 +37,23 @@ class HDFCBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Check for ATM withdrawals first
-        if (message.contains("withdrawn", ignoreCase = true) || 
-            message.contains("ATM", ignoreCase = true)) {
+        // Check for ATM withdrawals - extract location
+        if (message.contains("withdrawn", ignoreCase = true)) {
+            // Pattern: "At +18 Random Location" or "At ATM Location On"
+            val atLocationPattern = Regex("""At\s+\+?([^O]+?)\s+On""", RegexOption.IGNORE_CASE)
+            atLocationPattern.find(message)?.let { match ->
+                val location = match.groupValues[1].trim()
+                return if (location.isNotEmpty()) {
+                    "ATM at ${cleanMerchantName(location)}"
+                } else {
+                    "ATM"
+                }
+            }
+            return "ATM" // Fallback if no location found
+        }
+        
+        // Check for generic ATM mentions (without "withdrawn")
+        if (message.contains("ATM", ignoreCase = true)) {
             return "ATM"
         }
         
@@ -245,6 +259,18 @@ class HDFCBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
+        // Pattern for "Card x####" format in withdrawals
+        val cardPattern = Regex("""Card\s+x(\d{4})""", RegexOption.IGNORE_CASE)
+        cardPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
+        // Pattern for "BLOCK DC ####" format
+        val blockDCPattern = Regex("""BLOCK\s+DC\s+(\d{4})""", RegexOption.IGNORE_CASE)
+        blockDCPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+        
         // Additional pattern for "HDFC Bank XXNNNN" format (without A/c prefix)
         val hdfcBankPattern = Regex("""HDFC\s+Bank\s+([X\*]*\d+)""", RegexOption.IGNORE_CASE)
         hdfcBankPattern.find(message)?.let { match ->
