@@ -195,20 +195,20 @@ fun AnalyticsScreen(
         }
     }
     
-    // Chat FAB
-    SmallFloatingActionButton(
-        onClick = onNavigateToChat,
-        modifier = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(Dimensions.Padding.content),
-        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.Chat,
-            contentDescription = "Open AI Assistant"
-        )
-    }
+//    // Chat FAB
+//    SmallFloatingActionButton(
+//        onClick = onNavigateToChat,
+//        modifier = Modifier
+//            .align(Alignment.BottomEnd)
+//            .padding(Dimensions.Padding.content),
+//        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+//        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+//    ) {
+//        Icon(
+//            imageVector = Icons.AutoMirrored.Filled.Chat,
+//            contentDescription = "Open AI Assistant"
+//        )
+//    }
     }
 }
 
