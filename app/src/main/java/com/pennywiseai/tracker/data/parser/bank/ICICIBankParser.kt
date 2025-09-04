@@ -37,12 +37,12 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
-        // Pattern 1: "INR xxx.xx spent" (for card transactions)
-        val inrSpentPattern = Regex(
-            """INR\s+([0-9,]+(?:\.\d{2})?)\s+spent""",
+        // Pattern 1: "Rs xxx.xx spent" or "INR xxx.xx spent" (for card transactions)
+        val spentPattern = Regex(
+            """(?:Rs\.?|INR)\s+([0-9,]+(?:\.\d{2})?)\s+spent""",
             RegexOption.IGNORE_CASE
         )
-        inrSpentPattern.find(message)?.let { match ->
+        spentPattern.find(message)?.let { match ->
             val amount = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(amount)
@@ -112,9 +112,9 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: Card transactions - "on DD-Mon-YY on MERCHANT NAME. Avl"
+        // Pattern 1: Card transactions - "on DD-Mon-YY at MERCHANT NAME. Avl" or "on DD-Mon-YY on MERCHANT NAME"
         val cardMerchantPattern = Regex(
-            """on\s+\d{1,2}-\w{3}-\d{2}\s+on\s+([^.]+?)(?:\.|$)""",
+            """on\s+\d{1,2}-\w{3}-\d{2}\s+(?:at|on)\s+([^.]+?)(?:\.|\s+Avl|$)""",
             RegexOption.IGNORE_CASE
         )
         cardMerchantPattern.find(message)?.let { match ->
