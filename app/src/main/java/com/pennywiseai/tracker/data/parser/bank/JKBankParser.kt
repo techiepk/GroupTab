@@ -206,7 +206,13 @@ class JKBankParser : BankParser() {
                 merchant.contains("NEFT", ignoreCase = true) -> "NEFT Transfer"
                 merchant.contains("IMPS", ignoreCase = true) -> "IMPS Transfer"
                 merchant.contains("eTFR", ignoreCase = true) -> "Transfer"
-                merchant.contains("mTFR", ignoreCase = true) -> "Mobile Transfer"
+                merchant.contains("mTFR", ignoreCase = true) -> {
+                    // Extract the actual recipient name from mTFR/phone/NAME pattern
+                    val mtfrMatch = Regex("""mTFR/\d+/(.+)""", RegexOption.IGNORE_CASE).find(merchant)
+                    mtfrMatch?.let { 
+                        cleanMerchantName(it.groupValues[1].trim())
+                    } ?: "Mobile Transfer"
+                }
                 merchant.contains("TIN", ignoreCase = true) -> "Tax Information Network"
                 merchant.contains("CHRGS", ignoreCase = true) -> "Bank Charges"
                 else -> cleanMerchantName(merchant.substringBefore("/"))
@@ -398,10 +404,10 @@ class JKBankParser : BankParser() {
     override fun extractBalance(message: String): BigDecimal? {
         // JK Bank specific balance patterns
         val balancePatterns = listOf(
-            // Available Bal is INR XXXX  
-            Regex("""Available\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
-            // A/C Bal is INR XXXX
-            Regex("""A/C\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
+            // Available Bal is INR XXXX Cr/Dr
+            Regex("""Available\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)\s*(?:Cr|Dr)?""", RegexOption.IGNORE_CASE),
+            // A/C Bal is INR XXXX Cr/Dr
+            Regex("""A/C\s+Bal\s+is\s+INR\s*([0-9,]+(?:\.\d{2})?)\s*(?:Cr|Dr)?""", RegexOption.IGNORE_CASE),
             // Avl Bal: Rs.XXXX
             Regex("""Avl\s+Bal[:\s]+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             // Balance: Rs.XXXX
