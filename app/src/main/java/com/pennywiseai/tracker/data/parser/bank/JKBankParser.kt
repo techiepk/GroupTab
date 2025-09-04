@@ -196,7 +196,13 @@ class JKBankParser : BankParser() {
             val merchant = match.groupValues[1].trim()
             
             return when {
-                merchant.contains("RTGS", ignoreCase = true) -> "RTGS Transfer"
+                // Check for specific institutions first
+                merchant.contains("INDIAN CLEARING CORPO", ignoreCase = true) -> "Indian Clearing Corporation"
+                merchant.contains("CLEARING CORPO", ignoreCase = true) -> "Clearing Corporation"
+                merchant.contains("NSE CLEARING", ignoreCase = true) -> "NSE Clearing"
+                merchant.contains("BSE CLEARING", ignoreCase = true) -> "BSE Clearing"
+                // Generic transfer types
+                merchant.contains("RTGS", ignoreCase = true) && !merchant.contains("CLEARING", ignoreCase = true) -> "RTGS Transfer"
                 merchant.contains("NEFT", ignoreCase = true) -> "NEFT Transfer"
                 merchant.contains("IMPS", ignoreCase = true) -> "IMPS Transfer"
                 merchant.contains("eTFR", ignoreCase = true) -> "Transfer"
@@ -297,6 +303,22 @@ class JKBankParser : BankParser() {
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
+        
+        // Check for investment-related transactions first
+        if (lowerMessage.contains("clearing corpo") || 
+            lowerMessage.contains("indian clearing") ||
+            lowerMessage.contains("nse clearing") ||
+            lowerMessage.contains("bse clearing") ||
+            lowerMessage.contains("iccl") ||
+            lowerMessage.contains("nsccl")) {
+            // Clearing corporations handle investment transactions
+            // Credits are redemptions/dividends, debits are investments
+            return when {
+                lowerMessage.contains("credited") -> TransactionType.INVESTMENT
+                lowerMessage.contains("debited") -> TransactionType.INVESTMENT
+                else -> null
+            }
+        }
         
         return when {
             // JK Bank specific patterns
@@ -426,6 +448,19 @@ class JKBankParser : BankParser() {
             lowerMessage.contains("payment request") ||
             lowerMessage.contains("collect request") ||
             lowerMessage.contains("requesting payment")) {
+            return false
+        }
+        
+        // Skip RTGS/NEFT/IMPS confirmation messages
+        // These are confirmations of transactions that already happened
+        // Example: "Your RTGS Txn with UTR ... has been credited on ..."
+        if (lowerMessage.contains("your rtgs txn") && lowerMessage.contains("has been credited")) {
+            return false
+        }
+        if (lowerMessage.contains("your neft txn") && lowerMessage.contains("has been credited")) {
+            return false
+        }
+        if (lowerMessage.contains("your imps txn") && lowerMessage.contains("has been credited")) {
             return false
         }
         
