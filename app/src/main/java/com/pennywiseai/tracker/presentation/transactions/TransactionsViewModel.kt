@@ -54,6 +54,9 @@ class TransactionsViewModel @Inject constructor(
     private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
     
+    // Track if initial filters have been applied to prevent resetting on back navigation
+    private var hasAppliedInitialFilters = false
+    
     // Categories flow - will be used to map category names to colors
     val categories: StateFlow<Map<String, CategoryEntity>> = categoryRepository.getAllCategories()
         .map { categoryList ->
@@ -162,6 +165,41 @@ class TransactionsViewModel @Inject constructor(
     
     fun clearDeletedTransaction() {
         _deletedTransaction.value = null
+    }
+    
+    fun applyInitialFilters(
+        category: String?,
+        merchant: String?, 
+        period: String?
+    ) {
+        if (!hasAppliedInitialFilters) {
+            category?.let { 
+                val decoded = if (it.contains("+") || it.contains("%")) {
+                    java.net.URLDecoder.decode(it, "UTF-8")
+                } else it
+                setCategoryFilter(decoded)
+            }
+            
+            merchant?.let { 
+                val decoded = if (it.contains("+") || it.contains("%")) {
+                    java.net.URLDecoder.decode(it, "UTF-8")
+                } else it
+                updateSearchQuery(decoded)
+            }
+            
+            period?.let { periodName ->
+                val timePeriod = when (periodName) {
+                    "THIS_MONTH" -> TimePeriod.THIS_MONTH
+                    "LAST_MONTH" -> TimePeriod.LAST_MONTH
+                    "CURRENT_FY" -> TimePeriod.CURRENT_FY
+                    "ALL" -> TimePeriod.ALL
+                    else -> null
+                }
+                timePeriod?.let { selectPeriod(it) }
+            }
+            
+            hasAppliedInitialFilters = true
+        }
     }
     
     private fun getFilteredTransactions(

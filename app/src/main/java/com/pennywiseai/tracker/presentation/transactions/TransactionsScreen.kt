@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,37 +84,18 @@ fun TransactionsScreen(
         categoryFilter != null
     ).count { it }
     
-    // Initialize ViewModel with navigation arguments
+    // Remember scroll position across navigation
+    val listState = rememberSaveable(saver = LazyListState.Saver) {
+        LazyListState()
+    }
+    
+    // Apply initial filters only once (not when returning from navigation)
     LaunchedEffect(Unit) {
-        initialCategory?.let { 
-            println("DEBUG: initialCategory = '$it'")
-            val decoded = if (it.contains("+") || it.contains("%")) {
-                java.net.URLDecoder.decode(it, "UTF-8")
-            } else {
-                it
-            }
-            println("DEBUG: decoded category = '$decoded'")
-            viewModel.setCategoryFilter(decoded) 
-        }
-        initialMerchant?.let { 
-            val decoded = if (it.contains("+") || it.contains("%")) {
-                java.net.URLDecoder.decode(it, "UTF-8")
-            } else {
-                it
-            }
-            viewModel.updateSearchQuery(decoded) 
-        }
-        initialPeriod?.let { periodName ->
-            // Convert period name string to TimePeriod enum
-            val period = when (periodName) {
-                "THIS_MONTH" -> TimePeriod.THIS_MONTH
-                "LAST_MONTH" -> TimePeriod.LAST_MONTH
-                "CURRENT_FY" -> TimePeriod.CURRENT_FY
-                "ALL" -> TimePeriod.ALL
-                else -> null
-            }
-            period?.let { viewModel.selectPeriod(it) }
-        }
+        viewModel.applyInitialFilters(
+            initialCategory,
+            initialMerchant,
+            initialPeriod
+        )
     }
     
     // Handle delete undo snackbar
@@ -452,6 +436,7 @@ fun TransactionsScreen(
             }
             else -> {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         horizontal = Dimensions.Padding.content,
