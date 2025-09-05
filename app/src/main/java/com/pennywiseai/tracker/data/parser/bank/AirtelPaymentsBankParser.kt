@@ -18,8 +18,8 @@ class AirtelPaymentsBankParser : BankParser() {
     
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
-        return normalizedSender.contains("AIRBNK") || 
-               normalizedSender.contains("AIRTEL")
+        // Only handle Airtel Payments Bank, not prepaid recharges (Airtel-S)
+        return normalizedSender.contains("AIRBNK")
     }
     
     override fun extractAmount(message: String): BigDecimal? {

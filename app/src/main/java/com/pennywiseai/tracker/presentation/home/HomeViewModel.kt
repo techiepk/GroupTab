@@ -75,8 +75,8 @@ class HomeViewModel @Inject constructor(
                     val key = "${account.bankName}_${account.accountLast4}"
                     !hiddenAccounts.contains(key)
                 }
-                // Separate credit cards from regular accounts
-                val regularAccounts = balances.filter { !it.isCreditCard }
+                // Separate credit cards from regular accounts (hide zero balance accounts)
+                val regularAccounts = balances.filter { !it.isCreditCard && it.balance != BigDecimal.ZERO }
                 val creditCards = balances.filter { it.isCreditCard }
                 
                 // Log all accounts for debugging
@@ -208,8 +208,8 @@ class HomeViewModel @Inject constructor(
                     !hiddenAccounts.contains(key)
                 }
                 
-                // Separate credit cards from regular accounts
-                val regularAccounts = visibleBalances.filter { !it.isCreditCard }
+                // Separate credit cards from regular accounts (hide zero balance accounts)
+                val regularAccounts = visibleBalances.filter { !it.isCreditCard && it.balance != BigDecimal.ZERO }
                 val creditCards = visibleBalances.filter { it.isCreditCard }
                 
                 // Update UI state
