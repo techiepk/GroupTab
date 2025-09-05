@@ -63,8 +63,9 @@ class JKBankParser : BankParser() {
     ): String {
         val normalizedAmount = transaction.amount.setScale(2, RoundingMode.HALF_UP)
         
-        // Extract JK Bank specific reference and transaction time
-        val reference = extractJKBankReference(smsBody)
+        // Use the already parsed reference to ensure consistency
+        // This avoids issues where extractJKBankReference might have different patterns than extractReference
+        val reference = transaction.reference
         val transactionTime = extractTransactionTime(smsBody)
         
         // Build hash based on what's available (in order of preference)
