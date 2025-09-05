@@ -272,13 +272,10 @@ class SmsReaderWorker @AssistedInject constructor(
                             if (rowId != -1L) {
                                 savedCount++
                                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
-                            } else {
-                                Log.d(TAG, "Transaction already exists (duplicate), skipping transaction: ${entity.transactionHash}")
-                            }
-                            
-                            // ALWAYS save balance/credit limit information, even for duplicate transactions
-                            // This ensures credit limits and balances are always up-to-date
-                            if (parsedTransaction.bankName != null && parsedTransaction.accountLast4 != null) {
+                                
+                                // Only save balance/credit limit information for NEW transactions (not duplicates)
+                                // This prevents incorrect balance accumulation from duplicate SMS messages
+                                if (parsedTransaction.bankName != null && parsedTransaction.accountLast4 != null) {
                                 
                                 // Determine if this is a credit card based on transaction type
                                 val isCreditCard = (parsedTransaction.type == TransactionType.CREDIT)
@@ -343,6 +340,9 @@ class SmsReaderWorker @AssistedInject constructor(
                                     "Saved balance update for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}"
                                 }
                                 Log.d(TAG, logMsg)
+                            }
+                            } else {
+                                Log.d(TAG, "Transaction already exists (duplicate), skipping both transaction and balance update: ${entity.transactionHash}")
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error saving transaction: ${e.message}")
