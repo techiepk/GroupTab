@@ -294,7 +294,7 @@ abstract class BankParser {
      * This is the remaining credit available to spend, NOT the total credit limit.
      */
     protected open fun extractAvailableLimit(message: String): BigDecimal? {
-        android.util.Log.d("BankParser", "Attempting to extract credit limit from: ${message.take(150)}")
+        android.util.Log.d("BankParser", "Attempting to extract credit limit")
         
         // Common patterns for credit limit across banks
         val creditLimitPatterns = listOf(
@@ -315,13 +315,13 @@ abstract class BankParser {
         for ((index, pattern) in creditLimitPatterns.withIndex()) {
             pattern.find(message)?.let { match ->
                 val limitStr = match.groupValues[1].replace(",", "")
-                android.util.Log.d("BankParser", "Pattern $index matched! Found credit limit string: $limitStr")
+                android.util.Log.d("BankParser", "Credit limit pattern matched")
                 return try {
                     val limit = BigDecimal(limitStr)
-                    android.util.Log.d("BankParser", "Successfully parsed credit limit: $limit")
+                    android.util.Log.d("BankParser", "Credit limit parsed successfully")
                     limit
                 } catch (e: NumberFormatException) {
-                    android.util.Log.e("BankParser", "Failed to parse credit limit: $limitStr", e)
+                    android.util.Log.e("BankParser", "Failed to parse credit limit", e)
                     null
                 }
             }
@@ -353,7 +353,7 @@ abstract class BankParser {
         // If message contains account patterns, it's NOT a card transaction
         for (pattern in accountPatterns) {
             if (lowerMessage.contains(pattern)) {
-                android.util.Log.d("BankParser", "Account transaction detected (NOT card) via pattern: '$pattern' in message: ${message.take(100)}")
+                android.util.Log.d("BankParser", "Account transaction detected (NOT card)")
                 return false
             }
         }
@@ -373,7 +373,7 @@ abstract class BankParser {
         // Check for card patterns
         for (pattern in cardPatterns) {
             if (lowerMessage.contains(pattern)) {
-                android.util.Log.d("BankParser", "Card detected via pattern: '$pattern' in message: ${message.take(100)}")
+                android.util.Log.d("BankParser", "Card detected")
                 return true
             }
         }
@@ -382,11 +382,11 @@ abstract class BankParser {
         // BUT only if we haven't already excluded it as an account transaction
         val maskedCardRegex = Regex("""(?:xx|XX|\*{2,})?\d{4}""")
         if (lowerMessage.contains("ending") && maskedCardRegex.containsMatchIn(message)) {
-            android.util.Log.d("BankParser", "Card detected via 'ending' pattern in message: ${message.take(100)}")
+            android.util.Log.d("BankParser", "Card detected via 'ending' pattern")
             return true
         }
         
-        android.util.Log.d("BankParser", "No card pattern found in message: ${message.take(100)}")
+        android.util.Log.d("BankParser", "No card pattern found")
         return false
     }
     

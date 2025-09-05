@@ -299,10 +299,7 @@ class TransactionDetailViewModel @Inject constructor(
         // Use the original SMS sender if available
         val sender = txn.smsSender ?: ""
         
-        android.util.Log.d("TransactionDetailVM", "Generating report URL for transaction:")
-        android.util.Log.d("TransactionDetailVM", "SMS Body: ${smsBody.take(100)}...")
-        android.util.Log.d("TransactionDetailVM", "SMS Sender: $sender")
-        android.util.Log.d("TransactionDetailVM", "Bank Name: ${txn.bankName}")
+        android.util.Log.d("TransactionDetailVM", "Generating report URL for transaction")
         
         // URL encode the parameters
         val encodedMessage = java.net.URLEncoder.encode(smsBody, "UTF-8")

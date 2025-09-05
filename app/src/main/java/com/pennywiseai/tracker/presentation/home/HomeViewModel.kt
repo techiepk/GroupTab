@@ -79,32 +79,8 @@ class HomeViewModel @Inject constructor(
                 val regularAccounts = balances.filter { !it.isCreditCard && it.balance != BigDecimal.ZERO }
                 val creditCards = balances.filter { it.isCreditCard }
                 
-                // Log all accounts for debugging
-                Log.d("HomeViewModel", "========================================")
-                Log.d("HomeViewModel", "Loading ${balances.size} account(s) total:")
-                Log.d("HomeViewModel", "- Regular accounts: ${regularAccounts.size}")
-                Log.d("HomeViewModel", "- Credit cards: ${creditCards.size}")
-                
-                regularAccounts.forEach { account ->
-                    Log.d("HomeViewModel", """
-                        Regular Account: ${account.bankName} **${account.accountLast4}
-                        - Balance: ${account.balance}
-                        - Timestamp: ${account.timestamp}
-                    """.trimIndent())
-                }
-                
-                creditCards.forEach { card ->
-                    Log.d("HomeViewModel", """
-                        Credit Card: ${card.bankName} **${card.accountLast4}
-                        - Available Credit: ${card.creditLimit}
-                        - Outstanding: ${card.balance}
-                        - Timestamp: ${card.timestamp}
-                    """.trimIndent())
-                }
-                
-                Log.d("HomeViewModel", "Total Balance (regular accounts): ${regularAccounts.sumOf { it.balance }}")
-                Log.d("HomeViewModel", "Total Available Credit: ${creditCards.sumOf { it.creditLimit ?: BigDecimal.ZERO }}")
-                Log.d("HomeViewModel", "========================================")
+                // Account loading completed
+                Log.d("HomeViewModel", "Loaded ${balances.size} account(s)")
                 
                 _uiState.value = _uiState.value.copy(
                     accountBalances = regularAccounts,  // Only regular bank accounts

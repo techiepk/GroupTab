@@ -90,7 +90,6 @@ class SmsReaderWorker @AssistedInject constructor(
                 val parser = BankParserFactory.getParser(sms.sender)
                 if (parser != null) {
                     Log.d(TAG, "Processing SMS from ${parser.getBankName()}")
-                    Log.d(TAG, "SMS Content: ${sms.body.take(Constants.SmsProcessing.SMS_PREVIEW_LENGTH)}...")
                     
                     // Calculate SMS age for subscription filtering
                     val smsDateTime = LocalDateTime.ofInstant(
@@ -187,7 +186,7 @@ class SmsReaderWorker @AssistedInject constructor(
                                             balance = balanceUpdateInfo.balance,
                                             timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime
                                         )
-                                        Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName} **${balanceUpdateInfo.accountLast4}: ${balanceUpdateInfo.balance}")
+                                        Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName}")
                                     } catch (e: Exception) {
                                         Log.e(TAG, "Error saving balance update: ${e.message}")
                                     }
@@ -302,7 +301,7 @@ class SmsReaderWorker @AssistedInject constructor(
                                         // First time seeing this card - create it
                                         // Determine if it's a credit card based on transaction type
                                         val isCredit = (parsedTransaction.type == TransactionType.CREDIT)
-                                        Log.d(TAG, "Creating new card: ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}, isCredit=$isCredit")
+                                        Log.d(TAG, "Creating new card for ${parsedTransaction.bankName}")
                                         
                                         card = cardRepository.findOrCreateCard(
                                             cardLast4 = parsedTransaction.accountLast4,
@@ -312,13 +311,13 @@ class SmsReaderWorker @AssistedInject constructor(
                                         
                                         // CRITICAL: Refetch the card to get the actual state (might have been created before)
                                         card = cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)!!
-                                        Log.d(TAG, "Refetched card after creation: type=${card.cardType}, linkedAccount=${card.accountLast4}")
+                                        Log.d(TAG, "Card created/found successfully")
                                     } else {
-                                        Log.d(TAG, "Found existing card: type=${card.cardType}, linkedAccount=${card.accountLast4}")
+                                        Log.d(TAG, "Found existing card")
                                     }
                                     
                                     // Always update card's balance and source (for debugging)
-                                    Log.d(TAG, "Updating card with balance: ${parsedTransaction.balance}, source: ${parsedTransaction.smsBody.take(50)}...")
+                                    Log.d(TAG, "Updating card balance")
                                     cardRepository.updateCardBalance(
                                         cardId = card.id,
                                         balance = parsedTransaction.balance,  // Can be null

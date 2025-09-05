@@ -56,13 +56,6 @@ object DatabaseModule {
             // Enable auto-migrations
             // Room will automatically detect schema changes between versions
             
-            // Temporary: Enable destructive migration for development
-            // TODO: Remove this before production release
-            // .fallbackToDestructiveMigration()
-            
-            // Allow queries on main thread for debugging (remove in production)
-            // .allowMainThreadQueries()
-            
             // Add callback to seed default data on first creation
             .addCallback(DatabaseCallback())
             
