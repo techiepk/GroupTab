@@ -3,9 +3,15 @@ package com.pennywiseai.tracker.presentation.accounts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,6 +80,64 @@ fun ManageAccountsScreen(
                 contentPadding = PaddingValues(Dimensions.Padding.content),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
+                // Show success message if available
+                uiState.successMessage?.let { message ->
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Dimensions.Padding.content),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.sm))
+                                Text(
+                                    text = message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Show error message if available
+                uiState.errorMessage?.let { message ->
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Dimensions.Padding.content),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.width(Spacing.sm))
+                                Text(
+                                    text = message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 // Show hidden accounts toggle if any accounts are hidden
                 if (uiState.hiddenAccounts.isNotEmpty()) {
                     item {
@@ -122,6 +186,7 @@ fun ManageAccountsScreen(
                     items(regularAccounts) { account ->
                         AccountItem(
                             account = account,
+                            linkedCards = uiState.linkedCards[account.accountLast4] ?: emptyList(),
                             isHidden = viewModel.isAccountHidden(account.bankName, account.accountLast4),
                             onToggleVisibility = {
                                 viewModel.toggleAccountVisibility(account.bankName, account.accountLast4)
@@ -135,6 +200,36 @@ fun ManageAccountsScreen(
                                 historyAccount = account.bankName to account.accountLast4
                                 viewModel.loadBalanceHistory(account.bankName, account.accountLast4)
                                 showHistoryDialog = true
+                            },
+                            onUnlinkCard = { cardId ->
+                                viewModel.unlinkCard(cardId)
+                            }
+                        )
+                    }
+                }
+                
+                // Orphaned Cards Section
+                if (uiState.orphanedCards.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        Text(
+                            text = "Unlinked Cards",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(vertical = Spacing.xs)
+                        )
+                    }
+                    
+                    items(uiState.orphanedCards) { card ->
+                        OrphanedCardItem(
+                            card = card,
+                            accounts = regularAccounts,
+                            onLinkToAccount = { accountLast4 ->
+                                viewModel.linkCardToAccount(card.id, accountLast4)
+                            },
+                            onDeleteCard = { cardId ->
+                                viewModel.deleteCard(cardId)
                             }
                         )
                     }
@@ -464,10 +559,12 @@ private fun CreditCardItem(
 @Composable
 private fun AccountItem(
     account: com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity,
+    linkedCards: List<com.pennywiseai.tracker.data.database.entity.CardEntity> = emptyList(),
     isHidden: Boolean,
     onToggleVisibility: () -> Unit,
     onUpdateBalance: () -> Unit,
-    onViewHistory: () -> Unit
+    onViewHistory: () -> Unit,
+    onUnlinkCard: (cardId: Long) -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -542,6 +639,81 @@ private fun AccountItem(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
+            
+            // Linked Cards Section
+            if (linkedCards.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.padding(top = Spacing.sm)
+                ) {
+                    Text(
+                        text = "Linked Cards",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = Spacing.xs)
+                    )
+                    linkedCards.forEach { card ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = Spacing.xs),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("💳", style = MaterialTheme.typography.bodyMedium)
+                                    Column {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                        ) {
+                                            Text(
+                                                text = "••${card.cardLast4}",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            if (!card.isActive) {
+                                                Text(
+                                                    text = "(Inactive)",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                        // Show last transaction date if available
+                                        if (card.lastBalanceDate != null) {
+                                            Text(
+                                                text = "Updated: ${card.lastBalanceDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd"))}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                IconButton(
+                                    onClick = { onUnlinkCard(card.id) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LinkOff,
+                                        contentDescription = "Unlink card",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
             
             // Action Buttons
@@ -803,6 +975,226 @@ private fun UpdateCreditCardDialog(
                 enabled = isValid
             ) {
                 Text("Update")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun OrphanedCardItem(
+    card: com.pennywiseai.tracker.data.database.entity.CardEntity,
+    accounts: List<com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity>,
+    onLinkToAccount: (String) -> Unit,
+    onDeleteCard: (Long) -> Unit
+) {
+    var showLinkDialog by remember { mutableStateOf(false) }
+    var expandedSource by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expandedSource = !expandedSource },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                Text("💳", style = MaterialTheme.typography.titleMedium)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "${card.bankName} ••${card.cardLast4}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${if (card.cardType == com.pennywiseai.tracker.data.database.entity.CardType.CREDIT) "Credit" else "Debit"} Card (Unlinked)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Show last known balance if available
+                    if (card.lastBalance != null) {
+                        Text(
+                            text = "Last Balance: ${CurrencyFormatter.formatCurrency(card.lastBalance)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // Show source SMS that triggered card detection
+                    if (card.lastBalanceSource != null) {
+                        Text(
+                            text = if (expandedSource) {
+                                "SMS: ${card.lastBalanceSource}"
+                            } else {
+                                "SMS: ${card.lastBalanceSource.take(80)}... (tap to expand)"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = if (expandedSource) Int.MAX_VALUE else 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+            
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    OutlinedButton(
+                        onClick = { showLinkDialog = true }
+                    ) {
+                        Icon(
+                            Icons.Default.Link,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Link")
+                    }
+                    
+                    OutlinedButton(
+                        onClick = { onDeleteCard(card.id) },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Delete")
+                    }
+                }
+            }
+        }
+    }
+    
+    if (showLinkDialog) {
+        LinkCardDialog(
+            card = card,
+            accounts = accounts.filter { it.bankName == card.bankName },
+            onDismiss = { showLinkDialog = false },
+            onConfirm = { accountLast4 ->
+                onLinkToAccount(accountLast4)
+                showLinkDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LinkCardDialog(
+    card: com.pennywiseai.tracker.data.database.entity.CardEntity,
+    accounts: List<com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var selectedAccount by remember { mutableStateOf<String?>(null) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("Link Card to Account")
+                Text(
+                    text = "${card.bankName} ••${card.cardLast4}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                if (accounts.isEmpty()) {
+                    Text(
+                        text = "No ${card.bankName} accounts found. Add an account first.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "Select an account to link this card to:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    accounts.forEach { account ->
+                        Surface(
+                            onClick = { selectedAccount = account.accountLast4 },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (selectedAccount == account.accountLast4) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
+                            shape = MaterialTheme.shapes.small,
+                            border = BorderStroke(
+                                1.dp,
+                                if (selectedAccount == account.accountLast4) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outline
+                                }
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(Spacing.sm),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "••${account.accountLast4}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = CurrencyFormatter.formatCurrency(account.balance),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if (selectedAccount == account.accountLast4) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { selectedAccount?.let(onConfirm) },
+                enabled = selectedAccount != null
+            ) {
+                Text("Link")
             }
         },
         dismissButton = {

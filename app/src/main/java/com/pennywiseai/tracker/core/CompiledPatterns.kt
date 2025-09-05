@@ -89,11 +89,12 @@ object CompiledPatterns {
         val REF_NO = Regex("""Ref\s+No\.?\s+([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
         val REF_END = Regex("""(?:Ref|Reference)[:.\s]+([A-Z0-9]{6,})(?:\s*$|\s*Not\s+You)""", RegexOption.IGNORE_CASE)
         
-        // Account patterns
-        val ACCOUNT_DEPOSITED = Regex("""deposited\s+in\s+(?:HDFC\s+Bank\s+)?A/c\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE)
-        val ACCOUNT_FROM = Regex("""from\s+(?:HDFC\s+Bank\s+)?A/c\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE)
-        val ACCOUNT_SIMPLE = Regex("""HDFC\s+Bank\s+A/c\s+(\d{4})""", RegexOption.IGNORE_CASE)
-        val ACCOUNT_GENERIC = Regex("""A/c\s+(?:XX+)?(\d{4})""", RegexOption.IGNORE_CASE)
+        // Account patterns - Updated to handle longer account numbers
+        // These patterns now capture all digits, and we'll take last 4 in the parser
+        val ACCOUNT_DEPOSITED = Regex("""deposited\s+in\s+(?:HDFC\s+Bank\s+)?A/c\s+(?:XX+)?(\d+)""", RegexOption.IGNORE_CASE)
+        val ACCOUNT_FROM = Regex("""from\s+(?:HDFC\s+Bank\s+)?A/c\s+(?:XX+)?(\d+)""", RegexOption.IGNORE_CASE)
+        val ACCOUNT_SIMPLE = Regex("""HDFC\s+Bank\s+A/c\s+(\d+)""", RegexOption.IGNORE_CASE)
+        val ACCOUNT_GENERIC = Regex("""A/c\s+(?:XX+)?(\d+)""", RegexOption.IGNORE_CASE)
         
         // E-Mandate patterns (multi-line format)
         val AMOUNT_WILL_DEDUCT = Regex("""Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+will\s+be\s+deducted""", RegexOption.IGNORE_CASE)

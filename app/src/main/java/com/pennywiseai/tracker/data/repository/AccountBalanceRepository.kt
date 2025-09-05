@@ -91,16 +91,20 @@ class AccountBalanceRepository @Inject constructor(
         bankName: String,
         accountLast4: String,
         balance: BigDecimal,
-        timestamp: LocalDateTime
-    ) {
+        timestamp: LocalDateTime,
+        smsSource: String? = null,
+        sourceType: String? = null
+    ): Long {
         val balanceEntity = AccountBalanceEntity(
             bankName = bankName,
             accountLast4 = accountLast4,
             balance = balance,
             timestamp = timestamp,
-            transactionId = null
+            transactionId = null,
+            smsSource = smsSource?.take(500),  // Limit to 500 chars
+            sourceType = sourceType
         )
-        insertBalance(balanceEntity)
+        return insertBalance(balanceEntity)
     }
     
     suspend fun getBalanceHistoryForAccount(bankName: String, accountLast4: String): List<AccountBalanceEntity> {

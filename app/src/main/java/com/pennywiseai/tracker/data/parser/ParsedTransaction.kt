@@ -25,7 +25,8 @@ data class ParsedTransaction(
     val sender: String,
     val timestamp: Long,
     val bankName: String,
-    val transactionHash: String? = null
+    val transactionHash: String? = null,
+    val isFromCard: Boolean = false  // Indicates if this transaction is from a card (not an account)
 ) {
     /**
      * Generates a unique transaction ID based on sender, amount, and timestamp.

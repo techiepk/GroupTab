@@ -3,6 +3,7 @@ package com.pennywiseai.tracker.presentation.accounts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,6 +33,7 @@ fun BalanceHistoryDialog(
     var editingId by remember { mutableStateOf<Long?>(null) }
     var editingValue by remember { mutableStateOf("") }
     var showDeleteConfirmation by remember { mutableStateOf<Long?>(null) }
+    var expandedSources by remember { mutableStateOf<Set<Long>>(emptySet()) }
     
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -217,13 +219,56 @@ fun BalanceHistoryDialog(
                                                 )
                                             }
                                             
-                                            // Show source if available
-                                            if (balance.transactionId != null) {
-                                                Text(
-                                                    text = "From SMS transaction",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
+                                            // Show source information
+                                            Column(
+                                                modifier = Modifier.padding(top = Spacing.xs),
+                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                // Show source type
+                                                val sourceTypeText = when (balance.sourceType) {
+                                                    "TRANSACTION" -> "📱 From transaction SMS"
+                                                    "SMS_BALANCE" -> "💬 From balance SMS"
+                                                    "CARD_LINK" -> "💳 From linked card"
+                                                    "MANUAL" -> "✏️ Manual entry"
+                                                    else -> if (balance.transactionId != null) "📱 From SMS transaction" else null
+                                                }
+                                                
+                                                sourceTypeText?.let {
+                                                    Text(
+                                                        text = it,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                
+                                                // Show SMS source if available
+                                                balance.smsSource?.let { smsSource ->
+                                                    val isExpanded = expandedSources.contains(balance.id)
+                                                    Surface(
+                                                        onClick = { 
+                                                            expandedSources = if (isExpanded) {
+                                                                expandedSources - balance.id
+                                                            } else {
+                                                                expandedSources + balance.id
+                                                            }
+                                                        },
+                                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                                        shape = MaterialTheme.shapes.small,
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Text(
+                                                            text = if (isExpanded) {
+                                                                "SMS: $smsSource"
+                                                            } else {
+                                                                "SMS: ${smsSource.take(60)}... (tap to expand)"
+                                                            },
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.padding(Spacing.xs),
+                                                            maxLines = if (isExpanded) Int.MAX_VALUE else 2
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                         

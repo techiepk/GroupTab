@@ -13,6 +13,7 @@ import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
 import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
 import com.pennywiseai.tracker.data.parser.bank.SBIBankParser
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
+import com.pennywiseai.tracker.data.repository.CardRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
@@ -43,6 +44,7 @@ class SmsReaderWorker @AssistedInject constructor(
     private val transactionRepository: TransactionRepository,
     private val subscriptionRepository: SubscriptionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
+    private val cardRepository: CardRepository,
     private val llmRepository: LlmRepository,
     private val merchantMappingRepository: MerchantMappingRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
@@ -277,69 +279,168 @@ class SmsReaderWorker @AssistedInject constructor(
                                 // This prevents incorrect balance accumulation from duplicate SMS messages
                                 if (parsedTransaction.bankName != null && parsedTransaction.accountLast4 != null) {
                                 
-                                // Determine if this is a credit card based on transaction type
-                                val isCreditCard = (parsedTransaction.type == TransactionType.CREDIT)
-                                
-                                // Get the existing account
-                                val existingAccount = accountBalanceRepository.getLatestBalance(
-                                    parsedTransaction.bankName,
-                                    parsedTransaction.accountLast4
-                                )
-                                
-                                // Calculate new balance based on transaction
-                                val newBalance = when {
-                                    // For credit cards: spending increases balance (debt), payments decrease it
-                                    isCreditCard -> {
-                                        val currentBalance = existingAccount?.balance ?: BigDecimal.ZERO
-                                        // Credit card transaction (CREDIT type) = spending, add to outstanding
-                                        currentBalance + parsedTransaction.amount
-                                    }
-                                    // Check if this is a payment TO a credit card (reducing debt)
-                                    existingAccount?.isCreditCard == true && parsedTransaction.type == TransactionType.INCOME -> {
-                                        val currentBalance = existingAccount.balance ?: BigDecimal.ZERO
-                                        // Payment to credit card, reduce outstanding
-                                        (currentBalance - parsedTransaction.amount).max(BigDecimal.ZERO)
-                                    }
-                                    // For regular accounts, use balance from SMS if available
-                                    parsedTransaction.balance != null -> {
-                                        parsedTransaction.balance
-                                    }
-                                    // Otherwise keep existing or zero
-                                    else -> {
-                                        existingAccount?.balance ?: BigDecimal.ZERO
-                                    }
-                                }
+                                // Determine if this transaction is from a card based on the message pattern
+                                val isFromCard = parsedTransaction.isFromCard
                                 
                                 Log.d(TAG, """
-                                    Saving account balance:
+                                    Processing transaction:
                                     - Bank: ${parsedTransaction.bankName}
-                                    - Account: **${parsedTransaction.accountLast4}
-                                    - Is Credit Card: $isCreditCard
-                                    - Transaction Amount: ${parsedTransaction.amount}
-                                    - Previous Balance: ${existingAccount?.balance}
-                                    - New Balance: $newBalance
-                                    - Available Limit (from SMS): ${parsedTransaction.creditLimit}
+                                    - Number: **${parsedTransaction.accountLast4}
+                                    - Is From Card: $isFromCard
+                                    - Transaction Type: ${parsedTransaction.type}
+                                    - SMS Body (first 200 chars): ${parsedTransaction.smsBody.take(200)}
                                 """.trimIndent())
                                 
-                                // Create the balance entity
-                                val balanceEntity = AccountBalanceEntity(
-                                    bankName = parsedTransaction.bankName,
-                                    accountLast4 = parsedTransaction.accountLast4,
-                                    balance = newBalance,
-                                    timestamp = finalEntity.dateTime,
-                                    transactionId = if (rowId != -1L) rowId else null,
-                                    creditLimit = existingAccount?.creditLimit, // Keep existing credit limit
-                                    isCreditCard = isCreditCard || (existingAccount?.isCreditCard ?: false)
-                                )
-                                
-                                accountBalanceRepository.insertBalance(balanceEntity)
-                                
-                                val logMsg = if (parsedTransaction.creditLimit != null) {
-                                    "Saved balance/credit limit (${CurrencyFormatter.formatCurrency(parsedTransaction.creditLimit)}) for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}"
+                                // Handle card vs account logic
+                                val targetAccountLast4 = if (isFromCard) {
+                                    // This is a card transaction
+                                    Log.d(TAG, "Transaction identified as CARD transaction")
+                                    
+                                    var card = cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)
+                                    
+                                    if (card == null) {
+                                        // First time seeing this card - create it
+                                        // Determine if it's a credit card based on transaction type
+                                        val isCredit = (parsedTransaction.type == TransactionType.CREDIT)
+                                        Log.d(TAG, "Creating new card: ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}, isCredit=$isCredit")
+                                        
+                                        card = cardRepository.findOrCreateCard(
+                                            cardLast4 = parsedTransaction.accountLast4,
+                                            bankName = parsedTransaction.bankName,
+                                            isCredit = isCredit
+                                        )
+                                        
+                                        // CRITICAL: Refetch the card to get the actual state (might have been created before)
+                                        card = cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)!!
+                                        Log.d(TAG, "Refetched card after creation: type=${card.cardType}, linkedAccount=${card.accountLast4}")
+                                    } else {
+                                        Log.d(TAG, "Found existing card: type=${card.cardType}, linkedAccount=${card.accountLast4}")
+                                    }
+                                    
+                                    // Always update card's balance and source (for debugging)
+                                    Log.d(TAG, "Updating card with balance: ${parsedTransaction.balance}, source: ${parsedTransaction.smsBody.take(50)}...")
+                                    cardRepository.updateCardBalance(
+                                        cardId = card.id,
+                                        balance = parsedTransaction.balance,  // Can be null
+                                        source = parsedTransaction.smsBody.take(200),  // Always save source
+                                        date = LocalDateTime.ofInstant(
+                                            Instant.ofEpochMilli(parsedTransaction.timestamp),
+                                            ZoneId.systemDefault()
+                                        )
+                                    )
+                                    
+                                    // For cards, check if we should create balance entry
+                                    val result = when {
+                                        card.cardType == com.pennywiseai.tracker.data.database.entity.CardType.CREDIT -> {
+                                            // Credit cards get balance entries
+                                            Log.d(TAG, "CREDIT card - will create balance entry")
+                                            parsedTransaction.accountLast4
+                                        }
+                                        card.cardType == com.pennywiseai.tracker.data.database.entity.CardType.DEBIT && card.accountLast4 != null -> {
+                                            // Linked debit card - use the linked account for balance
+                                            Log.d(TAG, "DEBIT card linked to account **${card.accountLast4} - will update linked account balance")
+                                            card.accountLast4
+                                        }
+                                        else -> {
+                                            // Unlinked debit card - no balance entry
+                                            Log.d(TAG, "DEBIT card NOT linked - NO balance entry will be created")
+                                            null
+                                        }
+                                    }
+                                    result
                                 } else {
-                                    "Saved balance update for ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}"
+                                    // This is a direct account transaction - always create balance entry
+                                    Log.d(TAG, "Transaction identified as ACCOUNT transaction - will create balance entry")
+                                    parsedTransaction.accountLast4
                                 }
-                                Log.d(TAG, logMsg)
+                                
+                                // Only create balance entry if we have a target account
+                                if (targetAccountLast4 != null) {
+                                    // Determine if this is a credit card based on transaction type or card info
+                                    val isCreditCard = (parsedTransaction.type == TransactionType.CREDIT) ||
+                                        cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)?.cardType == 
+                                            com.pennywiseai.tracker.data.database.entity.CardType.CREDIT
+                                    
+                                    // Get the existing account using the target account
+                                    val existingAccount = accountBalanceRepository.getLatestBalance(
+                                        parsedTransaction.bankName,
+                                        targetAccountLast4
+                                    )
+                                    
+                                    // Calculate new balance based on transaction
+                                    val newBalance = when {
+                                        // For credit cards: spending increases balance (debt), payments decrease it
+                                        isCreditCard -> {
+                                            val currentBalance = existingAccount?.balance ?: BigDecimal.ZERO
+                                            // Credit card transaction (CREDIT type) = spending, add to outstanding
+                                            currentBalance + parsedTransaction.amount
+                                        }
+                                        // Check if this is a payment TO a credit card (reducing debt)
+                                        existingAccount?.isCreditCard == true && parsedTransaction.type == TransactionType.INCOME -> {
+                                            val currentBalance = existingAccount.balance ?: BigDecimal.ZERO
+                                            // Payment to credit card, reduce outstanding
+                                            (currentBalance - parsedTransaction.amount).max(BigDecimal.ZERO)
+                                        }
+                                        // For regular accounts, use balance from SMS if available
+                                        parsedTransaction.balance != null -> {
+                                            parsedTransaction.balance
+                                        }
+                                        // Otherwise keep existing or zero
+                                        else -> {
+                                            existingAccount?.balance ?: BigDecimal.ZERO
+                                        }
+                                    }
+                                    
+                                    Log.d(TAG, """
+                                        Saving account balance:
+                                        - Bank: ${parsedTransaction.bankName}
+                                        - Original: **${parsedTransaction.accountLast4}
+                                        - Target Account: **$targetAccountLast4
+                                        - Is Card Transaction: ${parsedTransaction.isFromCard}
+                                        - Is Credit Card: $isCreditCard
+                                        - Transaction Amount: ${parsedTransaction.amount}
+                                        - Previous Balance: ${existingAccount?.balance}
+                                        - New Balance: $newBalance
+                                        - Available Limit (from SMS): ${parsedTransaction.creditLimit}
+                                    """.trimIndent())
+                                    
+                                    // Only save balance if it's meaningful
+                                    val shouldSaveBalance = when {
+                                        parsedTransaction.balance != null -> true  // Always save if SMS had explicit balance
+                                        parsedTransaction.creditLimit != null -> true  // Save if credit limit info
+                                        newBalance != BigDecimal.ZERO -> true  // Save non-zero balances
+                                        existingAccount != null -> true  // Save to update existing account
+                                        else -> false  // Skip zero balance for new accounts without explicit balance
+                                    }
+                                    
+                                    if (shouldSaveBalance) {
+                                        // Create the balance entity using the target account
+                                        val balanceEntity = AccountBalanceEntity(
+                                            bankName = parsedTransaction.bankName,
+                                            accountLast4 = targetAccountLast4,
+                                            balance = newBalance,
+                                            timestamp = finalEntity.dateTime,
+                                            transactionId = if (rowId != -1L) rowId else null,
+                                            creditLimit = existingAccount?.creditLimit, // Keep existing credit limit
+                                            isCreditCard = isCreditCard || (existingAccount?.isCreditCard ?: false),
+                                            smsSource = parsedTransaction.smsBody.take(500),  // Store SMS snippet
+                                            sourceType = "TRANSACTION"
+                                        )
+                                        
+                                        accountBalanceRepository.insertBalance(balanceEntity)
+                                        
+                                        val logMsg = if (parsedTransaction.creditLimit != null) {
+                                            "Saved balance/credit limit (${CurrencyFormatter.formatCurrency(parsedTransaction.creditLimit)}) for ${parsedTransaction.bankName} **$targetAccountLast4"
+                                        } else {
+                                            "Saved balance update for ${parsedTransaction.bankName} **$targetAccountLast4"
+                                        }
+                                        Log.d(TAG, logMsg)
+                                    } else {
+                                        Log.d(TAG, "Skipped saving zero balance for new account: ${parsedTransaction.bankName} **$targetAccountLast4")
+                                    }
+                                } else {
+                                    Log.d(TAG, "No balance entry created for unlinked debit card: ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}")
+                                }
                             }
                             } else {
                                 Log.d(TAG, "Transaction already exists (duplicate), skipping both transaction and balance update: ${entity.transactionHash}")

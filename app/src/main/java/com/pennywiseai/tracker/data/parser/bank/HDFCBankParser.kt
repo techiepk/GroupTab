@@ -293,7 +293,13 @@ class HDFCBankParser : BankParser() {
         
         for (pattern in hdfcPatterns) {
             pattern.find(message)?.let { match ->
-                return match.groupValues[1]
+                val accountStr = match.groupValues[1]
+                // Take last 4 digits for consistency
+                return if (accountStr.length >= 4) {
+                    accountStr.takeLast(4)
+                } else {
+                    accountStr
+                }
             }
         }
         

@@ -6,6 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pennywiseai.tracker.data.database.PennyWiseDatabase
 import com.pennywiseai.tracker.data.database.dao.AccountBalanceDao
+import com.pennywiseai.tracker.data.database.dao.CardDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
@@ -55,8 +56,9 @@ object DatabaseModule {
             // Enable auto-migrations
             // Room will automatically detect schema changes between versions
             
-            // Removed fallbackToDestructiveMigration to allow proper migrations
-            // .fallbackToDestructiveMigration(dropAllTables = true)
+            // Temporary: Enable destructive migration for development
+            // TODO: Remove this before production release
+            // .fallbackToDestructiveMigration()
             
             // Allow queries on main thread for debugging (remove in production)
             // .allowMainThreadQueries()
@@ -149,6 +151,18 @@ object DatabaseModule {
     @Singleton
     fun provideUnrecognizedSmsDao(database: PennyWiseDatabase): UnrecognizedSmsDao {
         return database.unrecognizedSmsDao()
+    }
+    
+    /**
+     * Provides the CardDao from the database.
+     * 
+     * @param database The PennyWiseDatabase instance
+     * @return CardDao for accessing card data
+     */
+    @Provides
+    @Singleton
+    fun provideCardDao(database: PennyWiseDatabase): CardDao {
+        return database.cardDao()
     }
 }
 

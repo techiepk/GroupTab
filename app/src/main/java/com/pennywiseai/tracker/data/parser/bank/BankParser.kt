@@ -65,7 +65,8 @@ abstract class BankParser {
             smsBody = smsBody,
             sender = sender,
             timestamp = timestamp,
-            bankName = getBankName()
+            bankName = getBankName(),
+            isFromCard = detectIsCard(smsBody)
         )
     }
     
@@ -328,6 +329,65 @@ abstract class BankParser {
         
         android.util.Log.d("BankParser", "No credit limit pattern matched")
         return null
+    }
+    
+    /**
+     * Detects if the transaction is from a card (credit/debit) based on message patterns.
+     * First excludes account-related patterns, then checks for actual card patterns.
+     */
+    protected open fun detectIsCard(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        
+        // FIRST: Explicitly exclude account-related patterns - these are NOT cards
+        val accountPatterns = listOf(
+            "a/c",           // Account abbreviation (e.g., "from HDFC Bank A/c 120092")
+            "account",       // Full word account (e.g., "from HDFC Bank Account XX0093")
+            "ac ",           // Account abbreviation with space
+            "acc ",          // Account abbreviation
+            "saving account",
+            "current account",
+            "savings a/c",
+            "current a/c"
+        )
+        
+        // If message contains account patterns, it's NOT a card transaction
+        for (pattern in accountPatterns) {
+            if (lowerMessage.contains(pattern)) {
+                android.util.Log.d("BankParser", "Account transaction detected (NOT card) via pattern: '$pattern' in message: ${message.take(100)}")
+                return false
+            }
+        }
+        
+        // SECOND: Check for actual card-specific patterns
+        val cardPatterns = listOf(
+            "card ending",
+            "card xx",
+            "debit card",
+            "credit card",
+            "card no.",
+            "card number",
+            "card *",
+            "card x"
+        )
+        
+        // Check for card patterns
+        for (pattern in cardPatterns) {
+            if (lowerMessage.contains(pattern)) {
+                android.util.Log.d("BankParser", "Card detected via pattern: '$pattern' in message: ${message.take(100)}")
+                return true
+            }
+        }
+        
+        // Check for masked card number patterns (e.g., "XXXX1234", "*1234", "ending 1234")
+        // BUT only if we haven't already excluded it as an account transaction
+        val maskedCardRegex = Regex("""(?:xx|XX|\*{2,})?\d{4}""")
+        if (lowerMessage.contains("ending") && maskedCardRegex.containsMatchIn(message)) {
+            android.util.Log.d("BankParser", "Card detected via 'ending' pattern in message: ${message.take(100)}")
+            return true
+        }
+        
+        android.util.Log.d("BankParser", "No card pattern found in message: ${message.take(100)}")
+        return false
     }
     
     /**
