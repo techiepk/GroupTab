@@ -26,6 +26,7 @@ import javax.inject.Inject
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
+    private val userPreferencesRepository: com.pennywiseai.tracker.data.preferences.UserPreferencesRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     
@@ -63,6 +64,30 @@ class TransactionsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyMap()
         )
+    
+    // SMS scan period for info banner
+    val smsScanMonths: StateFlow<Int> = userPreferencesRepository.smsScanMonths
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 3
+        )
+    
+    fun isShowingLimitedData(): Boolean {
+        val currentPeriod = _selectedPeriod.value
+        val scanMonthsValue = smsScanMonths.value
+        
+        return when (currentPeriod) {
+            TimePeriod.ALL -> true  // Always show for "All Time"
+            TimePeriod.CURRENT_FY -> {
+                // Check if FY start is before scan period
+                val (fyStart, _) = getDateRangeForPeriod(TimePeriod.CURRENT_FY)
+                val scanStart = LocalDate.now().minusMonths(scanMonthsValue.toLong())
+                fyStart.isBefore(scanStart)
+            }
+            else -> false
+        }
+    }
     
     init {
         // Combine all filters: search query, period, category, transaction type, and sort

@@ -6,7 +6,7 @@ import java.time.YearMonth
 enum class TimePeriod(val label: String) {
     THIS_MONTH("This Month"),
     LAST_MONTH("Last Month"),
-    LAST_3_MONTHS("Last 3 Months"),
+    CURRENT_FY("Current FY"),
     ALL("All Time")
 }
 
@@ -32,9 +32,16 @@ fun getDateRangeForPeriod(period: TimePeriod): Pair<LocalDate, LocalDate> {
             val end = lastMonth.atEndOfMonth()
             start to end
         }
-        TimePeriod.LAST_3_MONTHS -> {
-            val start = today.minusMonths(3)
-            start to today
+        TimePeriod.CURRENT_FY -> {
+            // Indian Financial Year: April 1 to March 31
+            val currentYear = today.year
+            val currentMonth = today.monthValue
+            val fyStart = if (currentMonth >= 4) {
+                LocalDate.of(currentYear, 4, 1)  // Apr 1 of current year
+            } else {
+                LocalDate.of(currentYear - 1, 4, 1)  // Apr 1 of previous year
+            }
+            fyStart to today
         }
         TimePeriod.ALL -> {
             // Use a reasonable date range for "All Time" - 10 years back to today

@@ -181,6 +181,9 @@ fun MainScreen(
                         rootNavController?.navigate(
                             com.pennywiseai.tracker.navigation.AddTransaction
                         )
+                    },
+                    onNavigateToSettings = {
+                        navController.navigate("settings")
                     }
                 )
             }

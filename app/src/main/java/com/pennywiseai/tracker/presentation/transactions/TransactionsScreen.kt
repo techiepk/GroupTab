@@ -51,7 +51,8 @@ fun TransactionsScreen(
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onTransactionClick: (Long) -> Unit = {},
-    onAddTransactionClick: () -> Unit = {}
+    onAddTransactionClick: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -62,6 +63,7 @@ fun TransactionsScreen(
     val categoriesMap by viewModel.categories.collectAsState()
     val filteredTotals by viewModel.filteredTotals.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
+    val smsScanMonths by viewModel.smsScanMonths.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -104,7 +106,7 @@ fun TransactionsScreen(
             val period = when (periodName) {
                 "THIS_MONTH" -> TimePeriod.THIS_MONTH
                 "LAST_MONTH" -> TimePeriod.LAST_MONTH
-                "LAST_3_MONTHS" -> TimePeriod.LAST_3_MONTHS
+                "CURRENT_FY" -> TimePeriod.CURRENT_FY
                 "ALL" -> TimePeriod.ALL
                 else -> null
             }
@@ -267,6 +269,52 @@ fun TransactionsScreen(
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 )
+            }
+        }
+        
+        // Data scope info banner
+        if (viewModel.isShowingLimitedData()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimensions.Padding.content, vertical = Spacing.xs),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(Spacing.md)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(Dimensions.Icon.small)
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.sm))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Showing last $smsScanMonths months of SMS data",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            text = "Adjust in Settings to scan more history",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                    TextButton(
+                        onClick = onNavigateToSettings,
+                        contentPadding = PaddingValues(horizontal = Spacing.sm)
+                    ) {
+                        Text("Settings", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
         }
         
