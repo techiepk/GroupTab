@@ -349,6 +349,14 @@ class SettingsViewModel @Inject constructor(
     
     fun updateSmsScanMonths(months: Int) {
         viewModelScope.launch {
+            val currentMonths = userPreferencesRepository.getSmsScanMonths()
+            
+            // If increasing scan period, reset scan timestamp to force full scan
+            if (months > currentMonths) {
+                userPreferencesRepository.setLastScanTimestamp(0L)
+                Log.d("SettingsViewModel", "Scan period increased from $currentMonths to $months months - will perform full scan")
+            }
+            
             userPreferencesRepository.updateSmsScanMonths(months)
         }
     }

@@ -571,8 +571,8 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.md))
                     
-                    // Period options
-                    listOf(1, 2, 3, 6, 12).forEach { months ->
+                    // Period options - including 24 months for 2 years coverage
+                    listOf(1, 2, 3, 6, 12, 24).forEach { months ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -592,7 +592,11 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(Spacing.md))
                             Text(
-                                text = if (months == 1) "1 month" else "$months months",
+                                text = when(months) {
+                                    1 -> "1 month"
+                                    24 -> "2 years"
+                                    else -> "$months months"
+                                },
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }

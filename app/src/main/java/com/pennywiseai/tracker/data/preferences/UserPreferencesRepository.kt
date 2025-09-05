@@ -31,6 +31,8 @@ class UserPreferencesRepository @Inject constructor(
         val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
         val ACTIVE_DOWNLOAD_ID = longPreferencesKey("active_download_id")
         val SMS_SCAN_MONTHS = intPreferencesKey("sms_scan_months")
+        val LAST_SCAN_TIMESTAMP = longPreferencesKey("last_scan_timestamp")
+        val LAST_SCAN_PERIOD = intPreferencesKey("last_scan_period")
         
         // In-App Review preferences
         val FIRST_LAUNCH_TIME = longPreferencesKey("first_launch_time")
@@ -133,6 +135,30 @@ class UserPreferencesRepository @Inject constructor(
         return context.dataStore.data
             .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 }
             .first()
+    }
+    
+    suspend fun getLastScanTimestamp(): Long {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_TIMESTAMP] ?: 0L }
+            .first()
+    }
+    
+    suspend fun setLastScanTimestamp(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_SCAN_TIMESTAMP] = timestamp
+        }
+    }
+    
+    suspend fun getLastScanPeriod(): Int {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_PERIOD] ?: 0 }
+            .first()
+    }
+    
+    suspend fun setLastScanPeriod(period: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_SCAN_PERIOD] = period
+        }
     }
     
     // In-App Review methods

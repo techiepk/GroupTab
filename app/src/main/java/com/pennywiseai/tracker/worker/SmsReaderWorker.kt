@@ -513,18 +513,44 @@ class SmsReaderWorker @AssistedInject constructor(
         val messages = mutableListOf<SmsMessage>()
         
         try {
-            // Get the scan period from user preferences
+            // Get scan parameters
+            val lastScanTimestamp = userPreferencesRepository.getLastScanTimestamp()
             val scanMonths = userPreferencesRepository.getSmsScanMonths()
+            val lastScanPeriod = userPreferencesRepository.getLastScanPeriod()
+            val now = System.currentTimeMillis()
             
-            // Calculate start date - scan last N months of messages
-            val calendar = java.util.Calendar.getInstance().apply {
-                add(java.util.Calendar.MONTH, -scanMonths) // Go back N months
-                set(java.util.Calendar.HOUR_OF_DAY, 0)
-                set(java.util.Calendar.MINUTE, 0)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
+            // Determine if we need a full scan
+            val needsFullScan = lastScanTimestamp == 0L || scanMonths > lastScanPeriod
+            
+            // Calculate scan start time with 3-day buffer for incremental scans
+            val scanStartTime = if (needsFullScan) {
+                // Full scan - go back N months
+                val calendar = java.util.Calendar.getInstance().apply {
+                    add(java.util.Calendar.MONTH, -scanMonths)
+                    set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    set(java.util.Calendar.MINUTE, 0)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                }
+                Log.d(TAG, "Performing full SMS scan for last $scanMonths months")
+                calendar.timeInMillis
+            } else {
+                // Incremental scan with 3-day buffer
+                val threeDaysAgo = now - (3 * 24 * 60 * 60 * 1000L)
+                val periodLimit = java.util.Calendar.getInstance().apply {
+                    add(java.util.Calendar.MONTH, -scanMonths)
+                }.timeInMillis
+                
+                // Use the most recent of: 3 days ago, last scan, or period limit
+                val incrementalStart = maxOf(
+                    minOf(lastScanTimestamp, threeDaysAgo),
+                    periodLimit  // Never exceed configured period
+                )
+                
+                val daysSinceLastScan = (now - lastScanTimestamp) / (24 * 60 * 60 * 1000L)
+                Log.d(TAG, "Performing incremental SMS scan (last scan: $daysSinceLastScan days ago, buffer: 3 days)")
+                incrementalStart
             }
-            val scanStartTime = calendar.timeInMillis
             
             // Query SMS inbox from the scan start time
             val cursor = applicationContext.contentResolver.query(
@@ -553,6 +579,14 @@ class SmsReaderWorker @AssistedInject constructor(
                     messages.add(message)
                 }
             }
+            
+            // Update scan tracking after successful processing
+            userPreferencesRepository.setLastScanTimestamp(System.currentTimeMillis())
+            if (needsFullScan) {
+                userPreferencesRepository.setLastScanPeriod(scanMonths)
+            }
+            
+            Log.d(TAG, "SMS scan completed. Processed ${messages.size} messages")
             
             // Try to read RCS messages from MMS provider
             try {
