@@ -13,6 +13,9 @@ interface MerchantMappingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateMapping(mapping: MerchantMappingEntity)
     
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMapping(mapping: MerchantMappingEntity)
+    
     @Query("DELETE FROM merchant_mappings WHERE merchant_name = :merchantName")
     suspend fun deleteMapping(merchantName: String)
     
@@ -21,4 +24,7 @@ interface MerchantMappingDao {
     
     @Query("SELECT COUNT(*) FROM merchant_mappings")
     suspend fun getMappingCount(): Int
+    
+    @Query("DELETE FROM merchant_mappings")
+    suspend fun deleteAllMappings()
 }

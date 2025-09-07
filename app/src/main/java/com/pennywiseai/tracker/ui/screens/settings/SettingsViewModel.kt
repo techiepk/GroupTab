@@ -20,7 +20,13 @@ import com.pennywiseai.tracker.data.repository.ModelRepository
 import com.pennywiseai.tracker.data.repository.ModelState
 import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
+import com.pennywiseai.tracker.data.backup.BackupExporter
+import com.pennywiseai.tracker.data.backup.BackupImporter
+import com.pennywiseai.tracker.data.backup.ExportResult
+import com.pennywiseai.tracker.data.backup.ImportResult
+import com.pennywiseai.tracker.data.backup.ImportStrategy
 import android.content.Intent
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.first
@@ -33,7 +39,9 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val modelRepository: ModelRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val unrecognizedSmsRepository: UnrecognizedSmsRepository
+    private val unrecognizedSmsRepository: UnrecognizedSmsRepository,
+    private val backupExporter: BackupExporter,
+    private val backupImporter: BackupImporter
 ) : ViewModel() {
     
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -50,6 +58,13 @@ class SettingsViewModel @Inject constructor(
     
     private val _totalMB = MutableStateFlow(0L)
     val totalMB: StateFlow<Long> = _totalMB.asStateFlow()
+    
+    // Import/Export state
+    private val _importExportMessage = MutableStateFlow<String?>(null)
+    val importExportMessage: StateFlow<String?> = _importExportMessage.asStateFlow()
+    
+    private val _exportedBackupFile = MutableStateFlow<File?>(null)
+    val exportedBackupFile: StateFlow<File?> = _exportedBackupFile.asStateFlow()
     
     private var currentDownloadId: Long? = null
     
@@ -401,6 +416,103 @@ class SettingsViewModel @Inject constructor(
                 Log.e("SettingsViewModel", "Error opening unrecognized SMS report", e)
             }
         }
+    }
+    
+    fun exportBackup() {
+        viewModelScope.launch {
+            try {
+                val result = backupExporter.exportBackup()
+                when (result) {
+                    is ExportResult.Success -> {
+                        // Store the file for later saving
+                        _exportedBackupFile.value = result.file
+                        _importExportMessage.value = "Backup created successfully! Choose where to save it."
+                    }
+                    is ExportResult.Error -> {
+                        _importExportMessage.value = "Export failed: ${result.message}"
+                        Log.e("SettingsViewModel", "Export failed: ${result.message}")
+                    }
+                    else -> {}
+                }
+            } catch (e: Exception) {
+                _importExportMessage.value = "Export error: ${e.message}"
+                Log.e("SettingsViewModel", "Export error", e)
+            }
+        }
+    }
+    
+    fun saveBackupToFile(uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                _exportedBackupFile.value?.let { file ->
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        file.inputStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                    _importExportMessage.value = "Backup saved successfully!"
+                    _exportedBackupFile.value = null
+                }
+            } catch (e: Exception) {
+                _importExportMessage.value = "Failed to save backup: ${e.message}"
+                Log.e("SettingsViewModel", "Error saving backup", e)
+            }
+        }
+    }
+    
+    fun shareBackup() {
+        _exportedBackupFile.value?.let { file ->
+            shareBackupFile(file)
+        }
+    }
+    
+    private fun shareBackupFile(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/octet-stream"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "PennyWise Backup")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            
+            context.startActivity(Intent.createChooser(intent, "Share Backup").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error sharing backup file", e)
+        }
+    }
+    
+    fun importBackup(uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                _importExportMessage.value = "Importing backup..."
+                val result = backupImporter.importBackup(uri, ImportStrategy.MERGE)
+                when (result) {
+                    is ImportResult.Success -> {
+                        _importExportMessage.value = "Import successful! Imported ${result.importedTransactions} transactions, ${result.importedCategories} categories. Skipped ${result.skippedDuplicates} duplicates."
+                    }
+                    is ImportResult.Error -> {
+                        _importExportMessage.value = "Import failed: ${result.message}"
+                        Log.e("SettingsViewModel", "Import failed: ${result.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                _importExportMessage.value = "Import error: ${e.message}"
+                Log.e("SettingsViewModel", "Import error", e)
+            }
+        }
+    }
+    
+    fun clearImportExportMessage() {
+        _importExportMessage.value = null
     }
 }
 

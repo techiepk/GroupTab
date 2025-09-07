@@ -67,4 +67,7 @@ interface SubscriptionDao {
     
     @Query("SELECT * FROM subscriptions WHERE state = :state ORDER BY next_payment_date ASC")
     suspend fun getSubscriptionsByStateList(state: SubscriptionState): List<SubscriptionEntity>
+    
+    @Query("DELETE FROM subscriptions")
+    suspend fun deleteAllSubscriptions()
 }

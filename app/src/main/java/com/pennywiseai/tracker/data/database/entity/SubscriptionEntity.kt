@@ -20,7 +20,7 @@ data class SubscriptionEntity(
     val amount: BigDecimal,
     
     @ColumnInfo(name = "next_payment_date")
-    val nextPaymentDate: LocalDate,
+    val nextPaymentDate: LocalDate?,
     
     @ColumnInfo(name = "state")
     val state: SubscriptionState = SubscriptionState.ACTIVE,

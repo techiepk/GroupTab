@@ -39,4 +39,7 @@ interface CategoryDao {
     
     @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE name = :categoryName)")
     suspend fun categoryExists(categoryName: String): Boolean
+    
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }

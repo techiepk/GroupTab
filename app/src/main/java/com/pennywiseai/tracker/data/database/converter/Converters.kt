@@ -49,7 +49,18 @@ class Converters {
     
     @TypeConverter
     fun toLocalDate(value: String?): LocalDate? {
-        return value?.let { LocalDate.parse(it, dateFormatter) }
+        return value?.let { dateString ->
+            // Handle invalid dates
+            if (dateString == "0000-00-00" || dateString.isBlank()) {
+                return null
+            }
+            try {
+                LocalDate.parse(dateString, dateFormatter)
+            } catch (e: Exception) {
+                android.util.Log.w("Converters", "Invalid date format: $dateString", e)
+                null
+            }
+        }
     }
     
     @TypeConverter

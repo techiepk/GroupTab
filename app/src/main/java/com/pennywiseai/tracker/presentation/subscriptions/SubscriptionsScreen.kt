@@ -249,37 +249,47 @@ private fun SwipeableSubscriptionItem(
                                 
                                 // Calculate the actual next payment date
                                 val today = LocalDate.now()
-                                var nextPaymentDate = subscription.nextPaymentDate
+                                val subscriptionDate = subscription.nextPaymentDate
                                 
-                                // If the stored date is in the past, calculate the next occurrence
-                                while (nextPaymentDate.isBefore(today) || nextPaymentDate.isEqual(today)) {
-                                    nextPaymentDate = nextPaymentDate.plusMonths(1)
-                                }
-                                
-                                val daysUntilNext = ChronoUnit.DAYS.between(today, nextPaymentDate)
-                                
-                                Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                
-                                Text(
-                                    text = when {
-                                        daysUntilNext == 0L -> "Due today"
-                                        daysUntilNext == 1L -> "Due tomorrow"
-                                        daysUntilNext in 2..7 -> "Due in $daysUntilNext days"
-                                        else -> nextPaymentDate.format(
-                                            DateTimeFormatter.ofPattern("MMM d")
-                                        )
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = when {
-                                        daysUntilNext <= 3 -> MaterialTheme.colorScheme.error
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                // Handle null date
+                                if (subscriptionDate == null) {
+                                    Text(
+                                        text = "• No date set",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    // If the stored date is in the past, calculate the next occurrence
+                                    var nextPaymentDate: LocalDate = subscriptionDate
+                                    while (nextPaymentDate.isBefore(today) || nextPaymentDate.isEqual(today)) {
+                                        nextPaymentDate = nextPaymentDate.plusMonths(1)
                                     }
-                                )
+                                    
+                                    val daysUntilNext = ChronoUnit.DAYS.between(today, nextPaymentDate)
+                                
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    
+                                    Text(
+                                        text = when {
+                                            daysUntilNext == 0L -> "Due today"
+                                            daysUntilNext == 1L -> "Due tomorrow"
+                                            daysUntilNext in 2..7 -> "Due in $daysUntilNext days"
+                                            else -> nextPaymentDate.format(
+                                                DateTimeFormatter.ofPattern("MMM d")
+                                            )
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = when {
+                                            daysUntilNext <= 3 -> MaterialTheme.colorScheme.error
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                }
                                 
                                 subscription.category?.let { category ->
                                     Text(

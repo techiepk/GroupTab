@@ -171,6 +171,9 @@ dependencies {
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     
+    // Gson for backup/restore
+    implementation("com.google.code.gson:gson:2.10.1")
+    
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     

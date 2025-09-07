@@ -137,35 +137,16 @@ class UserPreferencesRepository @Inject constructor(
             .first()
     }
     
-    suspend fun getLastScanTimestamp(): Long {
-        return context.dataStore.data
-            .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_TIMESTAMP] ?: 0L }
-            .first()
-    }
-    
     suspend fun setLastScanTimestamp(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.LAST_SCAN_TIMESTAMP] = timestamp
         }
     }
     
-    suspend fun getLastScanPeriod(): Int {
-        return context.dataStore.data
-            .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_PERIOD] ?: 0 }
-            .first()
-    }
-    
     suspend fun setLastScanPeriod(period: Int) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.LAST_SCAN_PERIOD] = period
         }
-    }
-    
-    // In-App Review methods
-    suspend fun getFirstLaunchTime(): Long? {
-        return context.dataStore.data
-            .map { preferences -> preferences[PreferencesKeys.FIRST_LAUNCH_TIME] }
-            .first()
     }
     
     suspend fun setFirstLaunchTime(timestamp: Long) {
@@ -184,6 +165,69 @@ class UserPreferencesRepository @Inject constructor(
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.HAS_SHOWN_REVIEW_PROMPT] = true
             preferences[PreferencesKeys.LAST_REVIEW_PROMPT_TIME] = System.currentTimeMillis()
+        }
+    }
+    
+    // Flow methods for backup/restore
+    fun getLastScanTimestamp(): Flow<Long?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_TIMESTAMP] }
+    
+    fun getLastScanPeriod(): Flow<Int?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_SCAN_PERIOD] }
+    
+    fun getFirstLaunchTime(): Flow<Long?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.FIRST_LAUNCH_TIME] }
+    
+    fun getHasShownReviewPrompt(): Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.HAS_SHOWN_REVIEW_PROMPT] ?: false }
+    
+    fun getLastReviewPromptTime(): Flow<Long?> = context.dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_REVIEW_PROMPT_TIME] }
+    
+    // Update methods for import
+    suspend fun updateDarkTheme(enabled: Boolean?) {
+        updateDarkThemeEnabled(enabled)
+    }
+    
+    suspend fun updateDynamicColor(enabled: Boolean) {
+        updateDynamicColorEnabled(enabled)
+    }
+    
+    suspend fun updateHasSkippedSmsPermission(skipped: Boolean) {
+        updateSkippedSmsPermission(skipped)
+    }
+    
+    suspend fun updateDeveloperMode(enabled: Boolean) {
+        setDeveloperModeEnabled(enabled)
+    }
+    
+    suspend fun updateLastScanTimestamp(timestamp: Long) {
+        setLastScanTimestamp(timestamp)
+    }
+    
+    suspend fun updateLastScanPeriod(period: Int) {
+        setLastScanPeriod(period)
+    }
+    
+    suspend fun updateFirstLaunchTime(timestamp: Long) {
+        setFirstLaunchTime(timestamp)
+    }
+    
+    suspend fun updateHasShownScanTutorial(shown: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] = shown
+        }
+    }
+    
+    suspend fun updateHasShownReviewPrompt(shown: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_SHOWN_REVIEW_PROMPT] = shown
+        }
+    }
+    
+    suspend fun updateLastReviewPromptTime(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_REVIEW_PROMPT_TIME] = timestamp
         }
     }
 }

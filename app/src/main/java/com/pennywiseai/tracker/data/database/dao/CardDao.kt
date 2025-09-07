@@ -73,4 +73,7 @@ interface CardDao {
         AND is_active = 1
     """)
     suspend fun getBankCards(bankName: String, cardType: CardType): List<CardEntity>
+    
+    @Query("DELETE FROM cards")
+    suspend fun deleteAllCards()
 }

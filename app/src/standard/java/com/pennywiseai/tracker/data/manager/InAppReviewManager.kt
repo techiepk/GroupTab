@@ -13,6 +13,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -69,7 +70,7 @@ class InAppReviewManager @Inject constructor(
         }
         
         // Check first launch time
-        val firstLaunchTime = userPreferencesRepository.getFirstLaunchTime()
+        val firstLaunchTime = userPreferencesRepository.getFirstLaunchTime().first()
         if (firstLaunchTime == null) {
             // First time launching, record it
             userPreferencesRepository.setFirstLaunchTime(System.currentTimeMillis())

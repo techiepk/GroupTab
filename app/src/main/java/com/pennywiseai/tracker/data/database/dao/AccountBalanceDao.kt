@@ -54,6 +54,12 @@ interface AccountBalanceDao {
     """)
     fun getAllLatestBalances(): Flow<List<AccountBalanceEntity>>
     
+    @Query("SELECT * FROM account_balances ORDER BY timestamp DESC")
+    fun getAllBalances(): Flow<List<AccountBalanceEntity>>
+    
+    @Query("DELETE FROM account_balances")
+    suspend fun deleteAllBalances()
+    
     @Query("""
         SELECT DISTINCT 
             ab1.id,

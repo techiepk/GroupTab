@@ -15,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.clickable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,8 +50,31 @@ fun SettingsScreen(
     val totalMB by settingsViewModel.totalMB.collectAsStateWithLifecycle()
     val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle(initialValue = false)
     val smsScanMonths by settingsViewModel.smsScanMonths.collectAsStateWithLifecycle(initialValue = 3)
+    val importExportMessage by settingsViewModel.importExportMessage.collectAsStateWithLifecycle()
+    val exportedBackupFile by settingsViewModel.exportedBackupFile.collectAsStateWithLifecycle()
     var showSmsScanDialog by remember { mutableStateOf(false) }
+    var showExportOptionsDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    
+    // File picker for import
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                settingsViewModel.importBackup(it)
+            }
+        }
+    )
+    
+    // File saver for export
+    val exportSaveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
+        onResult = { uri ->
+            uri?.let {
+                settingsViewModel.saveBackupToFile(it)
+            }
+        }
+    )
     
     Column(
         modifier = modifier
@@ -182,6 +207,96 @@ fun SettingsScreen(
                         )
                         Text(
                             text = "Manage expense and income categories",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        // Export Data
+        PennyWiseCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { settingsViewModel.exportBackup() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Upload,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = "Export Data",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Backup all data to a file",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        // Import Data
+        PennyWiseCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { 
+                    importLauncher.launch("*/*")
+                }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = "Import Data",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Restore data from backup",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -605,6 +720,91 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showSmsScanDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // Show import/export message
+    importExportMessage?.let { message ->
+        // Check if we have an exported file ready
+        if (exportedBackupFile != null && message.contains("successfully! Choose")) {
+            showExportOptionsDialog = true
+        } else {
+            LaunchedEffect(message) {
+                // Auto-clear message after 5 seconds
+                kotlinx.coroutines.delay(5000)
+                settingsViewModel.clearImportExportMessage()
+            }
+            
+            AlertDialog(
+                onDismissRequest = { settingsViewModel.clearImportExportMessage() },
+                title = { Text("Backup Status") },
+                text = { Text(message) },
+                confirmButton = {
+                    TextButton(onClick = { settingsViewModel.clearImportExportMessage() }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
+    }
+    
+    // Export options dialog
+    if (showExportOptionsDialog && exportedBackupFile != null) {
+        val timestamp = java.time.LocalDateTime.now().format(
+            java.time.format.DateTimeFormatter.ofPattern("yyyy_MM_dd_HHmmss")
+        )
+        val fileName = "PennyWise_Backup_$timestamp.pennywisebackup"
+        
+        AlertDialog(
+            onDismissRequest = { 
+                showExportOptionsDialog = false
+                settingsViewModel.clearImportExportMessage()
+            },
+            title = { Text("Save Backup") },
+            text = { 
+                Column {
+                    Text("Backup created successfully!")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Choose how you want to save it:", style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = {
+                Row {
+                    TextButton(
+                        onClick = { 
+                            exportSaveLauncher.launch(fileName)
+                            showExportOptionsDialog = false
+                            settingsViewModel.clearImportExportMessage()
+                        }
+                    ) {
+                        Icon(Icons.Default.SaveAlt, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Save to Files")
+                    }
+                    
+                    TextButton(
+                        onClick = { 
+                            settingsViewModel.shareBackup()
+                            showExportOptionsDialog = false
+                            settingsViewModel.clearImportExportMessage()
+                        }
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Share")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        showExportOptionsDialog = false
+                        settingsViewModel.clearImportExportMessage()
+                    }
+                ) {
                     Text("Cancel")
                 }
             }

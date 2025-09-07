@@ -28,6 +28,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDateTime
@@ -514,13 +515,14 @@ class SmsReaderWorker @AssistedInject constructor(
         
         try {
             // Get scan parameters
-            val lastScanTimestamp = userPreferencesRepository.getLastScanTimestamp()
+            val lastScanTimestamp = userPreferencesRepository.getLastScanTimestamp().first() ?: 0L
             val scanMonths = userPreferencesRepository.getSmsScanMonths()
-            val lastScanPeriod = userPreferencesRepository.getLastScanPeriod()
+            val lastScanPeriod = userPreferencesRepository.getLastScanPeriod().first() ?: 0
             val now = System.currentTimeMillis()
             
             // Determine if we need a full scan
-            val needsFullScan = lastScanTimestamp == 0L || scanMonths > lastScanPeriod
+            val needsFullScan = lastScanTimestamp == 0L || scanMonths >
+            lastScanPeriod
             
             // Calculate scan start time with 3-day buffer for incremental scans
             val scanStartTime = if (needsFullScan) {
