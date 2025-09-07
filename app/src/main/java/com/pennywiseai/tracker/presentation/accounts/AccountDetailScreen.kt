@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -166,7 +167,7 @@ private fun ExpandableBalanceChart(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ShowChart,
+                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -497,7 +498,7 @@ private fun TransactionItem(
                         tint = amountColor
                     )
                     TransactionType.INVESTMENT -> Icon(
-                        Icons.Default.ShowChart,
+                        Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = "Investment",
                         modifier = Modifier.size(14.dp),
                         tint = amountColor

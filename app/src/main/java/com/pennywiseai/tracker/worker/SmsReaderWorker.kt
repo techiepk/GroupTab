@@ -277,7 +277,7 @@ class SmsReaderWorker @AssistedInject constructor(
                                 
                                 // Only save balance/credit limit information for NEW transactions (not duplicates)
                                 // This prevents incorrect balance accumulation from duplicate SMS messages
-                                if (parsedTransaction.bankName != null && parsedTransaction.accountLast4 != null) {
+                                if (parsedTransaction.accountLast4 != null) {
                                 
                                 // Determine if this transaction is from a card based on the message pattern
                                 val isFromCard = parsedTransaction.isFromCard

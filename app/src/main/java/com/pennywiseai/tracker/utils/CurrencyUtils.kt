@@ -10,7 +10,7 @@ import java.util.Locale
  */
 object CurrencyUtils {
     
-    private val indianLocale = Locale("en", "IN")
+    private val indianLocale = Locale.Builder().setLanguage("en").setRegion("IN").build()
     private val indianCurrencyFormat = NumberFormat.getCurrencyInstance(indianLocale).apply {
         currency = Currency.getInstance("INR")
         maximumFractionDigits = 0 // No decimal places for whole amounts

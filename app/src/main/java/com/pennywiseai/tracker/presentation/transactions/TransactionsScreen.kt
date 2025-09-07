@@ -10,11 +10,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Sort
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.LaunchedEffect
@@ -199,7 +202,7 @@ fun TransactionsScreen(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Sort,
+                        imageVector = Icons.AutoMirrored.Outlined.Sort,
                         contentDescription = "Sort",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -344,7 +347,7 @@ fun TransactionsScreen(
                                         modifier = Modifier.size(Dimensions.Icon.small)
                                     )
                                     TransactionTypeFilter.INVESTMENT -> Icon(
-                                        Icons.Default.ShowChart,
+                                        Icons.AutoMirrored.Filled.ShowChart,
                                         contentDescription = null,
                                         modifier = Modifier.size(Dimensions.Icon.small)
                                     )
@@ -615,7 +618,7 @@ private fun TransactionItem(
                         tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
                     )
                     TransactionType.INVESTMENT -> Icon(
-                        Icons.Default.ShowChart,
+                        Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = "Investment",
                         modifier = Modifier.size(Dimensions.Icon.small),
                         tint = if (!isSystemInDarkTheme()) investment_light else investment_dark

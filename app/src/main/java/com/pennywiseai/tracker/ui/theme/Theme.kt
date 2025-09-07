@@ -120,10 +120,8 @@ fun PennyWiseTheme(
         val darkTheme = darkTheme
         
         SideEffect {
-            // This is the recommended approach for API 21+
-            window.statusBarColor = colorScheme.background.toArgb()
-            // For newer APIs, also update the navigation bar
-            window.navigationBarColor = colorScheme.background.toArgb()
+            // Enable edge-to-edge display
+            WindowCompat.setDecorFitsSystemWindows(window, false)
             
             // Control whether status bar icons should be dark or light
             val windowInsetsController = WindowCompat.getInsetsController(window, view)

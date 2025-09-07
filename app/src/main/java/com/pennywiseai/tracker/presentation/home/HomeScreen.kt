@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
@@ -34,7 +35,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -494,7 +495,7 @@ private fun TransactionItem(
                         tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
                     )
                     TransactionType.INVESTMENT -> Icon(
-                        Icons.Default.ShowChart,
+                        Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = "Investment",
                         modifier = Modifier.size(Dimensions.Icon.small),
                         tint = if (!isSystemInDarkTheme()) investment_light else investment_dark
@@ -786,7 +787,7 @@ private fun TransactionSummaryCards(uiState: HomeUiState) {
                     // Investment Summary
                     TransactionTypeCard(
                         title = "Investments",
-                        icon = Icons.Default.ShowChart,
+                        icon = Icons.AutoMirrored.Filled.ShowChart,
                         amount = uiState.currentMonthInvestment,
                         color = if (!isSystemInDarkTheme()) investment_light else investment_dark,
                         emoji = "📈"

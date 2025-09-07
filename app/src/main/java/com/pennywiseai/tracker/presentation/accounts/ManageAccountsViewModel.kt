@@ -302,7 +302,7 @@ class ManageAccountsViewModel @Inject constructor(
                 cardRepository.linkCardToAccount(cardId, accountLast4)
                 
                 // If card had a balance, copy it to the account
-                if (card != null && hasBalance && accountLast4 != null) {
+                if (card != null && hasBalance) {
                     try {
                         val insertedId = accountBalanceRepository.insertBalanceUpdate(
                             bankName = card.bankName,

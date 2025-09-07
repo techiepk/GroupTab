@@ -198,7 +198,7 @@ class DatabaseCallback : RoomDatabase.Callback() {
             db.execSQL("""
                 INSERT OR IGNORE INTO categories (name, color, is_system, is_income, display_order, created_at, updated_at)
                 VALUES (?, ?, 1, ?, ?, datetime('now'), datetime('now'))
-            """.trimIndent(), arrayOf(name, color, if (isIncome) 1 else 0, index + 1))
+            """.trimIndent(), arrayOf<Any>(name, color, if (isIncome) 1 else 0, index + 1))
         }
     }
 }

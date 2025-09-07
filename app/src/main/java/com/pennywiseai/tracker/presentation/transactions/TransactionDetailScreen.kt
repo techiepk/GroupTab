@@ -7,7 +7,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import android.content.Intent
@@ -462,7 +464,7 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
                     TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
                     TransactionType.CREDIT -> Icons.Default.CreditCard
                     TransactionType.TRANSFER -> Icons.Default.SwapHoriz
-                    TransactionType.INVESTMENT -> Icons.Default.ShowChart
+                    TransactionType.INVESTMENT -> Icons.AutoMirrored.Filled.ShowChart
                 }
             )
             
@@ -684,7 +686,7 @@ private fun EditableTransactionHeader(
                         ) 
                     },
                     leadingIcon = if (transaction.transactionType == TransactionType.INVESTMENT) {
-                        { Icon(Icons.Default.ShowChart, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
+                        { Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(Dimensions.Icon.small)) }
                     } else null
                 )
             }

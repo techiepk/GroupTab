@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,7 @@ import com.pennywiseai.tracker.utils.CurrencyFormatter
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 
+@Suppress("DEPRECATION")
 @Composable
 fun BalanceHistoryDialog(
     bankName: String,
@@ -39,7 +41,7 @@ fun BalanceHistoryDialog(
     var editingValue by remember { mutableStateOf("") }
     var showDeleteConfirmation by remember { mutableStateOf<Long?>(null) }
     var expandedSources by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboardManager.current
     
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -141,7 +143,7 @@ fun BalanceHistoryDialog(
                                         expandedSources + balance.id
                                     }
                                 },
-                                clipboardManager = clipboardManager
+                                clipboard = clipboard
                             )
                         }
                     }
@@ -183,6 +185,7 @@ fun BalanceHistoryDialog(
     }
 }
 
+@Suppress("DEPRECATION")
 @Composable
 private fun BalanceHistoryItem(
     balance: AccountBalanceEntity,
@@ -197,7 +200,7 @@ private fun BalanceHistoryItem(
     onSaveEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onToggleExpand: () -> Unit,
-    clipboardManager: androidx.compose.ui.platform.ClipboardManager
+    clipboard: androidx.compose.ui.platform.ClipboardManager
 ) {
     Card(
         modifier = Modifier
@@ -441,7 +444,7 @@ private fun BalanceHistoryItem(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        Icons.Default.Message,
+                                        Icons.AutoMirrored.Filled.Message,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -478,7 +481,7 @@ private fun BalanceHistoryItem(
                                 if (isExpanded) {
                                     IconButton(
                                         onClick = {
-                                            clipboardManager.setText(AnnotatedString(smsSource))
+                                            clipboard.setText(AnnotatedString(smsSource))
                                         },
                                         modifier = Modifier.size(32.dp)
                                     ) {
