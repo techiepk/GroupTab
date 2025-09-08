@@ -38,7 +38,7 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class],
-    version = 20,
+    version = 21,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -59,6 +59,7 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19),
         AutoMigration(from = 19, to = 20)
+        // Note: v20 to v21 uses manual migration to handle nullable field change
     ]
 )
 @TypeConverters(Converters::class)
@@ -182,6 +183,46 @@ abstract class PennyWiseDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Add sms_body column to subscriptions table
                 db.execSQL("ALTER TABLE subscriptions ADD COLUMN sms_body TEXT")
+            }
+        }
+        
+        /**
+         * Manual migration from version 20 to 21.
+         * Makes next_payment_date nullable in subscriptions table.
+         * This fixes the issue where v2.15.18 had non-nullable field but v2.15.19+ needs nullable.
+         */
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // SQLite doesn't support ALTER COLUMN, so we need to recreate the table
+                // Step 1: Create new subscriptions table with nullable next_payment_date
+                db.execSQL("""
+                    CREATE TABLE subscriptions_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        merchant_name TEXT NOT NULL,
+                        amount TEXT NOT NULL,
+                        next_payment_date TEXT,
+                        state TEXT NOT NULL,
+                        bank_name TEXT,
+                        umn TEXT,
+                        category TEXT,
+                        sms_body TEXT,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                """)
+                
+                // Step 2: Copy data from old table to new table
+                db.execSQL("""
+                    INSERT INTO subscriptions_new (id, merchant_name, amount, next_payment_date, state, bank_name, umn, category, sms_body, created_at, updated_at)
+                    SELECT id, merchant_name, amount, next_payment_date, state, bank_name, umn, category, sms_body, created_at, updated_at
+                    FROM subscriptions
+                """)
+                
+                // Step 3: Drop old table
+                db.execSQL("DROP TABLE subscriptions")
+                
+                // Step 4: Rename new table to original name
+                db.execSQL("ALTER TABLE subscriptions_new RENAME TO subscriptions")
             }
         }
     }
