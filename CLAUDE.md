@@ -80,3 +80,7 @@ When adding new bank parsers:
 - Federal Bank (FederalBankParser) - in progress
 
 When implementing any feature, please ensure it aligns with the architecture patterns and design system defined in the documentation.
+
+
+# Important
+Never use pii in comments, code anywhere

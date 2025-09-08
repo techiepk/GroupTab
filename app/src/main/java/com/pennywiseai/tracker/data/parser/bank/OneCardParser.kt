@@ -8,7 +8,8 @@ import java.math.BigDecimal
  * Parser for OneCard credit card SMS messages
  * 
  * Supported formats:
- * - Spending: "You've made a booking of Rs. 95.00 on Nandi Economic Corridor, Benga on card ending XX9074"
+ * - Spending: "You've made a booking of Rs. X on MERCHANT on card ending XXXX"
+ * - Fuel: "You've fueled up for Rs. X at MERCHANT on card ending XXXX"
  * - General: "You've made a transaction of Rs. X on MERCHANT on card ending XXXX"
  * 
  * Common senders: CP-OneCrd-S, ONECRD, OneCard
@@ -46,12 +47,13 @@ class OneCardParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
-        // Pattern: "made a booking of Rs. 95.00" or "made a transaction of Rs. X"
-        val transactionPattern = Regex(
-            """made\s+a\s+(?:booking|transaction|purchase|payment)\s+of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+on""",
+        // Generic pattern: "for Rs. X at" - covers most OneCard formats
+        // Examples: "fueled up for Rs. X at", "hand-picked groceries for Rs. X at", etc.
+        val forAmountPattern = Regex(
+            """for\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+at""",
             RegexOption.IGNORE_CASE
         )
-        transactionPattern.find(message)?.let { match ->
+        forAmountPattern.find(message)?.let { match ->
             val amount = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(amount)
@@ -60,7 +62,21 @@ class OneCardParser : BankParser() {
             }
         }
         
-        // Pattern: "You've spent Rs. X"
+        // Pattern: "of Rs. X on" - for booking/transaction patterns
+        val ofAmountPattern = Regex(
+            """of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)\s+on""",
+            RegexOption.IGNORE_CASE
+        )
+        ofAmountPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+        
+        // Pattern: "spent Rs. X"
         val spentPattern = Regex(
             """spent\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""",
             RegexOption.IGNORE_CASE
@@ -79,7 +95,19 @@ class OneCardParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern: "on Nandi Economic Corridor, Benga on card" - extract merchant between "on" and "on card"
+        // Pattern: "at MERCHANT on card" - for fuel transactions
+        val atMerchantOnCardPattern = Regex(
+            """at\s+([^•\n]+?)\s+on\s+card""",
+            RegexOption.IGNORE_CASE
+        )
+        atMerchantOnCardPattern.find(message)?.let { match ->
+            val merchant = cleanMerchantName(match.groupValues[1].trim())
+            if (isValidMerchantName(merchant)) {
+                return merchant
+            }
+        }
+        
+        // Pattern: "on MERCHANT on card" - extract merchant between "on" and "on card"
         val merchantPattern = Regex(
             """on\s+([^•\n]+?)\s+on\s+card""",
             RegexOption.IGNORE_CASE
@@ -108,7 +136,7 @@ class OneCardParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
-        // Pattern: "card ending XX9074" or "card ending 9074"
+        // Pattern: "card ending XXXX" or "card ending XXXX"
         val cardEndingPattern = Regex(
             """card\s+ending\s+[X]*(\d{4})""",
             RegexOption.IGNORE_CASE
@@ -117,7 +145,7 @@ class OneCardParser : BankParser() {
             return match.groupValues[1]
         }
         
-        // Alternative pattern: "on card XX9074"
+        // Alternative pattern: "on card XXXX"
         val onCardPattern = Regex(
             """on\s+card\s+[X]*(\d{4})""",
             RegexOption.IGNORE_CASE
@@ -143,12 +171,15 @@ class OneCardParser : BankParser() {
             return false
         }
         
-        // Transaction indicators
-        if (lowerMessage.contains("you've made a") ||
-            lowerMessage.contains("made a booking") ||
-            lowerMessage.contains("made a transaction") ||
-            lowerMessage.contains("made a purchase") ||
-            lowerMessage.contains("spent")) {
+        // Transaction indicators - OneCard always starts with "You've"
+        if (lowerMessage.startsWith("you've") && 
+            lowerMessage.contains("on card ending")) {
+            return true
+        }
+        
+        // Additional patterns
+        if (lowerMessage.contains("spent") ||
+            lowerMessage.contains("made a")) {
             return true
         }
         
