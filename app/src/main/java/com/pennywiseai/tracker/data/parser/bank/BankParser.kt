@@ -101,6 +101,11 @@ abstract class BankParser {
             return false
         }
         
+        // Skip merchant payment acknowledgments
+        if (lowerMessage.contains("have received payment")) {
+            return false
+        }
+        
         // Skip payment reminder/due messages
         if (lowerMessage.contains("is due") ||
             lowerMessage.contains("min amount due") ||

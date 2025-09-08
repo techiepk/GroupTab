@@ -433,6 +433,13 @@ class SBIBankParser : BankParser() {
             return false
         }
         
+        // Skip credit card application status messages
+        if (lowerMessage.contains("sbi card application") ||
+            lowerMessage.contains("process your app.no") ||
+            lowerMessage.contains("track your application status")) {
+            return false
+        }
+        
         // Skip UPI-Mandate creation notifications
         if (isUPIMandateNotification(message)) {
             return false

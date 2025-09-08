@@ -17,7 +17,8 @@ class JioPayParser : BankParser() {
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
         return normalizedSender.contains("JIOPAY") ||
-               normalizedSender == "JA-JIOPAY-S"
+               normalizedSender == "JA-JIOPAY-S" ||
+               normalizedSender == "JM-JIOPAY"
     }
     
     override fun extractAmount(message: String): BigDecimal? {
