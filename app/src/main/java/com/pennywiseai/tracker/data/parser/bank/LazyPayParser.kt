@@ -92,6 +92,15 @@ class LazyPayParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
         
+        // Skip failed payment messages
+        if (lowerMessage.contains("could not be processed") ||
+            lowerMessage.contains("due to a failure") ||
+            lowerMessage.contains("payment failed") ||
+            lowerMessage.contains("transaction failed") ||
+            lowerMessage.contains("unsuccessful")) {
+            return false
+        }
+        
         // Skip promotional messages
         if (lowerMessage.contains("offer") || 
             lowerMessage.contains("get cashback") ||
