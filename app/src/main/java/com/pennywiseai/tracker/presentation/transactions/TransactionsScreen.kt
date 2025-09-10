@@ -367,7 +367,7 @@ fun TransactionsScreen(
         // Totals Card - Moved after filters
         TransactionTotalsCard(
             income = filteredTotals.income,
-            expenses = filteredTotals.expenses + filteredTotals.credit + filteredTotals.transfer + filteredTotals.investment,
+            expenses = filteredTotals.expenses,
             netBalance = filteredTotals.netBalance,
             isLoading = uiState.isLoading,
             modifier = Modifier
