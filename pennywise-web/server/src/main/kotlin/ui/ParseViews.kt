@@ -66,6 +66,12 @@ object ParseViews {
                         .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
                         .modal-buttons button { flex: 1; }
                         .success-msg { background: #065f46; border: 1px solid #10b981; color: #10b981; padding: 12px; border-radius: 8px; margin-top: 12px; }
+                        .parsed-info { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+                        .parsed-info h4 { margin: 0 0 12px 0; color: #9ca3af; font-size: 14px; font-weight: 600; }
+                        .parsed-info .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+                        .parsed-info .info-label { color: #9ca3af; }
+                        .parsed-info .info-value { color: #fff; font-weight: 500; }
+                        .parsed-info .no-transaction { color: #9ca3af; font-style: italic; }
                         @media (max-width: 640px) {
                           .header-content { flex-direction: column; gap: 16px; }
                           .container { padding: 16px; }
@@ -139,8 +145,16 @@ object ParseViews {
                         div(classes = "modal-content") {
                             h3 { +"Report Parsing Issue" }
 
+                            // Display what was parsed
+                            div(classes = "parsed-info") {
+                                id = "parsedInfo"
+                                h4 { +"What we detected:" }
+                                div { id = "parsedDetails" }
+                            }
+
                             form {
                                 id = "reportForm"
+                                h4 { +"What did you expect?" }
 
                                 label { htmlFor = "expected_amount"; +"Expected Amount" }
                                 input(type = InputType.number, name = "expected_amount") {
@@ -195,16 +209,112 @@ object ParseViews {
                               function setTs(){ ts && (ts.value = Date.now()); }
                               setTs();
                               document.addEventListener('htmx:configRequest', function(){ setTs(); });
+
+                              // Parse URL parameters (supports both hash and query params)
+                              function parseUrlParams() {
+                                const params = {};
+
+                                // Parse hash parameters
+                                if (window.location.hash) {
+                                  const hashParams = window.location.hash.substring(1);
+                                  const pairs = hashParams.split('&');
+                                  pairs.forEach(pair => {
+                                    const [key, value] = pair.split('=');
+                                    if (key && value) {
+                                      params[key] = decodeURIComponent(value.replace(/\+/g, ' '));
+                                    }
+                                  });
+                                }
+
+                                // Parse query parameters (override hash params if both exist)
+                                const searchParams = new URLSearchParams(window.location.search);
+                                searchParams.forEach((value, key) => {
+                                  params[key] = value;
+                                });
+
+                                return params;
+                              }
+
+                              // Auto-fill form and optionally parse on page load
+                              window.addEventListener('DOMContentLoaded', function() {
+                                const params = parseUrlParams();
+
+                                // Fill sender field
+                                if (params.sender) {
+                                  const senderField = document.getElementById('sender');
+                                  if (senderField) {
+                                    senderField.value = params.sender;
+                                  }
+                                }
+
+                                // Fill message field
+                                if (params.message) {
+                                  const messageField = document.getElementById('smsBody');
+                                  if (messageField) {
+                                    messageField.value = params.message;
+                                  }
+                                }
+
+                                // Auto-parse if requested
+                                if (params.autoparse === 'true' && params.sender && params.message) {
+                                  // Small delay to ensure HTMX is ready
+                                  setTimeout(function() {
+                                    const form = document.querySelector('form[hx-post="/htmx/parse"]');
+                                    if (form) {
+                                      htmx.trigger(form, 'submit');
+                                    }
+                                  }, 100);
+                                }
+
+                                // Clear URL parameters after processing (cleaner URL)
+                                if (Object.keys(params).length > 0) {
+                                  const cleanUrl = window.location.pathname;
+                                  window.history.replaceState({}, document.title, cleanUrl);
+                                }
+                              });
                             })();
 
                             function showReportModal() {
+                                // Show the modal
                                 document.getElementById('reportModal').classList.add('show');
+
+                                // Display parsed data in the modal
+                                const parsedResultStr = document.getElementById('parsed_result').value;
+                                const parsedDetails = document.getElementById('parsedDetails');
+
+                                if (parsedResultStr) {
+                                    try {
+                                        const parsed = JSON.parse(parsedResultStr);
+                                        let html = '';
+
+                                        if (parsed.amount !== undefined) {
+                                            html += '<div class="info-row"><span class="info-label">Amount:</span><span class="info-value">₹' + parsed.amount.toLocaleString('en-IN') + '</span></div>';
+                                        }
+                                        if (parsed.type) {
+                                            html += '<div class="info-row"><span class="info-label">Type:</span><span class="info-value">' + parsed.type + '</span></div>';
+                                        }
+                                        if (parsed.merchant) {
+                                            html += '<div class="info-row"><span class="info-label">Merchant:</span><span class="info-value">' + parsed.merchant + '</span></div>';
+                                        }
+
+                                        if (html === '') {
+                                            html = '<p class="no-transaction">No transaction details detected</p>';
+                                        }
+
+                                        parsedDetails.innerHTML = html;
+                                    } catch (e) {
+                                        parsedDetails.innerHTML = '<p class="no-transaction">No transaction detected</p>';
+                                    }
+                                } else {
+                                    parsedDetails.innerHTML = '<p class="no-transaction">No transaction detected</p>';
+                                }
                             }
 
                             function hideReportModal() {
                                 document.getElementById('reportModal').classList.remove('show');
                                 document.getElementById('reportForm').reset();
                                 document.getElementById('reportStatus').innerHTML = '';
+                                document.getElementById('parsedDetails').innerHTML = '';
                             }
 
                             async function submitReport() {
