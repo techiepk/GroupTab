@@ -6,6 +6,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.core.Constants
+import com.pennywiseai.tracker.core.Constants.Links
 import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
 import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,7 +68,7 @@ class UnrecognizedSmsViewModel @Inject constructor(
                 Log.d("UnrecognizedSmsViewModel", "Encoded device data: ${encodedDeviceData.take(50)}... (length: ${encodedDeviceData.length})")
                 
                 // Create the report URL using hash fragment for privacy
-                val url = "https://pennywise-5qh.pages.dev/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
+                val url = "${Constants.Links.WEB_PARSER_URL}/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
                 Log.d("UnrecognizedSmsViewModel", "Full URL length: ${url.length}")
                 
                 // Open in browser

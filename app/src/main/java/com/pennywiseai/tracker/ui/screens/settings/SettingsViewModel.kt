@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import com.pennywiseai.tracker.core.Constants
+import com.pennywiseai.tracker.core.Constants.Links
 import com.pennywiseai.tracker.data.repository.ModelRepository
 import com.pennywiseai.tracker.data.repository.ModelState
 import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
@@ -27,6 +27,7 @@ import com.pennywiseai.tracker.data.backup.ImportResult
 import com.pennywiseai.tracker.data.backup.ImportStrategy
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.pennywiseai.tracker.core.Constants
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.first
@@ -398,7 +399,7 @@ class SettingsViewModel @Inject constructor(
                     Log.d("SettingsViewModel", "Encoded device data: ${encodedDeviceData.take(50)}... (length: ${encodedDeviceData.length})")
                     
                     // Create the report URL using hash fragment for privacy
-                    val url = "https://pennywise-5qh.pages.dev/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
+                    val url = "${Constants.Links.WEB_PARSER_URL}/#message=$encodedMessage&sender=$encodedSender&device=$encodedDeviceData&autoparse=true"
                     Log.d("SettingsViewModel", "Full URL length: ${url.length}")
                     
                     // Open in browser

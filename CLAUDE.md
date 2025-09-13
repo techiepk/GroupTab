@@ -55,29 +55,70 @@ Recent version history:
 - 2.1.2: Spotlight tutorial, SBI/Indian Bank support, auto-scan on launch
 - 2.0.1: Previous release
 
+## Module Structure
+The project now uses a multi-module architecture:
+- **app**: Main Android application module
+- **parser-core**: Standalone bank parser module (no Android dependencies)
+
 ## Bank Parser Architecture
-When adding new bank parsers:
-1. **Base Class**: All bank parsers extend `BankParser` abstract class
-2. **Key Methods**:
+Bank parsers are now in the `parser-core` module for reusability across platforms.
+
+### When adding new bank parsers:
+1. **Location**: Add to `parser-core/src/main/kotlin/com/pennywiseai/parser/core/bank/`
+2. **Base Class**: All bank parsers extend `BankParser` abstract class
+3. **Key Methods**:
    - `getBankName()`: Returns the bank's display name
    - `canHandle(sender: String)`: Checks if parser can handle SMS from sender
    - `parse(smsBody, sender, timestamp)`: Returns `ParsedTransaction` or null
-3. **Override Patterns**: Banks typically override:
+4. **Override Patterns**: Banks typically override:
    - `extractAmount()`: Bank-specific amount patterns
    - `extractMerchant()`: Bank-specific merchant extraction
    - `extractTransactionType()`: If needed for special cases
-4. **Registration**: Add new parser to `BankParserFactory.parsers` list
-5. **Return Type**: Use `ParsedTransaction` (not Transaction)
-6. **Imports**: 
-   - `com.pennywiseai.tracker.data.database.entity.TransactionType`
-   - `com.pennywiseai.tracker.data.parser.ParsedTransaction`
+5. **Registration**: Add new parser to `BankParserFactory.parsers` list in parser-core
+6. **Return Type**: Use `ParsedTransaction` from parser-core
+7. **Imports for parser-core**:
+   - `com.pennywiseai.parser.core.TransactionType`
+   - `com.pennywiseai.parser.core.ParsedTransaction`
    - `java.math.BigDecimal` for amounts
 
-## Supported Banks
-- HDFC Bank (HDFCBankParser)
-- State Bank of India (SBIBankParser) 
-- Indian Bank (IndianBankParser)
-- Federal Bank (FederalBankParser) - in progress
+### Integration in main app:
+- Use `com.pennywiseai.tracker.data.mapper.toEntity()` to convert ParsedTransaction to TransactionEntity
+- The mapper handles type conversions between modules
+
+## Supported Banks (34 parsers)
+- Airtel Payments Bank
+- American Express (AMEX)
+- Axis Bank
+- Bank of Baroda
+- Bank of India
+- Canara Bank
+- Central Bank of India
+- City Union Bank
+- DBS Bank
+- Federal Bank
+- HDFC Bank
+- HSBC Bank
+- ICICI Bank
+- IDBI Bank
+- IDFC First Bank
+- Indian Bank
+- Indian Overseas Bank
+- India Post Payments Bank (IPPB)
+- Jio Payments Bank
+- JioPay
+- Jammu & Kashmir Bank
+- Jupiter Bank
+- Juspay
+- Karnataka Bank
+- Kotak Bank
+- LazyPay
+- OneCard
+- Punjab National Bank (PNB)
+- State Bank of India (SBI)
+- Slice
+- South Indian Bank
+- Union Bank
+- Utkarsh Bank
 
 When implementing any feature, please ensure it aligns with the architecture patterns and design system defined in the documentation.
 

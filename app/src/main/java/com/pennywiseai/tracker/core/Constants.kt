@@ -75,4 +75,13 @@ object Constants {
         const val MODEL_SIZE_BYTES = 1_610_613_760L // 1536 MB in bytes
         const val REQUIRED_SPACE_BYTES = 2_013_771_776L // ~2GB (2x model size for safety)
     }
+
+    /**
+     * External Links
+     */
+    object Links {
+        const val DISCORD_URL = "https://discord.gg/H3xWeMWjKQ"
+        const val GITHUB_URL = "https://github.com/sarim2000/pennywiseai-tracker"
+        const val WEB_PARSER_URL = "https://pennywise-web-ywcyejojoa-el.a.run.app"
+    }
 }

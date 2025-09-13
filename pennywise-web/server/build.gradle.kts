@@ -5,6 +5,8 @@ val kotlinx_browser_version: String by project
 val kotlinx_html_version: String by project
 val logback_version: String by project
 val postgres_version: String by project
+val exposed_version: String by project
+val hikari_version: String by project
 
 plugins {
     kotlin("jvm") version "2.2.20"
@@ -32,29 +34,33 @@ ktor {
 }
 
 dependencies {
-    implementation("org.openfolder:kotlin-asyncapi-ktor:3.1.1")
+    // Core Ktor dependencies
     implementation("io.ktor:ktor-server-core")
-    implementation("io.ktor:ktor-server-swagger")
-    implementation("io.ktor:ktor-server-openapi")
+    implementation("io.ktor:ktor-server-netty")
+    implementation("io.ktor:ktor-server-config-yaml")
+
+    // Content negotiation and serialization
     implementation("io.ktor:ktor-server-content-negotiation")
-    implementation("io.ktor:ktor-serialization-gson")
+    implementation("io.ktor:ktor-serialization-kotlinx-json")
+
+    // HTML templating
     implementation("io.ktor:ktor-server-html-builder")
     implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinx_html_version")
-    implementation("io.ktor:ktor-server-htmx")
-    implementation("io.ktor:ktor-htmx-html")
-    implementation("org.jetbrains.kotlin-wrappers:kotlin-css-jvm:2025.6.4")
-    implementation("io.ktor:ktor-serialization-kotlinx-json")
+
+    // CORS support
+    implementation("io.ktor:ktor-server-cors")
+
+    // Database
     implementation("org.postgresql:postgresql:$postgres_version")
     implementation("com.h2database:h2:$h2_version")
-    implementation("io.insert-koin:koin-ktor:$koin_version")
-    implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
-    implementation("io.ktor:ktor-server-netty")
+
+    // Logging
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("io.ktor:ktor-server-config-yaml")
-    // CORS
-    implementation("io.ktor:ktor-server-cors")
-    // Shared parser core
+
+    // Parser core
     implementation("com.pennywiseai:parser-core:0.1.0-SNAPSHOT")
+
+    // Testing
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
