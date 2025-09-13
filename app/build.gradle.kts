@@ -141,6 +141,8 @@ ksp {
 }
 
 dependencies {
+    // Local modules
+    implementation(project(":parser-core"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -3,9 +3,9 @@ package com.pennywiseai.tracker.data.repository
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionState
-import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
-import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
-import com.pennywiseai.tracker.data.parser.bank.SBIBankParser
+import com.pennywiseai.parser.core.bank.HDFCBankParser
+import com.pennywiseai.parser.core.bank.IndianBankParser
+import com.pennywiseai.parser.core.bank.SBIBankParser
 import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -78,7 +78,7 @@ class SubscriptionRepository @Inject constructor(
         
         // For HDFC, UMN is the primary identifier when available
         val existing = if (bankName == "HDFC Bank" && eMandateInfo.umn != null) {
-            subscriptionDao.getSubscriptionByUmn(eMandateInfo.umn)
+            subscriptionDao.getSubscriptionByUmn(eMandateInfo.umn!!)
         } else {
             // For other banks or when no UMN, use merchant and amount matching
             subscriptionDao.getSubscriptionByMerchantAndAmount(
@@ -281,7 +281,7 @@ class SubscriptionRepository @Inject constructor(
         
         // For SBI, UMN is the primary identifier when available
         val existing = if (upiMandateInfo.umn != null) {
-            subscriptionDao.getSubscriptionByUmn(upiMandateInfo.umn)
+            subscriptionDao.getSubscriptionByUmn(upiMandateInfo.umn!!)
         } else {
             // When no UMN, use merchant and amount matching
             subscriptionDao.getSubscriptionByMerchantAndAmount(

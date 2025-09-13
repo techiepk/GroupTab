@@ -8,10 +8,13 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pennywiseai.tracker.core.Constants
-import com.pennywiseai.tracker.data.parser.bank.BankParserFactory
-import com.pennywiseai.tracker.data.parser.bank.HDFCBankParser
-import com.pennywiseai.tracker.data.parser.bank.IndianBankParser
-import com.pennywiseai.tracker.data.parser.bank.SBIBankParser
+import com.pennywiseai.parser.core.bank.BankParserFactory
+import com.pennywiseai.parser.core.bank.HDFCBankParser
+import com.pennywiseai.parser.core.bank.IndianBankParser
+import com.pennywiseai.parser.core.bank.SBIBankParser
+import com.pennywiseai.parser.core.ParsedTransaction
+import com.pennywiseai.tracker.data.mapper.toEntity
+import com.pennywiseai.tracker.data.mapper.toEntityType
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.CardRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
@@ -296,22 +299,28 @@ class SmsReaderWorker @AssistedInject constructor(
                                     // This is a card transaction
                                     Log.d(TAG, "Transaction identified as CARD transaction")
                                     
-                                    var card = cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)
+                                    var card = parsedTransaction.accountLast4?.let {
+                                        cardRepository.getCard(parsedTransaction.bankName, it)
+                                    }
                                     
                                     if (card == null) {
                                         // First time seeing this card - create it
                                         // Determine if it's a credit card based on transaction type
-                                        val isCredit = (parsedTransaction.type == TransactionType.CREDIT)
+                                        val isCredit = (parsedTransaction.type.toEntityType() == TransactionType.CREDIT)
                                         Log.d(TAG, "Creating new card for ${parsedTransaction.bankName}")
                                         
-                                        card = cardRepository.findOrCreateCard(
-                                            cardLast4 = parsedTransaction.accountLast4,
-                                            bankName = parsedTransaction.bankName,
-                                            isCredit = isCredit
-                                        )
+                                        card = parsedTransaction.accountLast4?.let { accountLast4 ->
+                                            cardRepository.findOrCreateCard(
+                                                cardLast4 = accountLast4,
+                                                bankName = parsedTransaction.bankName,
+                                                isCredit = isCredit
+                                            )
+                                        }
                                         
                                         // CRITICAL: Refetch the card to get the actual state (might have been created before)
-                                        card = cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)!!
+                                        card = parsedTransaction.accountLast4?.let {
+                                            cardRepository.getCard(parsedTransaction.bankName, it)
+                                        }!!
                                         Log.d(TAG, "Card created/found successfully")
                                     } else {
                                         Log.d(TAG, "Found existing card")
@@ -357,8 +366,10 @@ class SmsReaderWorker @AssistedInject constructor(
                                 // Only create balance entry if we have a target account
                                 if (targetAccountLast4 != null) {
                                     // Determine if this is a credit card based on transaction type or card info
-                                    val isCreditCard = (parsedTransaction.type == TransactionType.CREDIT) ||
-                                        cardRepository.getCard(parsedTransaction.bankName, parsedTransaction.accountLast4)?.cardType == 
+                                    val isCreditCard = (parsedTransaction.type.toEntityType() == TransactionType.CREDIT) ||
+                                        parsedTransaction.accountLast4?.let {
+                                            cardRepository.getCard(parsedTransaction.bankName, it)?.cardType
+                                        } == 
                                             com.pennywiseai.tracker.data.database.entity.CardType.CREDIT
                                     
                                     // Get the existing account using the target account
@@ -376,14 +387,14 @@ class SmsReaderWorker @AssistedInject constructor(
                                             currentBalance + parsedTransaction.amount
                                         }
                                         // Check if this is a payment TO a credit card (reducing debt)
-                                        existingAccount?.isCreditCard == true && parsedTransaction.type == TransactionType.INCOME -> {
+                                        existingAccount?.isCreditCard == true && parsedTransaction.type.toEntityType() == TransactionType.INCOME -> {
                                             val currentBalance = existingAccount.balance ?: BigDecimal.ZERO
                                             // Payment to credit card, reduce outstanding
                                             (currentBalance - parsedTransaction.amount).max(BigDecimal.ZERO)
                                         }
                                         // For regular accounts, use balance from SMS if available
                                         parsedTransaction.balance != null -> {
-                                            parsedTransaction.balance
+                                            parsedTransaction.balance!!
                                         }
                                         // Otherwise keep existing or zero
                                         else -> {
@@ -430,7 +441,7 @@ class SmsReaderWorker @AssistedInject constructor(
                                         accountBalanceRepository.insertBalance(balanceEntity)
                                         
                                         val logMsg = if (parsedTransaction.creditLimit != null) {
-                                            "Saved balance/credit limit (${CurrencyFormatter.formatCurrency(parsedTransaction.creditLimit)}) for ${parsedTransaction.bankName} **$targetAccountLast4"
+                                            "Saved balance/credit limit (${CurrencyFormatter.formatCurrency(parsedTransaction.creditLimit!!)}) for ${parsedTransaction.bankName} **$targetAccountLast4"
                                         } else {
                                             "Saved balance update for ${parsedTransaction.bankName} **$targetAccountLast4"
                                         }

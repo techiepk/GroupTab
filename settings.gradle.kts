@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "pennywiseai-tracker"
 include(":app")
+include(":parser-core")
