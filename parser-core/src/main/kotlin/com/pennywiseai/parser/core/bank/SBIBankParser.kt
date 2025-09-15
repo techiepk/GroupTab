@@ -110,6 +110,17 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
+        // Pattern for transaction number format: "transaction number 1234 for Rs.383.00"
+        val transactionNumberPattern = Regex("""transaction\s+number\s+\d+\s+for\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        transactionNumberPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+
         // Pattern for credit card payment: "payment of Rs.1,644.55"
         val paymentPattern = Regex("""payment\s+of\s+Rs\.?\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         paymentPattern.find(message)?.let { match ->
@@ -259,20 +270,30 @@ class SBIBankParser : BankParser() {
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
-        
+
         // SBI-specific patterns
         return when {
             lowerMessage.contains("withdrawn") -> TransactionType.EXPENSE
             lowerMessage.contains("transferred") -> TransactionType.EXPENSE
             lowerMessage.contains("paid to") -> TransactionType.EXPENSE
             lowerMessage.contains("atm withdrawal") -> TransactionType.EXPENSE
-            
+            lowerMessage.contains("by sbi debit card") -> TransactionType.EXPENSE
+
             // Fall back to base class for common patterns
             else -> super.extractTransactionType(message)
         }
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
+        // Pattern for "done at <location>": "done at -string of number redacted- on"
+        val doneAtPattern = Regex("""done\s+at\s+([^.\n]+?)(?:\s+on\s+|$)""", RegexOption.IGNORE_CASE)
+        doneAtPattern.find(message)?.let { match ->
+            val location = cleanMerchantName(match.groupValues[1].trim())
+            if (isValidMerchantName(location)) {
+                return location
+            }
+        }
+
         // Pattern 0: trf to Merchant (UPI format)
         val trfPattern = Regex("""trf\s+to\s+([^.\n]+?)(?:\s+Ref|\s+ref|$)""", RegexOption.IGNORE_CASE)
         trfPattern.find(message)?.let { match ->
@@ -330,6 +351,21 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractAccountLast4(message: String): String? {
+        // Pattern for debit card: "by SBI Debit Card <last4>" - can be digits or redacted
+        val debitCardPattern = Regex("""by\s+SBI\s+Debit\s+Card\s+([\w\-]+)""", RegexOption.IGNORE_CASE)
+        debitCardPattern.find(message)?.let { match ->
+            val cardInfo = match.groupValues[1]
+            // If it's all digits and 4 characters, return as is
+            // Otherwise try to extract last 4 digits if present
+            return if (cardInfo.matches(Regex("""\d{4}"""))) {
+                cardInfo
+            } else {
+                // Extract last 4 digits if available
+                val digits = cardInfo.filter { it.isDigit() }
+                if (digits.length >= 4) digits.takeLast(4) else cardInfo
+            }
+        }
+
         // Pattern 1: A/c XNNNN or A/c XXNNNN - extract everything after A/c
         val pattern1 = Regex("""A/c\s+([X\*]*\d+)""", RegexOption.IGNORE_CASE)
         pattern1.find(message)?.let { match ->
@@ -360,6 +396,17 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractBalance(message: String): BigDecimal? {
+        // Pattern for updated balance: "Your updated available balance is Rs.999999999"
+        val updatedBalancePattern = Regex("""Your\s+updated\s+available\s+balance\s+is\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        updatedBalancePattern.find(message)?.let { match ->
+            val balanceStr = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(balanceStr)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+
         // Pattern 1: Avl Bal Rs 1000.00
         val pattern1 = Regex("""Avl\s+Bal\s+Rs\.?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         pattern1.find(message)?.let { match ->
@@ -398,6 +445,12 @@ class SBIBankParser : BankParser() {
     }
     
     override fun extractReference(message: String): String? {
+        // Pattern for transaction number: "transaction number <alphanumeric>"
+        val transactionNumberPattern = Regex("""transaction\s+number\s+([\w\-]+)""", RegexOption.IGNORE_CASE)
+        transactionNumberPattern.find(message)?.let { match ->
+            return match.groupValues[1]
+        }
+
         // Pattern 1: Ref No 123456789
         val pattern1 = Regex("""Ref\s+No\.?\s*(\w+)""", RegexOption.IGNORE_CASE)
         pattern1.find(message)?.let { match ->
@@ -422,29 +475,34 @@ class SBIBankParser : BankParser() {
     
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
-        
+
         // Skip e-statement notifications
         if (lowerMessage.contains("e-statement of sbi credit card")) {
             return false
         }
-        
+
         // Skip future/pending transactions
         if (lowerMessage.contains("is due for")) {
             return false
         }
-        
+
         // Skip credit card application status messages
         if (lowerMessage.contains("sbi card application") ||
             lowerMessage.contains("process your app.no") ||
             lowerMessage.contains("track your application status")) {
             return false
         }
-        
+
         // Skip UPI-Mandate creation notifications
         if (isUPIMandateNotification(message)) {
             return false
         }
-        
+
+        // SBI Debit Card transactions
+        if (lowerMessage.contains("by sbi debit card")) {
+            return true
+        }
+
         // Fall back to base class for other checks
         return super.isTransactionMessage(message)
     }
