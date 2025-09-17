@@ -10,13 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.pennywiseai.tracker.presentation.accounts.AccountDetailScreen
-import com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen
 import com.pennywiseai.tracker.ui.MainScreen
-import com.pennywiseai.tracker.ui.screens.PermissionScreen
-import com.pennywiseai.tracker.ui.screens.settings.SettingsScreen
-import com.pennywiseai.tracker.ui.screens.settings.FAQScreen
-import com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen
 import com.pennywiseai.tracker.ui.viewmodel.ThemeViewModel
 
 @Composable
@@ -44,7 +38,7 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            PermissionScreen(
+            com.pennywiseai.tracker.ui.screens.PermissionScreen(
                 onPermissionGranted = {
                     navController.navigate(Home) {
                         popUpTo(Permission) { inclusive = true }
@@ -69,7 +63,7 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            SettingsScreen(
+            com.pennywiseai.tracker.ui.screens.settings.SettingsScreen(
                 themeViewModel = themeViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
@@ -106,7 +100,7 @@ fun PennyWiseNavHost(
             popExitTransition = { ExitTransition.None }
         ) { backStackEntry ->
             val transactionDetail = backStackEntry.toRoute<TransactionDetail>()
-            TransactionDetailScreen(
+            com.pennywiseai.tracker.presentation.transactions.TransactionDetailScreen(
                 transactionId = transactionDetail.transactionId,
                 onNavigateBack = {
                     navController.popBackStack()
@@ -133,7 +127,7 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            UnrecognizedSmsScreen(
+            com.pennywiseai.tracker.ui.screens.unrecognized.UnrecognizedSmsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -146,8 +140,42 @@ fun PennyWiseNavHost(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            FAQScreen(
+            com.pennywiseai.tracker.ui.screens.settings.FAQScreen(
                 onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Rules>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            com.pennywiseai.tracker.ui.screens.rules.RulesScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToCreateRule = {
+                    navController.navigate(CreateRule)
+                }
+            )
+        }
+
+        composable<CreateRule>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
+            val rulesViewModel: com.pennywiseai.tracker.ui.viewmodel.RulesViewModel = hiltViewModel()
+            com.pennywiseai.tracker.ui.screens.rules.CreateRuleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSaveRule = { rule ->
+                    rulesViewModel.createRule(rule)
                     navController.popBackStack()
                 }
             )
@@ -160,7 +188,7 @@ fun PennyWiseNavHost(
             popExitTransition = { ExitTransition.None }
         ) { backStackEntry ->
             val accountDetail = backStackEntry.toRoute<AccountDetail>()
-            AccountDetailScreen(
+            com.pennywiseai.tracker.presentation.accounts.AccountDetailScreen(
                 navController = navController
             )
         }

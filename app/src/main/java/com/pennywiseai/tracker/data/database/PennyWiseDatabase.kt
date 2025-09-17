@@ -14,6 +14,8 @@ import com.pennywiseai.tracker.data.database.dao.CardDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
+import com.pennywiseai.tracker.data.database.dao.RuleApplicationDao
+import com.pennywiseai.tracker.data.database.dao.RuleDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
 import com.pennywiseai.tracker.data.database.dao.UnrecognizedSmsDao
@@ -22,6 +24,8 @@ import com.pennywiseai.tracker.data.database.entity.CardEntity
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
 import com.pennywiseai.tracker.data.database.entity.MerchantMappingEntity
+import com.pennywiseai.tracker.data.database.entity.RuleApplicationEntity
+import com.pennywiseai.tracker.data.database.entity.RuleEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
@@ -37,8 +41,8 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class],
-    version = 21,
+    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class, RuleEntity::class, RuleApplicationEntity::class],
+    version = 23,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -72,6 +76,8 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun accountBalanceDao(): AccountBalanceDao
     abstract fun unrecognizedSmsDao(): UnrecognizedSmsDao
     abstract fun cardDao(): CardDao
+    abstract fun ruleDao(): RuleDao
+    abstract fun ruleApplicationDao(): RuleApplicationDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -223,6 +229,106 @@ abstract class PennyWiseDatabase : RoomDatabase() {
                 
                 // Step 4: Rename new table to original name
                 db.execSQL("ALTER TABLE subscriptions_new RENAME TO subscriptions")
+            }
+        }
+
+        /**
+         * Manual migration from version 21 to 22.
+         * Adds transaction_rules and rule_applications tables for the rule engine.
+         * Note: This migration is kept for users who might be on v21.
+         */
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create transaction_rules table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS transaction_rules (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        priority INTEGER NOT NULL,
+                        conditions TEXT NOT NULL,
+                        actions TEXT NOT NULL,
+                        is_active INTEGER NOT NULL,
+                        is_system_template INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                """)
+
+                // Create indices for transaction_rules
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_rules_priority_is_active ON transaction_rules (priority, is_active)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_rules_name ON transaction_rules (name)")
+
+                // Create rule_applications table
+                db.execSQL("""
+                    CREATE TABLE rule_applications (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        rule_id TEXT NOT NULL,
+                        rule_name TEXT NOT NULL,
+                        transaction_id TEXT NOT NULL,
+                        fields_modified TEXT NOT NULL,
+                        applied_at TEXT NOT NULL,
+                        FOREIGN KEY(rule_id) REFERENCES transaction_rules(id) ON DELETE CASCADE,
+                        FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+                    )
+                """)
+
+                // Create indices for rule_applications
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_rule_id ON rule_applications (rule_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_transaction_id ON rule_applications (transaction_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_applied_at ON rule_applications (applied_at)")
+            }
+        }
+
+        /**
+         * Manual migration from version 22 to 23.
+         * Adds transaction_rules and rule_applications tables for the rule engine.
+         * This is for users who were already on v22 before the rules feature was added.
+         */
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Drop table if exists to ensure clean state
+                db.execSQL("DROP TABLE IF EXISTS transaction_rules")
+                db.execSQL("DROP TABLE IF EXISTS rule_applications")
+
+                // Create transaction_rules table with all required columns
+                db.execSQL("""
+                    CREATE TABLE transaction_rules (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        priority INTEGER NOT NULL,
+                        conditions TEXT NOT NULL,
+                        actions TEXT NOT NULL,
+                        is_active INTEGER NOT NULL,
+                        is_system_template INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                """)
+
+                // Create indices for transaction_rules
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_rules_priority_is_active ON transaction_rules (priority, is_active)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transaction_rules_name ON transaction_rules (name)")
+
+                // Create rule_applications table
+                db.execSQL("""
+                    CREATE TABLE rule_applications (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        rule_id TEXT NOT NULL,
+                        rule_name TEXT NOT NULL,
+                        transaction_id TEXT NOT NULL,
+                        fields_modified TEXT NOT NULL,
+                        applied_at TEXT NOT NULL,
+                        FOREIGN KEY(rule_id) REFERENCES transaction_rules(id) ON DELETE CASCADE,
+                        FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+                    )
+                """)
+
+                // Create indices for rule_applications
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_rule_id ON rule_applications (rule_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_transaction_id ON rule_applications (transaction_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_rule_applications_applied_at ON rule_applications (applied_at)")
             }
         }
     }

@@ -43,6 +43,7 @@ fun SettingsScreen(
     onNavigateToUnrecognizedSms: () -> Unit = {},
     onNavigateToManageAccounts: () -> Unit = {},
     onNavigateToFaq: () -> Unit = {},
+    onNavigateToRules: () -> Unit = {},
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
@@ -209,6 +210,50 @@ fun SettingsScreen(
                         )
                         Text(
                             text = "Manage expense and income categories",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Smart Rules
+        PennyWiseCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToRules() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimensions.Padding.content),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = "Smart Rules",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "Automatic transaction categorization",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -38,3 +38,9 @@ object UnrecognizedSms
 
 @Serializable
 object Faq
+
+@Serializable
+object Rules
+
+@Serializable
+object CreateRule

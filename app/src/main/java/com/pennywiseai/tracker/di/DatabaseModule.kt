@@ -10,6 +10,8 @@ import com.pennywiseai.tracker.data.database.dao.CardDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
+import com.pennywiseai.tracker.data.database.dao.RuleApplicationDao
+import com.pennywiseai.tracker.data.database.dao.RuleDao
 import com.pennywiseai.tracker.data.database.dao.SubscriptionDao
 import com.pennywiseai.tracker.data.database.dao.TransactionDao
 import com.pennywiseai.tracker.data.database.dao.UnrecognizedSmsDao
@@ -51,7 +53,9 @@ object DatabaseModule {
                 PennyWiseDatabase.MIGRATION_12_14,
                 PennyWiseDatabase.MIGRATION_13_14,
                 PennyWiseDatabase.MIGRATION_14_15,
-                PennyWiseDatabase.MIGRATION_20_21
+                PennyWiseDatabase.MIGRATION_20_21,
+                PennyWiseDatabase.MIGRATION_21_22,
+                PennyWiseDatabase.MIGRATION_22_23
             )
             
             // Enable auto-migrations
@@ -149,7 +153,7 @@ object DatabaseModule {
     
     /**
      * Provides the CardDao from the database.
-     * 
+     *
      * @param database The PennyWiseDatabase instance
      * @return CardDao for accessing card data
      */
@@ -157,6 +161,30 @@ object DatabaseModule {
     @Singleton
     fun provideCardDao(database: PennyWiseDatabase): CardDao {
         return database.cardDao()
+    }
+
+    /**
+     * Provides the RuleDao from the database.
+     *
+     * @param database The PennyWiseDatabase instance
+     * @return RuleDao for accessing rule data
+     */
+    @Provides
+    @Singleton
+    fun provideRuleDao(database: PennyWiseDatabase): RuleDao {
+        return database.ruleDao()
+    }
+
+    /**
+     * Provides the RuleApplicationDao from the database.
+     *
+     * @param database The PennyWiseDatabase instance
+     * @return RuleApplicationDao for accessing rule application data
+     */
+    @Provides
+    @Singleton
+    fun provideRuleApplicationDao(database: PennyWiseDatabase): RuleApplicationDao {
+        return database.ruleApplicationDao()
     }
 }
 

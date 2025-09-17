@@ -174,4 +174,20 @@ class TransactionRepository @Inject constructor(
     ): Flow<List<TransactionEntity>> {
         return transactionDao.getTransactionsByAccountAndDateRange(bankName, accountLast4, startDate, endDate)
     }
+
+    // Methods for batch rule application
+    suspend fun getAllTransactionsList(): List<TransactionEntity> {
+        // Get all non-deleted transactions as a list (not Flow) for batch processing
+        // Use a large date range to get all transactions
+        val startDate = LocalDateTime.of(2000, 1, 1, 0, 0)
+        val endDate = LocalDateTime.now().plusYears(10)
+        return transactionDao.getTransactionsBetweenDatesList(startDate, endDate)
+    }
+
+    suspend fun getUncategorizedTransactions(): List<TransactionEntity> {
+        // Get all transactions without a category or with "Others" category
+        return getAllTransactionsList().filter { transaction ->
+            transaction.category.isNullOrBlank() || transaction.category == "Others"
+        }
+    }
 }

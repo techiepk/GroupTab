@@ -255,6 +255,11 @@ fun MainScreen(
                     },
                     onNavigateToFaq = {
                         navController.navigate("faq")
+                    },
+                    onNavigateToRules = {
+                        rootNavController?.navigate(
+                            com.pennywiseai.tracker.navigation.Rules
+                        )
                     }
                 )
             }

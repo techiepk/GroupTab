@@ -22,6 +22,8 @@ import com.pennywiseai.tracker.data.repository.MerchantMappingRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import com.pennywiseai.tracker.data.repository.UnrecognizedSmsRepository
+import com.pennywiseai.tracker.domain.repository.RuleRepository
+import com.pennywiseai.tracker.domain.service.RuleEngine
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
@@ -52,7 +54,9 @@ class SmsReaderWorker @AssistedInject constructor(
     private val llmRepository: LlmRepository,
     private val merchantMappingRepository: MerchantMappingRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val unrecognizedSmsRepository: UnrecognizedSmsRepository
+    private val unrecognizedSmsRepository: UnrecognizedSmsRepository,
+    private val ruleRepository: RuleRepository,
+    private val ruleEngine: RuleEngine
 ) : CoroutineWorker(appContext, workerParams) {
     
     companion object {
@@ -252,31 +256,52 @@ class SmsReaderWorker @AssistedInject constructor(
                         } else {
                             entity
                         }
-                        
+
+                        // Apply rule engine to the transaction
+                        val activeRules = ruleRepository.getActiveRules()
+                        val (entityWithRules, ruleApplications) = ruleEngine.evaluateRules(
+                            entityWithMapping,
+                            sms.body,
+                            activeRules
+                        )
+
+                        if (ruleApplications.isNotEmpty()) {
+                            Log.d(TAG, "Applied ${ruleApplications.size} rules to transaction")
+                            ruleApplications.forEach { app ->
+                                Log.d(TAG, "Applied rule: ${app.ruleName}")
+                            }
+                        }
+
                         try {
                             // Check if this transaction matches an active subscription
                             val matchedSubscription = subscriptionRepository.matchTransactionToSubscription(
-                                entityWithMapping.merchantName,
-                                entityWithMapping.amount
+                                entityWithRules.merchantName,
+                                entityWithRules.amount
                             )
-                            
+
                             // If matched to active subscription, update the entity to mark as recurring
                             val finalEntity = if (matchedSubscription != null) {
                                 Log.d(TAG, "Transaction matched to active subscription: ${matchedSubscription.merchantName}")
                                 // Update next payment date for the subscription
                                 subscriptionRepository.updateNextPaymentDateAfterCharge(
                                     matchedSubscription.id,
-                                    entityWithMapping.dateTime.toLocalDate()
+                                    entityWithRules.dateTime.toLocalDate()
                                 )
-                                entityWithMapping.copy(isRecurring = true)
+                                entityWithRules.copy(isRecurring = true)
                             } else {
-                                entityWithMapping
+                                entityWithRules
                             }
                             
                             val rowId = transactionRepository.insertTransaction(finalEntity)
                             if (rowId != -1L) {
                                 savedCount++
                                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
+
+                                // Save rule applications if any rules were applied
+                                if (ruleApplications.isNotEmpty()) {
+                                    ruleRepository.saveRuleApplications(ruleApplications)
+                                    Log.d(TAG, "Saved ${ruleApplications.size} rule applications for transaction: ${finalEntity.id}")
+                                }
                                 
                                 // Only save balance/credit limit information for NEW transactions (not duplicates)
                                 // This prevents incorrect balance accumulation from duplicate SMS messages
