@@ -310,22 +310,23 @@ private fun RuleCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // More actions menu
-                Box {
-                    IconButton(
-                        onClick = { showActionsMenu = true }
-                    ) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "More actions"
-                        )
-                    }
+                // More actions menu - only show when rule is active
+                if (rule.isActive) {
+                    Box {
+                        IconButton(
+                            onClick = { showActionsMenu = true }
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More actions"
+                            )
+                        }
 
-                    DropdownMenu(
-                        expanded = showActionsMenu,
-                        onDismissRequest = { showActionsMenu = false }
-                    ) {
-                        if (rule.isActive) {
+                        DropdownMenu(
+                            expanded = showActionsMenu,
+                            onDismissRequest = { showActionsMenu = false }
+                        ) {
+                            // Apply to past transactions
                             DropdownMenuItem(
                                 text = { Text("Apply to Past Transactions") },
                                 leadingIcon = {
@@ -336,24 +337,24 @@ private fun RuleCard(
                                     onApplyToPast()
                                 }
                             )
-                        }
 
-                        // Only show delete for custom rules
-                        if (!rule.isSystemTemplate) {
-                            DropdownMenuItem(
-                                text = { Text("Delete Rule") },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                onClick = {
-                                    showActionsMenu = false
-                                    showDeleteDialog = true
-                                }
-                            )
+                            // Only show delete for custom rules
+                            if (!rule.isSystemTemplate) {
+                                DropdownMenuItem(
+                                    text = { Text("Delete Rule") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        showActionsMenu = false
+                                        showDeleteDialog = true
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -424,10 +425,23 @@ private fun BatchApplyDialog(
                         style = MaterialTheme.typography.bodyMedium
                     )
 
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+
                     Text(
-                        text = "This will update your existing transactions based on this rule's conditions.",
+                        text = "Choose how to apply this rule:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+
+                    Text(
+                        text = "• All - Apply to every transaction",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "• Uncategorized - Skip already categorized transactions (Recommended)",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 } else if (progress != null) {
                     // Processing state - show progress
@@ -493,18 +507,19 @@ private fun BatchApplyDialog(
         },
         confirmButton = {
             if (progress == null && result == null) {
-                // Show action buttons
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                // Show action buttons using FlowRow for better responsive layout
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
                     TextButton(onClick = onApplyToUncategorized) {
-                        Text("Uncategorized Only")
+                        Text("Uncategorized")
                     }
                     TextButton(onClick = onApplyToAll) {
-                        Text("All Transactions")
+                        Text("All")
                     }
                 }
             } else if (result != null) {

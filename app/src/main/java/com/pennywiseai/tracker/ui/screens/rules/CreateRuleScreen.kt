@@ -29,16 +29,26 @@ fun CreateRuleScreen(
     var ruleName by remember { mutableStateOf(existingRule?.name ?: "") }
     var description by remember { mutableStateOf(existingRule?.description ?: "") }
 
-    // Simple condition state
-    var selectedField by remember { mutableStateOf(TransactionField.AMOUNT) }
+    // Initialize condition state from existing rule or use defaults
+    var selectedField by remember {
+        mutableStateOf(existingRule?.conditions?.firstOrNull()?.field ?: TransactionField.AMOUNT)
+    }
     var fieldDropdownExpanded by remember { mutableStateOf(false) }
-    var selectedOperator by remember { mutableStateOf(ConditionOperator.LESS_THAN) }
-    var conditionValue by remember { mutableStateOf("") }
+    var selectedOperator by remember {
+        mutableStateOf(existingRule?.conditions?.firstOrNull()?.operator ?: ConditionOperator.LESS_THAN)
+    }
+    var conditionValue by remember {
+        mutableStateOf(existingRule?.conditions?.firstOrNull()?.value ?: "")
+    }
 
-    // Simple action state
-    var actionField by remember { mutableStateOf(TransactionField.CATEGORY) }
+    // Initialize action state from existing rule or use defaults
+    var actionField by remember {
+        mutableStateOf(existingRule?.actions?.firstOrNull()?.field ?: TransactionField.CATEGORY)
+    }
     var actionFieldDropdownExpanded by remember { mutableStateOf(false) }
-    var actionValue by remember { mutableStateOf("") }
+    var actionValue by remember {
+        mutableStateOf(existingRule?.actions?.firstOrNull()?.value ?: "")
+    }
 
     // Common presets for quick setup
     val commonPresets = listOf(
@@ -91,7 +101,7 @@ fun CreateRuleScreen(
                             id = existingRule?.id ?: UUID.randomUUID().toString(),
                             name = ruleName,
                             description = description.takeIf { it.isNotBlank() },
-                            priority = 100,
+                            priority = existingRule?.priority ?: 100,
                             conditions = listOf(
                                 RuleCondition(
                                     field = selectedField,
@@ -106,7 +116,10 @@ fun CreateRuleScreen(
                                     value = actionValue
                                 )
                             ),
-                            isActive = true
+                            isActive = existingRule?.isActive ?: true,
+                            isSystemTemplate = existingRule?.isSystemTemplate ?: false,
+                            createdAt = existingRule?.createdAt ?: System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
                         )
                         onSaveRule(rule)
                         // Navigation is handled in PennyWiseNavHost after saving
