@@ -28,17 +28,13 @@ data class RuleCondition(
 
 @Serializable
 enum class TransactionField {
-    AMOUNT,
-    TYPE,
-    CATEGORY,
-    MERCHANT,
-    NARRATION,
-    SMS_TEXT,
-    DATE,
-    ACCOUNT_NUMBER,
-    REFERENCE_NUMBER,
-    MODE,
-    UPI_ID
+    AMOUNT,       // Transaction amount
+    TYPE,         // INCOME, EXPENSE, or TRANSFER
+    CATEGORY,     // Transaction category
+    MERCHANT,     // Merchant/vendor name
+    NARRATION,    // Description/notes
+    SMS_TEXT,     // Original SMS text
+    BANK_NAME     // Bank name from SMS
 }
 
 @Serializable

@@ -61,25 +61,16 @@ class RuleEngine @Inject constructor() {
     ): Boolean {
         if (conditions.isEmpty()) return false
 
-        var result = true
-        var currentOperator = LogicalOperator.AND
-
-        for ((index, condition) in conditions.withIndex()) {
+        // KISS: Simply AND all conditions together
+        // Each condition must be true for the rule to apply
+        for (condition in conditions) {
             val conditionResult = evaluateCondition(transaction, smsText, condition)
-
-            if (index == 0) {
-                result = conditionResult
-            } else {
-                result = when (currentOperator) {
-                    LogicalOperator.AND -> result && conditionResult
-                    LogicalOperator.OR -> result || conditionResult
-                }
+            if (!conditionResult) {
+                return false // If any condition is false, rule doesn't match
             }
-
-            currentOperator = condition.logicalOperator
         }
 
-        return result
+        return true // All conditions matched
     }
 
     private fun evaluateCondition(
@@ -122,11 +113,7 @@ class RuleEngine @Inject constructor() {
             TransactionField.MERCHANT -> transaction.merchantName
             TransactionField.NARRATION -> transaction.description ?: ""
             TransactionField.SMS_TEXT -> smsText ?: ""
-            TransactionField.DATE -> transaction.dateTime.toString()
-            TransactionField.ACCOUNT_NUMBER -> transaction.accountNumber ?: ""
-            TransactionField.REFERENCE_NUMBER -> "" // Not available in TransactionEntity
-            TransactionField.MODE -> "" // Not available in TransactionEntity
-            TransactionField.UPI_ID -> "" // Not available in TransactionEntity
+            TransactionField.BANK_NAME -> transaction.bankName ?: ""
         }
     }
 

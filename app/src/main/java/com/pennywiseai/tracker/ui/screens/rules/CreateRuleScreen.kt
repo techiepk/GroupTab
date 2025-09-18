@@ -37,6 +37,7 @@ fun CreateRuleScreen(
 
     // Simple action state
     var actionField by remember { mutableStateOf(TransactionField.CATEGORY) }
+    var actionFieldDropdownExpanded by remember { mutableStateOf(false) }
     var actionValue by remember { mutableStateOf("") }
 
     // Common presets for quick setup
@@ -49,20 +50,28 @@ fun CreateRuleScreen(
             actionField = TransactionField.CATEGORY
             actionValue = "Food & Dining"
         },
-        "Contains keyword → Category" to {
-            ruleName = "Custom Category Rule"
+        "Standardize Merchant" to {
+            ruleName = "Standardize Merchant Name"
+            selectedField = TransactionField.MERCHANT
+            selectedOperator = ConditionOperator.CONTAINS
+            conditionValue = "AMZN"
+            actionField = TransactionField.MERCHANT
+            actionValue = "Amazon"
+        },
+        "Mark as Income" to {
+            ruleName = "Mark Credits as Income"
             selectedField = TransactionField.SMS_TEXT
             selectedOperator = ConditionOperator.CONTAINS
-            conditionValue = ""
-            actionField = TransactionField.CATEGORY
-            actionValue = ""
+            conditionValue = "credited"
+            actionField = TransactionField.TYPE
+            actionValue = "income"
         },
-        "Merchant name → Category" to {
-            ruleName = "Merchant Category Rule"
+        "Add Description" to {
+            ruleName = "Add Transaction Note"
             selectedField = TransactionField.MERCHANT
             selectedOperator = ConditionOperator.CONTAINS
             conditionValue = ""
-            actionField = TransactionField.CATEGORY
+            actionField = TransactionField.NARRATION
             actionValue = ""
         }
     )
@@ -100,7 +109,7 @@ fun CreateRuleScreen(
                             isActive = true
                         )
                         onSaveRule(rule)
-                        onNavigateBack()
+                        // Navigation is handled in PennyWiseNavHost after saving
                     }
                 },
                 enabled = ruleName.isNotBlank() && conditionValue.isNotBlank() && actionValue.isNotBlank()
@@ -113,6 +122,7 @@ fun CreateRuleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding() // Push content up when keyboard appears
                 .verticalScroll(rememberScrollState())
                 .padding(Dimensions.Padding.content),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
@@ -215,10 +225,11 @@ fun CreateRuleScreen(
                         ) {
                             listOf(
                                 TransactionField.AMOUNT to "Amount",
+                                TransactionField.TYPE to "Transaction Type",
+                                TransactionField.CATEGORY to "Category",
                                 TransactionField.MERCHANT to "Merchant",
                                 TransactionField.SMS_TEXT to "SMS Text",
-                                TransactionField.CATEGORY to "Category",
-                                TransactionField.TYPE to "Transaction Type"
+                                TransactionField.BANK_NAME to "Bank Name"
                             ).forEach { (field, label) ->
                                 DropdownMenuItem(
                                     text = { Text(label) },
@@ -306,41 +317,162 @@ fun CreateRuleScreen(
                         )
                     }
 
-                    Text(
-                        text = "Set Category to:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    // Common categories as chips
-                    val commonCategories = listOf(
-                        "Food & Dining", "Transportation", "Shopping",
-                        "Bills & Utilities", "Entertainment", "Healthcare",
-                        "Investments", "Others"
-                    )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-                        modifier = Modifier.fillMaxWidth()
+                    // Action field selector
+                    ExposedDropdownMenuBox(
+                        expanded = actionFieldDropdownExpanded,
+                        onExpandedChange = { actionFieldDropdownExpanded = !actionFieldDropdownExpanded }
                     ) {
-                        commonCategories.forEach { category ->
-                            FilterChip(
-                                selected = actionValue == category,
-                                onClick = { actionValue = category },
-                                label = { Text(category, style = MaterialTheme.typography.bodySmall) }
-                            )
+                        OutlinedTextField(
+                            value = when(actionField) {
+                                TransactionField.CATEGORY -> "Set Category"
+                                TransactionField.MERCHANT -> "Set Merchant Name"
+                                TransactionField.TYPE -> "Set Transaction Type"
+                                TransactionField.NARRATION -> "Set Description"
+                                else -> "Set Field"
+                            },
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Action") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionFieldDropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = actionFieldDropdownExpanded,
+                            onDismissRequest = { actionFieldDropdownExpanded = false }
+                        ) {
+                            listOf(
+                                TransactionField.CATEGORY to "Set Category",
+                                TransactionField.MERCHANT to "Set Merchant Name",
+                                TransactionField.TYPE to "Set Transaction Type",
+                                TransactionField.NARRATION to "Set Description"
+                            ).forEach { (field, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        actionField = field
+                                        actionFieldDropdownExpanded = false
+                                        actionValue = "" // Reset value when changing field
+                                    }
+                                )
+                            }
                         }
                     }
 
-                    // Custom category input
-                    OutlinedTextField(
-                        value = actionValue,
-                        onValueChange = { actionValue = it },
-                        label = { Text("Or type custom category") },
-                        placeholder = { Text("e.g., Rent") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+                    // Dynamic value input based on selected action field
+                    when (actionField) {
+                        TransactionField.CATEGORY -> {
+                            // Category chips and input
+                            val commonCategories = listOf(
+                                "Food & Dining", "Transportation", "Shopping",
+                                "Bills & Utilities", "Entertainment", "Healthcare",
+                                "Investments", "Others"
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                commonCategories.forEach { category ->
+                                    FilterChip(
+                                        selected = actionValue == category,
+                                        onClick = { actionValue = category },
+                                        label = { Text(category, style = MaterialTheme.typography.bodySmall) }
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = actionValue,
+                                onValueChange = { actionValue = it },
+                                label = { Text("Category Name") },
+                                placeholder = { Text("e.g., Rent") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+
+                        TransactionField.TYPE -> {
+                            // Transaction type chips
+                            Text(
+                                text = "Select transaction type:",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf("income", "expense", "transfer").forEach { type ->
+                                    FilterChip(
+                                        selected = actionValue == type,
+                                        onClick = { actionValue = type },
+                                        label = {
+                                            Text(
+                                                type.replaceFirstChar { it.uppercase() },
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        TransactionField.MERCHANT -> {
+                            // Merchant name input with common suggestions
+                            val commonMerchants = listOf(
+                                "Amazon", "Swiggy", "Zomato", "Uber",
+                                "Netflix", "Google", "Flipkart"
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                commonMerchants.forEach { merchant ->
+                                    AssistChip(
+                                        onClick = { actionValue = merchant },
+                                        label = { Text(merchant, style = MaterialTheme.typography.bodySmall) }
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = actionValue,
+                                onValueChange = { actionValue = it },
+                                label = { Text("Merchant Name") },
+                                placeholder = { Text("e.g., Amazon") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+
+                        TransactionField.NARRATION -> {
+                            // Description/Narration input
+                            OutlinedTextField(
+                                value = actionValue,
+                                onValueChange = { actionValue = it },
+                                label = { Text("Description") },
+                                placeholder = { Text("e.g., Monthly subscription payment") },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                maxLines = 3
+                            )
+                        }
+
+                        else -> {
+                            // Generic text input for other fields
+                            OutlinedTextField(
+                                value = actionValue,
+                                onValueChange = { actionValue = it },
+                                label = { Text("Value") },
+                                placeholder = { Text("Enter value") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
                 }
             }
 
@@ -365,10 +497,11 @@ fun CreateRuleScreen(
                                 append("When ")
                                 append(when(selectedField) {
                                     TransactionField.AMOUNT -> "amount"
+                                    TransactionField.TYPE -> "type"
+                                    TransactionField.CATEGORY -> "category"
                                     TransactionField.MERCHANT -> "merchant"
                                     TransactionField.SMS_TEXT -> "SMS text"
-                                    TransactionField.CATEGORY -> "category"
-                                    TransactionField.TYPE -> "type"
+                                    TransactionField.BANK_NAME -> "bank"
                                     else -> "field"
                                 })
                                 append(" ")
@@ -382,7 +515,14 @@ fun CreateRuleScreen(
                                 })
                                 append(" ")
                                 append(conditionValue)
-                                append(", set category to ")
+                                append(", ")
+                                append(when(actionField) {
+                                    TransactionField.CATEGORY -> "set category to "
+                                    TransactionField.MERCHANT -> "set merchant to "
+                                    TransactionField.TYPE -> "set type to "
+                                    TransactionField.NARRATION -> "set description to "
+                                    else -> "set field to "
+                                })
                                 append(actionValue)
                             },
                             style = MaterialTheme.typography.bodySmall,

@@ -10,35 +10,8 @@ class RuleTemplateService @Inject constructor() {
 
     fun getDefaultRuleTemplates(): List<TransactionRule> {
         return listOf(
-            // Small payments to food
-            createSmallPaymentsToFoodRule(),
-
-            // UPI cashback
-            createUpiCashbackRule(),
-
-            // Salary/Income detection
-            createSalaryDetectionRule(),
-
-            // Rent payment detection
-            createRentPaymentRule(),
-
-            // Investment detection
-            createInvestmentDetectionRule(),
-
-            // EMI detection
-            createEmiDetectionRule(),
-
-            // Transfer categorization
-            createTransferCategorizationRule(),
-
-            // Subscription detection
-            createSubscriptionDetectionRule(),
-
-            // Fuel/Petrol detection
-            createFuelDetectionRule(),
-
-            // Medical/Healthcare detection
-            createHealthcareDetectionRule()
+            // Just one simple example rule to get users started
+            createSmallPaymentsToFoodRule()
         )
     }
 
@@ -46,7 +19,7 @@ class RuleTemplateService @Inject constructor() {
         return TransactionRule(
             id = UUID.randomUUID().toString(),
             name = "Small Payments to Food",
-            description = "Categorize small UPI/debit payments (under ₹200) as Food & Dining",
+            description = "Categorize small expense payments (under ₹200) as Food & Dining",
             priority = 100,
             conditions = listOf(
                 RuleCondition(
@@ -57,8 +30,8 @@ class RuleTemplateService @Inject constructor() {
                 ),
                 RuleCondition(
                     field = TransactionField.TYPE,
-                    operator = ConditionOperator.IN,
-                    value = "payment,debit",
+                    operator = ConditionOperator.EQUALS,
+                    value = "EXPENSE",
                     logicalOperator = LogicalOperator.AND
                 )
             ),
@@ -89,8 +62,8 @@ class RuleTemplateService @Inject constructor() {
                 ),
                 RuleCondition(
                     field = TransactionField.TYPE,
-                    operator = ConditionOperator.IN,
-                    value = "receipt,credit",
+                    operator = ConditionOperator.EQUALS,
+                    value = "INCOME",
                     logicalOperator = LogicalOperator.AND
                 ),
                 RuleCondition(
@@ -121,7 +94,7 @@ class RuleTemplateService @Inject constructor() {
                 RuleCondition(
                     field = TransactionField.TYPE,
                     operator = ConditionOperator.EQUALS,
-                    value = "credit",
+                    value = "INCOME",
                     logicalOperator = LogicalOperator.AND
                 ),
                 RuleCondition(
@@ -157,8 +130,8 @@ class RuleTemplateService @Inject constructor() {
             conditions = listOf(
                 RuleCondition(
                     field = TransactionField.TYPE,
-                    operator = ConditionOperator.IN,
-                    value = "payment,debit",
+                    operator = ConditionOperator.EQUALS,
+                    value = "EXPENSE",
                     logicalOperator = LogicalOperator.AND
                 ),
                 RuleCondition(
@@ -225,8 +198,8 @@ class RuleTemplateService @Inject constructor() {
             conditions = listOf(
                 RuleCondition(
                     field = TransactionField.TYPE,
-                    operator = ConditionOperator.IN,
-                    value = "payment,debit",
+                    operator = ConditionOperator.EQUALS,
+                    value = "EXPENSE",
                     logicalOperator = LogicalOperator.AND
                 ),
                 RuleCondition(
