@@ -440,13 +440,14 @@ class SmsReaderWorker @AssistedInject constructor(
                                         - Available Limit (from SMS): ${parsedTransaction.creditLimit}
                                     """.trimIndent())
                                     
-                                    // Only save balance if it's meaningful
+                                    // Save balance if:
                                     val shouldSaveBalance = when {
                                         parsedTransaction.balance != null -> true  // Always save if SMS had explicit balance
                                         parsedTransaction.creditLimit != null -> true  // Save if credit limit info
                                         newBalance != BigDecimal.ZERO -> true  // Save non-zero balances
                                         existingAccount != null -> true  // Save to update existing account
-                                        else -> false  // Skip zero balance for new accounts without explicit balance
+                                        existingAccount == null -> true  // Create new account even with 0 balance (first time)
+                                        else -> false
                                     }
                                     
                                     if (shouldSaveBalance) {
@@ -472,7 +473,7 @@ class SmsReaderWorker @AssistedInject constructor(
                                         }
                                         Log.d(TAG, logMsg)
                                     } else {
-                                        Log.d(TAG, "Skipped saving zero balance for new account: ${parsedTransaction.bankName} **$targetAccountLast4")
+                                        Log.d(TAG, "Skipped saving balance: ${parsedTransaction.bankName} **$targetAccountLast4")
                                     }
                                 } else {
                                     Log.d(TAG, "No balance entry created for unlinked debit card: ${parsedTransaction.bankName} **${parsedTransaction.accountLast4}")
