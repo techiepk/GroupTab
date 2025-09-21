@@ -38,7 +38,8 @@ object BankParserFactory {
         IndianOverseasBankParser(),
         AirtelPaymentsBankParser(),
         AMEXBankParser(),
-        OneCardParser()
+        OneCardParser(),
+        UCOBankParser()
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
