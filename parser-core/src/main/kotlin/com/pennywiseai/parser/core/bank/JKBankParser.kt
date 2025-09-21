@@ -166,21 +166,44 @@ class JKBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
+        // Check for IMPS Fund transfer pattern first
+        // "Amt received from TRUEFILLINGS ADVISOR having A/C No."
+        if (message.contains("IMPS Fund transfer", ignoreCase = true)) {
+            val impsPattern = Regex("""Amt\s+received\s+from\s+([^h]+?)(?:\s+having\s+A/C|$)""", RegexOption.IGNORE_CASE)
+            impsPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+
+            // Fallback pattern for "received from"
+            val fromPattern = Regex("""received\s+from\s+([^.\n]+?)(?:\s+having|\s+with|$)""", RegexOption.IGNORE_CASE)
+            fromPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+
+            return "IMPS Transfer"
+        }
+
         // Check for TIN/Tax Information Network
         if (message.contains("TIN/Tax Information", ignoreCase = true)) {
             return "Tax Information Network"
         }
-        
+
         // Check for ATM Recovery and other charges
         if (message.contains("ATM RECOVERY", ignoreCase = true)) {
             return "ATM Recovery Charge"
         }
-        
+
         // Check for specific charge patterns with "towards"
         val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.|Available|$)""", RegexOption.IGNORE_CASE)
         towardsPattern.find(message)?.let { match ->
             val charge = match.groupValues[1].trim()
-            if (charge.contains("RECOVERY", ignoreCase = true) || 
+            if (charge.contains("RECOVERY", ignoreCase = true) ||
                 charge.contains("CHA", ignoreCase = true) ||
                 charge.contains("FEE", ignoreCase = true)) {
                 return cleanMerchantName(charge)
@@ -355,6 +378,8 @@ class JKBankParser : BankParser() {
     override fun extractReference(message: String): String? {
         // JK Bank specific reference patterns
         val jkBankPatterns = listOf(
+            // RRN No.1234567890 for IMPS transfers
+            Regex("""RRN\s+No\.?\s*(\d+)""", RegexOption.IGNORE_CASE),
             // UPI Ref: 115458170728
             Regex("""UPI\s+Ref[:\s]+(\d+)""", RegexOption.IGNORE_CASE),
             // txn Ref: XXXXX
