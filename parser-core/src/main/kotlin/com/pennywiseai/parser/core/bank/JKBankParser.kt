@@ -199,15 +199,12 @@ class JKBankParser : BankParser() {
             return "ATM Recovery Charge"
         }
 
-        // Check for specific charge patterns with "towards"
-        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.|Available|$)""", RegexOption.IGNORE_CASE)
+        // Check for "towards" pattern - common for tax and other payments
+        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.\s*Avl|\.\s*Available|$)""", RegexOption.IGNORE_CASE)
         towardsPattern.find(message)?.let { match ->
-            val charge = match.groupValues[1].trim()
-            if (charge.contains("RECOVERY", ignoreCase = true) ||
-                charge.contains("CHA", ignoreCase = true) ||
-                charge.contains("FEE", ignoreCase = true)) {
-                return cleanMerchantName(charge)
-            }
+            val merchant = match.groupValues[1].trim()
+            // Return the merchant name, cleaning it up
+            return cleanMerchantName(merchant)
         }
         
         // Check for transaction patterns "by XXX" but skip the amount part
@@ -218,14 +215,17 @@ class JKBankParser : BankParser() {
         )
         transactionByPattern.find(message)?.let { match ->
             val merchant = match.groupValues[1].trim()
-            
+
             return when {
-                // Check for specific institutions first
+                // Bank charges patterns - return null as these are internal bank charges
+                merchant.contains("CHRGS", ignoreCase = true) ||
+                merchant.contains("CHARGES", ignoreCase = true) -> null
+                // Check for specific institutions
                 merchant.contains("INDIAN CLEARING CORPO", ignoreCase = true) -> "Indian Clearing Corporation"
                 merchant.contains("CLEARING CORPO", ignoreCase = true) -> "Clearing Corporation"
                 merchant.contains("NSE CLEARING", ignoreCase = true) -> "NSE Clearing"
                 merchant.contains("BSE CLEARING", ignoreCase = true) -> "BSE Clearing"
-                // Generic transfer types
+                // Generic transfer types (only if not charges)
                 merchant.contains("RTGS", ignoreCase = true) && !merchant.contains("CLEARING", ignoreCase = true) -> "RTGS Transfer"
                 merchant.contains("NEFT", ignoreCase = true) -> "NEFT Transfer"
                 merchant.contains("IMPS", ignoreCase = true) -> "IMPS Transfer"
@@ -233,12 +233,11 @@ class JKBankParser : BankParser() {
                 merchant.contains("mTFR", ignoreCase = true) -> {
                     // Extract the actual recipient name from mTFR/phone/NAME pattern
                     val mtfrMatch = Regex("""mTFR/\d+/(.+)""", RegexOption.IGNORE_CASE).find(merchant)
-                    mtfrMatch?.let { 
+                    mtfrMatch?.let {
                         cleanMerchantName(it.groupValues[1].trim())
                     } ?: "Mobile Transfer"
                 }
                 merchant.contains("TIN", ignoreCase = true) -> "Tax Information Network"
-                merchant.contains("CHRGS", ignoreCase = true) -> "Bank Charges"
                 else -> cleanMerchantName(merchant.substringBefore("/"))
             }
         }
