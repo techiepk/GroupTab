@@ -258,7 +258,8 @@ class SmsReaderWorker @AssistedInject constructor(
                         }
 
                         // Apply rule engine to the transaction
-                        val activeRules = ruleRepository.getActiveRules()
+                        // Optimize by getting rules specific to this transaction type
+                        val activeRules = ruleRepository.getActiveRulesByType(entityWithMapping.transactionType)
                         val (entityWithRules, ruleApplications) = ruleEngine.evaluateRules(
                             entityWithMapping,
                             sms.body,

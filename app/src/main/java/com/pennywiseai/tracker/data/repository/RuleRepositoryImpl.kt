@@ -4,6 +4,7 @@ import com.pennywiseai.tracker.data.database.dao.RuleApplicationDao
 import com.pennywiseai.tracker.data.database.dao.RuleDao
 import com.pennywiseai.tracker.data.database.entity.RuleApplicationEntity
 import com.pennywiseai.tracker.data.database.entity.RuleEntity
+import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.domain.model.rule.*
 import com.pennywiseai.tracker.domain.repository.RuleRepository
 import com.pennywiseai.tracker.domain.service.RuleEngine
@@ -31,6 +32,70 @@ class RuleRepositoryImpl @Inject constructor(
         return ruleDao.getActiveRules().map { entity ->
             entityToRule(entity)
         }
+    }
+
+    override suspend fun getActiveRulesByType(type: TransactionType): List<TransactionRule> {
+        // Get all active rules and filter in memory based on conditions
+        val allActiveRules = ruleDao.getActiveRules()
+        return allActiveRules
+            .map { entity -> entityToRule(entity) }
+            .filter { rule ->
+                // Check if rule has no TYPE condition (applies to all) or matches the type
+                val hasTypeCondition = rule.conditions.any { it.field == TransactionField.TYPE }
+                if (!hasTypeCondition) {
+                    true // Rule applies to all transaction types
+                } else {
+                    // Check if any TYPE condition matches
+                    rule.conditions.any { condition ->
+                        condition.field == TransactionField.TYPE &&
+                        when (condition.operator) {
+                            ConditionOperator.EQUALS -> condition.value.equals(type.name, ignoreCase = true)
+                            ConditionOperator.IN -> condition.value.split(",")
+                                .map { it.trim() }
+                                .any { it.equals(type.name, ignoreCase = true) }
+                            ConditionOperator.NOT_EQUALS -> !condition.value.equals(type.name, ignoreCase = true)
+                            ConditionOperator.NOT_IN -> !condition.value.split(",")
+                                .map { it.trim() }
+                                .any { it.equals(type.name, ignoreCase = true) }
+                            else -> false
+                        }
+                    }
+                }
+            }
+    }
+
+    override suspend fun getActiveRulesByTypes(types: List<TransactionType>): List<TransactionRule> {
+        // Get all active rules and filter in memory based on conditions
+        val allActiveRules = ruleDao.getActiveRules()
+        val typeNames = types.map { it.name }
+
+        return allActiveRules
+            .map { entity -> entityToRule(entity) }
+            .filter { rule ->
+                // Check if rule has no TYPE condition (applies to all) or matches any of the types
+                val hasTypeCondition = rule.conditions.any { it.field == TransactionField.TYPE }
+                if (!hasTypeCondition) {
+                    true // Rule applies to all transaction types
+                } else {
+                    // Check if any TYPE condition matches any of the requested types
+                    rule.conditions.any { condition ->
+                        condition.field == TransactionField.TYPE &&
+                        when (condition.operator) {
+                            ConditionOperator.EQUALS -> typeNames.any { it.equals(condition.value, ignoreCase = true) }
+                            ConditionOperator.IN -> {
+                                val conditionTypes = condition.value.split(",").map { it.trim() }
+                                typeNames.any { type -> conditionTypes.any { it.equals(type, ignoreCase = true) } }
+                            }
+                            ConditionOperator.NOT_EQUALS -> typeNames.all { !it.equals(condition.value, ignoreCase = true) }
+                            ConditionOperator.NOT_IN -> {
+                                val conditionTypes = condition.value.split(",").map { it.trim() }
+                                typeNames.any { type -> conditionTypes.none { it.equals(type, ignoreCase = true) } }
+                            }
+                            else -> false
+                        }
+                    }
+                }
+            }
     }
 
     override suspend fun getRuleById(ruleId: String): TransactionRule? {

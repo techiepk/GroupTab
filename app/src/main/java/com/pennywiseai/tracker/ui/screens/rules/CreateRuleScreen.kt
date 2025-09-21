@@ -283,28 +283,58 @@ fun CreateRuleScreen(
                     }
 
                     // Value input
-                    OutlinedTextField(
-                        value = conditionValue,
-                        onValueChange = { conditionValue = it },
-                        label = { Text("Value") },
-                        placeholder = {
+                    when (selectedField) {
+                        TransactionField.TYPE -> {
+                            // Transaction type chips for TYPE field
                             Text(
-                                when(selectedField) {
-                                    TransactionField.AMOUNT -> "e.g., 200"
-                                    TransactionField.MERCHANT -> "e.g., Swiggy"
-                                    TransactionField.SMS_TEXT -> "e.g., salary"
-                                    else -> "Enter value"
-                                }
+                                text = "Select transaction type:",
+                                style = MaterialTheme.typography.bodySmall
                             )
-                        },
-                        keyboardOptions = if (selectedField == TransactionField.AMOUNT) {
-                            KeyboardOptions(keyboardType = KeyboardType.Number)
-                        } else {
-                            KeyboardOptions.Default
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf("INCOME", "EXPENSE", "CREDIT", "TRANSFER", "INVESTMENT").forEach { type ->
+                                    FilterChip(
+                                        selected = conditionValue == type,
+                                        onClick = { conditionValue = type },
+                                        label = {
+                                            Text(
+                                                type.lowercase().replaceFirstChar { it.uppercase() },
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        else -> {
+                            // Regular text input for other fields
+                            OutlinedTextField(
+                                value = conditionValue,
+                                onValueChange = { conditionValue = it },
+                                label = { Text("Value") },
+                                placeholder = {
+                                    Text(
+                                        when(selectedField) {
+                                            TransactionField.AMOUNT -> "e.g., 200"
+                                            TransactionField.MERCHANT -> "e.g., Swiggy"
+                                            TransactionField.SMS_TEXT -> "e.g., salary"
+                                            else -> "Enter value"
+                                        }
+                                    )
+                                },
+                                keyboardOptions = if (selectedField == TransactionField.AMOUNT) {
+                                    KeyboardOptions(keyboardType = KeyboardType.Number)
+                                } else {
+                                    KeyboardOptions.Default
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
                 }
             }
 
@@ -416,13 +446,13 @@ fun CreateRuleScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                listOf("income", "expense", "transfer").forEach { type ->
+                                listOf("INCOME", "EXPENSE", "CREDIT", "TRANSFER", "INVESTMENT").forEach { type ->
                                     FilterChip(
                                         selected = actionValue == type,
                                         onClick = { actionValue = type },
                                         label = {
                                             Text(
-                                                type.replaceFirstChar { it.uppercase() },
+                                                type.lowercase().replaceFirstChar { it.uppercase() },
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }

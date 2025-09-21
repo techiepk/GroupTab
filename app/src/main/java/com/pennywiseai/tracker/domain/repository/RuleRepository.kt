@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.domain.repository
 
+import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.domain.model.rule.RuleApplication
 import com.pennywiseai.tracker.domain.model.rule.TransactionRule
 import kotlinx.coroutines.flow.Flow
@@ -7,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 interface RuleRepository {
     fun getAllRules(): Flow<List<TransactionRule>>
     suspend fun getActiveRules(): List<TransactionRule>
+    suspend fun getActiveRulesByType(type: TransactionType): List<TransactionRule>
+    suspend fun getActiveRulesByTypes(types: List<TransactionType>): List<TransactionRule>
     suspend fun getRuleById(ruleId: String): TransactionRule?
     suspend fun insertRule(rule: TransactionRule)
     suspend fun updateRule(rule: TransactionRule)

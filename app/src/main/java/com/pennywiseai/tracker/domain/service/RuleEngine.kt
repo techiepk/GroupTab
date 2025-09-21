@@ -54,6 +54,43 @@ class RuleEngine @Inject constructor() {
         return modifiedTransaction to applications
     }
 
+    /**
+     * Evaluates rules for a specific transaction type.
+     * This is a convenience method that pre-filters rules based on transaction type.
+     */
+    fun evaluateRulesForType(
+        transaction: TransactionEntity,
+        smsText: String?,
+        rules: List<TransactionRule>,
+        type: TransactionType
+    ): Pair<TransactionEntity, List<RuleApplication>> {
+        // Pre-filter rules that apply to this transaction type
+        val applicableRules = rules.filter { rule ->
+            val hasTypeCondition = rule.conditions.any { it.field == TransactionField.TYPE }
+            if (!hasTypeCondition) {
+                true // Rule applies to all transaction types
+            } else {
+                // Check if any TYPE condition matches this transaction's type
+                rule.conditions.any { condition ->
+                    condition.field == TransactionField.TYPE &&
+                    when (condition.operator) {
+                        ConditionOperator.EQUALS -> condition.value.equals(type.name, ignoreCase = true)
+                        ConditionOperator.IN -> condition.value.split(",")
+                            .map { it.trim() }
+                            .any { it.equals(type.name, ignoreCase = true) }
+                        ConditionOperator.NOT_EQUALS -> !condition.value.equals(type.name, ignoreCase = true)
+                        ConditionOperator.NOT_IN -> !condition.value.split(",")
+                            .map { it.trim() }
+                            .any { it.equals(type.name, ignoreCase = true) }
+                        else -> false
+                    }
+                }
+            }
+        }
+
+        return evaluateRules(transaction, smsText, applicableRules)
+    }
+
     private fun evaluateConditions(
         transaction: TransactionEntity,
         smsText: String?,
