@@ -19,19 +19,7 @@ class AUBankParser : BankParser() {
 
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
-        return normalizedSender.contains("AUBANK") ||
-               normalizedSender.contains("AUSFB") ||
-               normalizedSender.contains("AU-BANK") ||
-               normalizedSender.contains("AUSMALLF") ||
-               // DLT patterns for transactions (-S/-T suffix)
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUBANK-[ST]$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUSFB-[ST]$")) ||
-               // Other DLT patterns
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUBANK-[TPG]$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUSFB-[TPG]$")) ||
-               // Legacy patterns
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUBANK$")) ||
-               normalizedSender.matches(Regex("^[A-Z]{2}-AUSFB$"))
+        return normalizedSender.contains("AUBANK")
     }
 
     override fun extractAmount(message: String): BigDecimal? {
