@@ -161,12 +161,12 @@ echo -e "${YELLOW}🔨 Building APKs...${NC}"
 # Function to revert changes on failure
 revert_changes() {
     echo -e "${RED}❌ Build failed! Reverting changes...${NC}"
-    
+
     CHANGES_MADE=false  # Reset flag so cleanup_on_exit doesn't run again
-    
+
     # Revert build.gradle.kts
     git checkout -- app/build.gradle.kts
-    
+
     # Remove fastlane changelog files
     if [ -f "$CHANGELOG_FILE" ]; then
         rm -f "$CHANGELOG_FILE"
@@ -174,7 +174,7 @@ revert_changes() {
     if [ -f "$CHANGELOG_DIR/default.txt" ]; then
         git checkout -- "$CHANGELOG_DIR/default.txt" 2>/dev/null || rm -f "$CHANGELOG_DIR/default.txt"
     fi
-    
+
     echo -e "${YELLOW}⚠️  Changes reverted. Please fix the build errors and try again.${NC}"
     exit 1
 }
@@ -183,6 +183,13 @@ revert_changes() {
 if ! ./gradlew clean; then
     revert_changes
 fi
+
+# Build parser-core module first to ensure it compiles
+echo -e "${YELLOW}🔧 Building parser-core module...${NC}"
+if ! ./gradlew :parser-core:build; then
+    revert_changes
+fi
+echo -e "${GREEN}✅ Parser-core module built${NC}"
 
 if ! ./gradlew assembleStandardRelease; then
     revert_changes
