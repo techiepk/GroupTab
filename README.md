@@ -164,6 +164,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sarim2000/pennywiseai-tracker&type=Date)](https://star-history.com/#sarim2000/pennywiseai-tracker&Date)
+
 ## License
 
 MIT License - see [LICENSE](LICENSE)
