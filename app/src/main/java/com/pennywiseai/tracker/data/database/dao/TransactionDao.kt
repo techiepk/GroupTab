@@ -90,9 +90,20 @@ interface TransactionDao {
     
     @Query("UPDATE transactions SET category = :newCategory WHERE merchant_name = :merchantName")
     suspend fun updateCategoryForMerchant(merchantName: String, newCategory: String)
-    
+
     @Query("SELECT COUNT(*) FROM transactions WHERE merchant_name = :merchantName AND id != :excludeId")
     suspend fun getTransactionCountForMerchant(merchantName: String, excludeId: Long): Int
+
+    // Soft delete methods
+    @Query("UPDATE transactions SET is_deleted = 1 WHERE id = :transactionId")
+    suspend fun softDeleteTransaction(transactionId: Long)
+
+    @Query("UPDATE transactions SET is_deleted = 1 WHERE transaction_hash = :transactionHash")
+    suspend fun softDeleteByHash(transactionHash: String)
+
+    // Method to check if transaction exists by hash (including deleted)
+    @Query("SELECT * FROM transactions WHERE transaction_hash = :transactionHash LIMIT 1")
+    suspend fun getTransactionByHash(transactionHash: String): TransactionEntity?
     
     @Query("""
         SELECT * FROM transactions 

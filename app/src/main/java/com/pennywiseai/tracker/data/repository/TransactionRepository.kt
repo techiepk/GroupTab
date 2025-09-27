@@ -68,18 +68,28 @@ class TransactionRepository @Inject constructor(
     suspend fun updateTransaction(transaction: TransactionEntity) = 
         transactionDao.updateTransaction(transaction)
     
-    suspend fun deleteTransaction(transaction: TransactionEntity) = 
-        transactionDao.deleteTransaction(transaction)
-    
-    suspend fun deleteTransactionById(id: Long) = 
-        transactionDao.deleteTransactionById(id)
-    
-    suspend fun deleteAllTransactions() = 
-        transactionDao.deleteAllTransactions()
-    
-    suspend fun softDeleteTransaction(transaction: TransactionEntity) {
-        transactionDao.updateTransaction(transaction.copy(isDeleted = true))
+    suspend fun deleteTransaction(transaction: TransactionEntity, hardDelete: Boolean = false) {
+        if (hardDelete) {
+            transactionDao.deleteTransaction(transaction)
+        } else {
+            transactionDao.softDeleteTransaction(transaction.id)
+        }
     }
+
+    suspend fun deleteTransactionById(id: Long, hardDelete: Boolean = false) {
+        if (hardDelete) {
+            transactionDao.deleteTransactionById(id)
+        } else {
+            transactionDao.softDeleteTransaction(id)
+        }
+    }
+
+    suspend fun deleteAllTransactions() =
+        transactionDao.deleteAllTransactions()
+
+    // Helper method to check if transaction exists by hash
+    suspend fun getTransactionByHash(transactionHash: String): TransactionEntity? =
+        transactionDao.getTransactionByHash(transactionHash)
     
     suspend fun undoDeleteTransaction(transaction: TransactionEntity) {
         transactionDao.updateTransaction(transaction.copy(isDeleted = false))

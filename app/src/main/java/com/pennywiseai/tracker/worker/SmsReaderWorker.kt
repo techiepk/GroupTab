@@ -247,7 +247,19 @@ class SmsReaderWorker @AssistedInject constructor(
                         
                         // Convert to entity and save
                         val entity = parsedTransaction.toEntity()
-                        
+
+                        // Check if this transaction was previously deleted by the user
+                        val existingTransaction = transactionRepository.getTransactionByHash(entity.transactionHash)
+                        if (existingTransaction != null) {
+                            if (existingTransaction.isDeleted) {
+                                Log.d(TAG, "Skipping previously deleted transaction with hash: ${entity.transactionHash}")
+                                continue
+                            }
+                            // Transaction already exists and not deleted - normal deduplication
+                            Log.d(TAG, "Transaction already exists: ${entity.transactionHash}")
+                            continue
+                        }
+
                         // Check for custom merchant mapping
                         val customCategory = merchantMappingRepository.getCategoryForMerchant(entity.merchantName)
                         val entityWithMapping = if (customCategory != null) {

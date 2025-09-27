@@ -145,7 +145,7 @@ class TransactionsViewModel @Inject constructor(
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             _deletedTransaction.value = transaction
-            transactionRepository.softDeleteTransaction(transaction)
+            transactionRepository.deleteTransaction(transaction)
         }
     }
     
