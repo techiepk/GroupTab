@@ -39,9 +39,25 @@ class KotakBankParser : BankParser() {
                 // Handle other UPI IDs - extract username part
                 else -> {
                     val name = upiId.substringBefore("@")
-                    if (name.isNotEmpty() && !name.all { it.isDigit() }) {
-                        cleanMerchantName(name)
-                    } else null
+                    val bankCode = upiId.substringAfter("@")
+
+                    when {
+                        // Valid UPI ID with meaningful content (not just all digits)
+                        name.isNotEmpty() && (!name.all { it.isDigit() } || name.contains("-") || name.contains("_")) -> {
+                            // For phone numbers or IDs with separators, try to get meaningful merchant name
+                            if (name.all { it.isDigit() || it == '-' || it == '_' }) {
+                                // This looks like a phone number or ID, try to extract merchant from bank code
+                                extractMerchantFromBankCode(bankCode) ?: name
+                            } else {
+                                cleanMerchantName(name)
+                            }
+                        }
+                        // Pure phone numbers - try to extract from bank code
+                        name.length == 10 && name.all { it.isDigit() } -> {
+                            extractMerchantFromBankCode(bankCode) ?: "Phone Transfer"
+                        }
+                        else -> null
+                    }
                 }
             }
             
@@ -53,12 +69,37 @@ class KotakBankParser : BankParser() {
         // Fall back to generic extraction
         return super.extractMerchant(message, sender)
     }
+
+    /**
+     * Extract meaningful merchant name from UPI bank codes
+     */
+    private fun extractMerchantFromBankCode(bankCode: String): String? {
+        return when (bankCode.lowercase()) {
+            "okaxis" -> "Axis Bank"
+            "okbizaxis" -> "Axis Bank Business"
+            "okhdfcbank" -> "HDFC Bank"
+            "okicici" -> "ICICI Bank"
+            "oksbi" -> "State Bank of India"
+            "paytm" -> "Paytm"
+            "ybl" -> "PhonePe"
+            "amazonpay" -> "Amazon Pay"
+            "googlepay" -> "Google Pay"
+            "airtel" -> "Airtel Money"
+            "freecharge" -> "Freecharge"
+            "mobikwik" -> "MobiKwik"
+            "jupiteraxis" -> "Jupiter"
+            "razorpay" -> "Razorpay"
+            "bharatpe" -> "BharatPe"
+            else -> null
+        }
+    }
     
     override fun extractTransactionType(message: String): TransactionType? {
         val lowerMessage = message.lowercase()
-        
+
         return when {
-            // Kotak specific: "Sent Rs.X from Kotak Bank"
+            // Kotak specific: "Sent Rs.X from Kotak Bank" - money going OUT (EXPENSE)
+            // This indicates the user sent money from their Kotak account to someone else
             lowerMessage.contains("sent") && lowerMessage.contains("from kotak") -> TransactionType.EXPENSE
             
             // Standard expense keywords
