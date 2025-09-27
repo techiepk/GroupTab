@@ -189,8 +189,9 @@ class JKBankParser : BankParser() {
             return "IMPS Transfer"
         }
 
-        // Check for TIN/Tax Information Network
-        if (message.contains("TIN/Tax Information", ignoreCase = true)) {
+        // Check for TIN/Tax Information Network (handles both full and truncated versions)
+        if (message.contains("TIN/Tax Information", ignoreCase = true) ||
+            message.contains("TIN/Tax Informat", ignoreCase = true)) {
             return "Tax Information Network"
         }
 
@@ -200,9 +201,16 @@ class JKBankParser : BankParser() {
         }
 
         // Check for "towards" pattern - common for tax and other payments
-        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.\s*Avl|\.\s*Available|$)""", RegexOption.IGNORE_CASE)
+        val towardsPattern = Regex("""towards\s+([^.\n]+?)(?:\.\s*Avl|\.\s*Available|\.\s*To\s+dispute|$)""", RegexOption.IGNORE_CASE)
         towardsPattern.find(message)?.let { match ->
             val merchant = match.groupValues[1].trim()
+
+            // Special handling for TIN/Tax patterns
+            if (merchant.contains("TIN/Tax Informat", ignoreCase = true) ||
+                merchant.contains("TIN/Tax Information", ignoreCase = true)) {
+                return "Tax Information Network"
+            }
+
             // Return the merchant name, cleaning it up
             return cleanMerchantName(merchant)
         }
