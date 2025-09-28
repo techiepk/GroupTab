@@ -37,6 +37,21 @@ class HDFCBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
+        // Check for HDFC Bank Card debit transactions - "Spent Rs.xxx From HDFC Bank Card xxxx At [MERCHANT] On xxx"
+        if (message.contains("From HDFC Bank Card", ignoreCase = true) &&
+            message.contains(" At ", ignoreCase = true) &&
+            message.contains(" On ", ignoreCase = true)) {
+            // Extract merchant between "At" and "On" using string operations for reliability
+            val atIndex = message.indexOf(" At ", ignoreCase = true)
+            val onIndex = message.indexOf(" On ", ignoreCase = true)
+            if (atIndex != -1 && onIndex != -1 && onIndex > atIndex) {
+                val merchant = message.substring(atIndex + 4, onIndex).trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+
         // Check for ATM withdrawals - extract location
         if (message.contains("withdrawn", ignoreCase = true)) {
             // Pattern: "At +18 Random Location" or "At ATM Location On"
