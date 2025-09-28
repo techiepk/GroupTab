@@ -25,7 +25,8 @@ object CurrencyFormatter {
         "CAD" to "C$",
         "AUD" to "A$",
         "JPY" to "¥",
-        "CNY" to "¥"
+        "CNY" to "¥",
+        "NPR" to "₨"
     )
 
     /**
@@ -41,7 +42,8 @@ object CurrencyFormatter {
         "CAD" to Locale.CANADA,
         "AUD" to Locale.Builder().setLanguage("en").setRegion("AU").build(),
         "JPY" to Locale.JAPAN,
-        "CNY" to Locale.CHINA
+        "CNY" to Locale.CHINA,
+        "NPR" to Locale.Builder().setLanguage("ne").setRegion("NP").build()
     )
 
     /**
