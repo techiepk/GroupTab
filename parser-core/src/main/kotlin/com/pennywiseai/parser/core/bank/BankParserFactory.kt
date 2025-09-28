@@ -41,7 +41,9 @@ object BankParserFactory {
         OneCardParser(),
         UCOBankParser(),
         AUBankParser(),
-        FABParser()  // First Abu Dhabi Bank (UAE)
+        FABParser(),  // First Abu Dhabi Bank (UAE)
+        CitiBankParser(),  // Citi Bank (USA)
+        DiscoverCardParser()  // Discover Card (USA)
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
