@@ -69,6 +69,8 @@ fun TransactionsScreen(
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val categoriesMap by viewModel.categories.collectAsState()
     val filteredTotals by viewModel.filteredTotals.collectAsState()
+    val currencyGroupedTotals by viewModel.currencyGroupedTotals.collectAsState()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val smsScanMonths by viewModel.smsScanMonths.collectAsState()
     
@@ -370,6 +372,9 @@ fun TransactionsScreen(
             income = filteredTotals.income,
             expenses = filteredTotals.expenses,
             netBalance = filteredTotals.netBalance,
+            currency = selectedCurrency,
+            availableCurrencies = currencyGroupedTotals.availableCurrencies,
+            onCurrencySelected = { viewModel.selectCurrency(it) },
             isLoading = uiState.isLoading,
             modifier = Modifier
                 .padding(horizontal = Dimensions.Padding.content)

@@ -24,7 +24,13 @@ class AnalyticsViewModel @Inject constructor(
     
     private val _transactionTypeFilter = MutableStateFlow(TransactionTypeFilter.EXPENSE)
     val transactionTypeFilter: StateFlow<TransactionTypeFilter> = _transactionTypeFilter.asStateFlow()
-    
+
+    private val _selectedCurrency = MutableStateFlow("INR") // Default to INR
+    val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
+
+    private val _availableCurrencies = MutableStateFlow<List<String>>(emptyList())
+    val availableCurrencies: StateFlow<List<String>> = _availableCurrencies.asStateFlow()
+
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
     
@@ -41,6 +47,11 @@ class AnalyticsViewModel @Inject constructor(
         _transactionTypeFilter.value = filter
         loadAnalytics()
     }
+
+    fun selectCurrency(currency: String) {
+        _selectedCurrency.value = currency
+        loadAnalytics()
+    }
     
     private fun loadAnalytics() {
         viewModelScope.launch {
@@ -50,23 +61,42 @@ class AnalyticsViewModel @Inject constructor(
                 startDate = dateRange.first,
                 endDate = dateRange.second
             ).collect { transactions ->
+                // Update available currencies
+                val allCurrencies = transactions.map { it.currency }.distinct().sortedWith { a, b ->
+                    when {
+                        a == "INR" -> -1 // INR first
+                        b == "INR" -> 1
+                        else -> a.compareTo(b) // Alphabetical for others
+                    }
+                }
+                _availableCurrencies.value = allCurrencies
+
+                // Auto-select primary currency if not already selected or if current currency no longer exists
+                val currentSelectedCurrency = _selectedCurrency.value
+                if (!allCurrencies.contains(currentSelectedCurrency) && allCurrencies.isNotEmpty()) {
+                    _selectedCurrency.value = if (allCurrencies.contains("INR")) "INR" else allCurrencies.first()
+                }
+
+                // Filter by selected currency first
+                val currencyFilteredTransactions = transactions.filter { it.currency == _selectedCurrency.value }
+
                 // Filter by selected transaction type
                 val filteredTransactions = when (_transactionTypeFilter.value) {
-                    TransactionTypeFilter.ALL -> transactions
-                    TransactionTypeFilter.INCOME -> transactions.filter { 
-                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME 
+                    TransactionTypeFilter.ALL -> currencyFilteredTransactions
+                    TransactionTypeFilter.INCOME -> currencyFilteredTransactions.filter {
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME
                     }
-                    TransactionTypeFilter.EXPENSE -> transactions.filter { 
-                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.EXPENSE 
+                    TransactionTypeFilter.EXPENSE -> currencyFilteredTransactions.filter {
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.EXPENSE
                     }
-                    TransactionTypeFilter.CREDIT -> transactions.filter { 
-                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT 
+                    TransactionTypeFilter.CREDIT -> currencyFilteredTransactions.filter {
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT
                     }
-                    TransactionTypeFilter.TRANSFER -> transactions.filter { 
-                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER 
+                    TransactionTypeFilter.TRANSFER -> currencyFilteredTransactions.filter {
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER
                     }
-                    TransactionTypeFilter.INVESTMENT -> transactions.filter { 
-                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT 
+                    TransactionTypeFilter.INVESTMENT -> currencyFilteredTransactions.filter {
+                        it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT
                     }
                 }
                 
@@ -122,6 +152,7 @@ class AnalyticsViewModel @Inject constructor(
                     averageAmount = averageAmount,
                     topCategory = topCategory?.name,
                     topCategoryPercentage = topCategory?.percentage ?: 0f,
+                    currency = _selectedCurrency.value,
                     isLoading = false
                 )
             }
@@ -138,6 +169,7 @@ data class AnalyticsUiState(
     val averageAmount: BigDecimal = BigDecimal.ZERO,
     val topCategory: String? = null,
     val topCategoryPercentage: Float = 0f,
+    val currency: String = "INR",
     val isLoading: Boolean = true
 )
 

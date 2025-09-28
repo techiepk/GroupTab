@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +26,9 @@ fun TransactionTotalsCard(
     income: BigDecimal,
     expenses: BigDecimal,
     netBalance: BigDecimal,
+    currency: String,
+    availableCurrencies: List<String> = emptyList(),
+    onCurrencySelected: (String) -> Unit = {},
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -49,12 +53,29 @@ fun TransactionTotalsCard(
     PennyWiseCard(
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Dimensions.Padding.content),
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .padding(Dimensions.Padding.content)
         ) {
+            // Currency Selector (if multiple currencies available)
+            if (availableCurrencies.size > 1) {
+                CurrencySelector(
+                    selectedCurrency = currency,
+                    availableCurrencies = availableCurrencies,
+                    onCurrencySelected = onCurrencySelected,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(Spacing.sm))
+            }
+
+            // Totals Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
             // Income Column
             TotalColumn(
                 icon = {
@@ -66,7 +87,7 @@ fun TransactionTotalsCard(
                     )
                 },
                 label = "Income",
-                amount = CurrencyFormatter.formatCurrency(income),
+                amount = CurrencyFormatter.formatCurrency(income, currency),
                 color = if (!isSystemInDarkTheme()) income_light else income_dark,
                 modifier = Modifier
                     .weight(1f)
@@ -92,7 +113,7 @@ fun TransactionTotalsCard(
                     )
                 },
                 label = "Expenses",
-                amount = CurrencyFormatter.formatCurrency(expenses),
+                amount = CurrencyFormatter.formatCurrency(expenses, currency),
                 color = if (!isSystemInDarkTheme()) expense_light else expense_dark,
                 modifier = Modifier
                     .weight(1f)
@@ -122,12 +143,13 @@ fun TransactionTotalsCard(
             TotalColumn(
                 icon = null,
                 label = "Net",
-                amount = "$netPrefix${CurrencyFormatter.formatCurrency(netBalance)}",
+                amount = "$netPrefix${CurrencyFormatter.formatCurrency(netBalance, currency)}",
                 color = netColor,
                 modifier = Modifier
                     .weight(1f)
                     .alpha(netAlpha)
             )
+            }
         }
     }
 }
@@ -163,5 +185,56 @@ private fun TotalColumn(
             color = color,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CurrencySelector(
+    selectedCurrency: String,
+    availableCurrencies: List<String>,
+    onCurrencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedCurrency,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Currency") },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = "Select currency",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            ),
+            modifier = Modifier.menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            availableCurrencies.forEach { currency ->
+                DropdownMenuItem(
+                    text = { Text(currency) },
+                    onClick = {
+                        onCurrencySelected(currency)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }

@@ -27,6 +27,7 @@ fun AnalyticsSummaryCard(
     averageAmount: BigDecimal,
     topCategory: String?,
     topCategoryPercentage: Float,
+    currency: String,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -60,7 +61,7 @@ fun AnalyticsSummaryCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = CurrencyFormatter.formatCurrency(totalAmount),
+                        text = CurrencyFormatter.formatCurrency(totalAmount, currency),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -105,9 +106,9 @@ fun AnalyticsSummaryCard(
                     )
                     Text(
                         text = if (transactionCount > 0) {
-                            CurrencyFormatter.formatCurrency(averageAmount)
+                            CurrencyFormatter.formatCurrency(averageAmount, currency)
                         } else {
-                            CurrencyFormatter.formatCurrency(BigDecimal.ZERO)
+                            CurrencyFormatter.formatCurrency(BigDecimal.ZERO, currency)
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,

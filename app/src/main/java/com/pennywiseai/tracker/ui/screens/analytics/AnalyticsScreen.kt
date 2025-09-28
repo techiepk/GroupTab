@@ -40,6 +40,8 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
     val transactionTypeFilter by viewModel.transactionTypeFilter.collectAsStateWithLifecycle()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+    val availableCurrencies by viewModel.availableCurrencies.collectAsStateWithLifecycle()
     var showAdvancedFilters by remember { mutableStateOf(false) }
     
     // Calculate active filter count
@@ -77,7 +79,19 @@ fun AnalyticsScreen(
                 }
             }
         }
-        
+
+        // Currency Selector (if multiple currencies available)
+        if (availableCurrencies.size > 1) {
+            item {
+                CurrencyFilterRow(
+                    selectedCurrency = selectedCurrency,
+                    availableCurrencies = availableCurrencies,
+                    onCurrencySelected = { viewModel.selectCurrency(it) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
         // Collapsible Transaction Type Filter
         item {
             CollapsibleFilterRow(
@@ -146,6 +160,7 @@ fun AnalyticsScreen(
                     averageAmount = uiState.averageAmount,
                     topCategory = uiState.topCategory,
                     topCategoryPercentage = uiState.topCategoryPercentage,
+                    currency = uiState.currency,
                     isLoading = uiState.isLoading
                 )
             }
@@ -307,6 +322,42 @@ private fun EmptyAnalyticsState() {
                     textAlign = TextAlign.Center
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyFilterRow(
+    selectedCurrency: String,
+    availableCurrencies: List<String>,
+    onCurrencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        item {
+            Text(
+                text = "Currency:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(
+                    vertical = Spacing.sm,
+                    horizontal = Spacing.xs
+                )
+            )
+        }
+        items(availableCurrencies) { currency ->
+            FilterChip(
+                selected = selectedCurrency == currency,
+                onClick = { onCurrencySelected(currency) },
+                label = { Text(currency) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
         }
     }
 }

@@ -10,6 +10,8 @@ import com.pennywiseai.tracker.data.repository.TransactionRepository
 import com.pennywiseai.tracker.presentation.common.TimePeriod
 import com.pennywiseai.tracker.presentation.common.TransactionTypeFilter
 import com.pennywiseai.tracker.presentation.common.getDateRangeForPeriod
+import com.pennywiseai.tracker.presentation.common.CurrencyGroupedTotals
+import com.pennywiseai.tracker.presentation.common.CurrencyTotals
 import com.pennywiseai.tracker.core.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,12 +47,36 @@ class TransactionsViewModel @Inject constructor(
     
     private val _sortOption = MutableStateFlow(SortOption.DATE_NEWEST)
     val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
-    
+
+    private val _selectedCurrency = MutableStateFlow("INR") // Default to INR
+    val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
+
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
     
-    private val _filteredTotals = MutableStateFlow(FilteredTotals())
-    val filteredTotals: StateFlow<FilteredTotals> = _filteredTotals.asStateFlow()
+    private val _currencyGroupedTotals = MutableStateFlow(CurrencyGroupedTotals())
+    val currencyGroupedTotals: StateFlow<CurrencyGroupedTotals> = _currencyGroupedTotals.asStateFlow()
+
+    // Computed property for current selected currency totals
+    val filteredTotals: StateFlow<FilteredTotals> = combine(
+        _currencyGroupedTotals,
+        _selectedCurrency
+    ) { groupedTotals, currency ->
+        val currencyTotals = groupedTotals.getTotalsForCurrency(currency)
+        FilteredTotals(
+            income = currencyTotals.income,
+            expenses = currencyTotals.expenses,
+            credit = currencyTotals.credit,
+            transfer = currencyTotals.transfer,
+            investment = currencyTotals.investment,
+            netBalance = currencyTotals.netBalance,
+            transactionCount = currencyTotals.transactionCount
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = FilteredTotals()
+    )
     
     private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
@@ -113,7 +139,14 @@ class TransactionsViewModel @Inject constructor(
                 isLoading = false
             )
             // Calculate totals for filtered transactions
-            _filteredTotals.value = calculateTotals(transactions)
+            _currencyGroupedTotals.value = calculateCurrencyGroupedTotals(transactions)
+
+            // Auto-select primary currency if not already selected or if current currency no longer exists
+            val currentSelectedCurrency = _selectedCurrency.value
+            val groupedTotals = _currencyGroupedTotals.value
+            if (!groupedTotals.availableCurrencies.contains(currentSelectedCurrency) && groupedTotals.hasAnyCurrency()) {
+                _selectedCurrency.value = groupedTotals.getPrimaryCurrency()
+            }
         }.launchIn(viewModelScope)
     }
     
@@ -140,6 +173,10 @@ class TransactionsViewModel @Inject constructor(
     
     fun setSortOption(option: SortOption) {
         _sortOption.value = option
+    }
+
+    fun selectCurrency(currency: String) {
+        _selectedCurrency.value = currency
     }
     
     fun deleteTransaction(transaction: TransactionEntity) {
@@ -310,42 +347,58 @@ class TransactionsViewModel @Inject constructor(
         }
     }
     
-    private fun calculateTotals(transactions: List<TransactionEntity>): FilteredTotals {
-        val income = transactions
-            .filter { it.transactionType == TransactionType.INCOME }
-            .sumOf { it.amount.toDouble() }
-            .toBigDecimal()
-            
-        val expenses = transactions
-            .filter { it.transactionType == TransactionType.EXPENSE }
-            .sumOf { it.amount.toDouble() }
-            .toBigDecimal()
-            
-        val credit = transactions
-            .filter { it.transactionType == TransactionType.CREDIT }
-            .sumOf { it.amount.toDouble() }
-            .toBigDecimal()
-            
-        val transfer = transactions
-            .filter { it.transactionType == TransactionType.TRANSFER }
-            .sumOf { it.amount.toDouble() }
-            .toBigDecimal()
-            
-        val investment = transactions
-            .filter { it.transactionType == TransactionType.INVESTMENT }
-            .sumOf { it.amount.toDouble() }
-            .toBigDecimal()
-            
-        // Calculate net balance (income minus all outgoing)
-        val netBalance = income - expenses - credit - transfer - investment
-        
-        return FilteredTotals(
-            income = income,
-            expenses = expenses,
-            credit = credit,
-            transfer = transfer,
-            investment = investment,
-            netBalance = netBalance,
+    private fun calculateCurrencyGroupedTotals(transactions: List<TransactionEntity>): CurrencyGroupedTotals {
+        // Group transactions by currency
+        val transactionsByCurrency = transactions.groupBy { it.currency }
+
+        val totalsByCurrency = transactionsByCurrency.mapValues { (currency, currencyTransactions) ->
+            val income = currencyTransactions
+                .filter { it.transactionType == TransactionType.INCOME }
+                .sumOf { it.amount.toDouble() }
+                .toBigDecimal()
+
+            val expenses = currencyTransactions
+                .filter { it.transactionType == TransactionType.EXPENSE }
+                .sumOf { it.amount.toDouble() }
+                .toBigDecimal()
+
+            val credit = currencyTransactions
+                .filter { it.transactionType == TransactionType.CREDIT }
+                .sumOf { it.amount.toDouble() }
+                .toBigDecimal()
+
+            val transfer = currencyTransactions
+                .filter { it.transactionType == TransactionType.TRANSFER }
+                .sumOf { it.amount.toDouble() }
+                .toBigDecimal()
+
+            val investment = currencyTransactions
+                .filter { it.transactionType == TransactionType.INVESTMENT }
+                .sumOf { it.amount.toDouble() }
+                .toBigDecimal()
+
+            CurrencyTotals(
+                currency = currency,
+                income = income,
+                expenses = expenses,
+                credit = credit,
+                transfer = transfer,
+                investment = investment,
+                transactionCount = currencyTransactions.size
+            )
+        }
+
+        val availableCurrencies = totalsByCurrency.keys.toList().sortedWith { a, b ->
+            when {
+                a == "INR" -> -1 // INR first
+                b == "INR" -> 1
+                else -> a.compareTo(b) // Alphabetical for others
+            }
+        }
+
+        return CurrencyGroupedTotals(
+            totalsByCurrency = totalsByCurrency,
+            availableCurrencies = availableCurrencies,
             transactionCount = transactions.size
         )
     }
