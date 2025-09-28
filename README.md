@@ -25,7 +25,7 @@ Turn bank SMS into a clean, searchable money timeline with on-device AI assistan
 
 ## Overview
 
-For Android users in India who want automatic expense tracking from bank SMS — clean categories, subscription detection, and clear insights.
+For Android users worldwide who want automatic expense tracking from bank SMS — clean categories, subscription detection, and clear insights. Supporting 40+ banks across 5 countries with multi-currency capabilities.
 
 <a href="https://play.google.com/store/apps/details?id=com.pennywiseai.tracker">
   <img src="https://img.shields.io/badge/GET_IT_ON-Google_Play-00875F?style=for-the-badge&logo=google-play&logoColor=white" alt="Get it on Google Play" />
@@ -42,31 +42,40 @@ For Android users in India who want automatic expense tracking from bank SMS —
 
 ## Why PennyWise
 
-- **🤖 Smart SMS Parsing** - Automatically extracts transaction details from Indian bank SMS
+- **🤖 Smart SMS Parsing** - Automatically extracts transaction details from 40+ banks across 5 countries
+- **🌍 Multi-Currency Support** - Native support for ₹, $, د.إ, ₨, ብር with proper localization
 - **📊 Clear Insights** - Analytics and charts to instantly see where money goes
 - **🔄 Subscription Tracking** - Detects and monitors recurring payments
 - **💬 On-device AI Assistant** - Ask questions like "What did I spend on food last month?" locally
 - **🏷️ Auto‑Categorization** - Clean merchant names and sensible categories
 - **📤 Data Export** - Export as CSV or PDF for taxes or records
 
-## Supported Banks
+## Supported Banks & Countries
 
-Currently supporting major Indian banks:
+Supporting **40+ banks** across **5 countries** with **multi-currency** capabilities:
 
-- **HDFC Bank**
-- **State Bank of India (SBI)**
-- **ICICI Bank**
-- **Axis Bank**
-- **Punjab National Bank (PNB)**
-- **IDBI Bank**
-- **Indian Bank**
-- **Federal Bank**
-- **Karnataka Bank**
-- **Canara Bank**
-- **Bank of Baroda**
-- **Jio Payments Bank**
-- **Jupiter (CSB Bank)**
-- **Amazon Pay (Juspay)**
+### 🇮🇳 India (34 banks) - INR ₹
+- **HDFC Bank**, **State Bank of India (SBI)**, **ICICI Bank**
+- **Axis Bank**, **Punjab National Bank (PNB)**, **IDBI Bank**
+- **Indian Bank**, **Federal Bank**, **Karnataka Bank**
+- **Canara Bank**, **Bank of Baroda**, **Jio Payments Bank**
+- **Jupiter (CSB Bank)**, **Amazon Pay (Juspay)**, **Kotak Bank**
+- **IDFC First Bank**, **Union Bank**, **HSBC Bank**
+- **Central Bank of India**, **South Indian Bank**, **JK Bank**
+- **Indian Overseas Bank**, **Airtel Payments Bank**, **AMEX**
+- **OneCard**, **UCO Bank**, **AU Bank**, and more...
+
+### 🇺🇸 USA (3 banks) - USD $
+- **Citi Bank**, **Discover Card**, **Old Hickory Credit Union**
+
+### 🇦🇪 UAE (1 bank) - AED د.إ
+- **First Abu Dhabi Bank (FAB)**
+
+### 🇳🇵 Nepal (2 banks) - NPR ₨
+- **Laxmi Sunrise Bank**, **Everest Bank**
+
+### 🇪🇹 Ethiopia (1 bank) - ETB ብር
+- **Commercial Bank of Ethiopia (CBE)**
 
 More banks being added regularly! [Request your bank →](https://github.com/sarim2000/pennywiseai-tracker/issues/new?template=bank_support_request.md)
 
