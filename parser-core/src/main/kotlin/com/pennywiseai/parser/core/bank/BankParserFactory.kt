@@ -44,7 +44,8 @@ object BankParserFactory {
         FABParser(),  // First Abu Dhabi Bank (UAE)
         CitiBankParser(),  // Citi Bank (USA)
         DiscoverCardParser(),  // Discover Card (USA)
-        LaxmiBankParser()  // Laxmi Sunrise Bank (Nepal)
+        LaxmiBankParser(),  // Laxmi Sunrise Bank (Nepal)
+        CBEBankParser()  // Commercial Bank of Ethiopia
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.

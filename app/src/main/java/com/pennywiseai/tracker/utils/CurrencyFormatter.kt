@@ -26,7 +26,8 @@ object CurrencyFormatter {
         "AUD" to "A$",
         "JPY" to "¥",
         "CNY" to "¥",
-        "NPR" to "₨"
+        "NPR" to "₨",
+        "ETB" to "ብር"
     )
 
     /**
@@ -43,7 +44,8 @@ object CurrencyFormatter {
         "AUD" to Locale.Builder().setLanguage("en").setRegion("AU").build(),
         "JPY" to Locale.JAPAN,
         "CNY" to Locale.CHINA,
-        "NPR" to Locale.Builder().setLanguage("ne").setRegion("NP").build()
+        "NPR" to Locale.Builder().setLanguage("ne").setRegion("NP").build(),
+        "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build()
     )
 
     /**
