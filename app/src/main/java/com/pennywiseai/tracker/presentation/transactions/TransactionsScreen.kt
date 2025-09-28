@@ -44,6 +44,7 @@ import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.components.CollapsibleFilterRow
 import com.pennywiseai.tracker.ui.theme.*
 import com.pennywiseai.tracker.utils.CurrencyFormatter
+import com.pennywiseai.tracker.utils.formatAmount
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 
@@ -588,7 +589,7 @@ private fun TransactionItem(
     ListItemCard(
         title = transaction.merchantName,
         subtitle = subtitleParts.joinToString(" • "),
-        amount = CurrencyFormatter.formatCurrency(transaction.amount),
+        amount = transaction.formatAmount(),
         amountColor = amountColor,
         onClick = onClick,
         leadingContent = {
@@ -639,7 +640,7 @@ private fun TransactionItem(
                 
                 // Always show amount
                 Text(
-                    text = CurrencyFormatter.formatCurrency(transaction.amount),
+                    text = transaction.formatAmount(),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = amountColor

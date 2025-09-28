@@ -192,7 +192,8 @@ class SmsReaderWorker @AssistedInject constructor(
                                             bankName = balanceUpdateInfo.bankName,
                                             accountLast4 = balanceUpdateInfo.accountLast4,
                                             balance = balanceUpdateInfo.balance,
-                                            timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime
+                                            timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime,
+                                            currency = parser.getCurrency()
                                         )
                                         Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName}")
                                     } catch (e: Exception) {
@@ -474,7 +475,8 @@ class SmsReaderWorker @AssistedInject constructor(
                                             creditLimit = existingAccount?.creditLimit, // Keep existing credit limit
                                             isCreditCard = isCreditCard || (existingAccount?.isCreditCard ?: false),
                                             smsSource = parsedTransaction.smsBody.take(500),  // Store SMS snippet
-                                            sourceType = "TRANSACTION"
+                                            sourceType = "TRANSACTION",
+                                            currency = parsedTransaction.currency
                                         )
                                         
                                         accountBalanceRepository.insertBalance(balanceEntity)

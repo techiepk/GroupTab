@@ -43,6 +43,7 @@ import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
 import com.pennywiseai.tracker.ui.theme.Dimensions
 import com.pennywiseai.tracker.ui.theme.Spacing
 import com.pennywiseai.tracker.utils.CurrencyFormatter
+import com.pennywiseai.tracker.utils.formatAmount
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -345,7 +346,7 @@ private fun TransactionHeader(transaction: TransactionEntity) {
             }
             
             Text(
-                text = "$sign${CurrencyFormatter.formatCurrency(transaction.amount)}",
+                text = "$sign${transaction.formatAmount()}",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = amountColor

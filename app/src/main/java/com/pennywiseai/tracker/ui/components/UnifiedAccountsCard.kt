@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.ui.theme.*
 import com.pennywiseai.tracker.utils.CurrencyFormatter
+import com.pennywiseai.tracker.utils.formatBalance
+import com.pennywiseai.tracker.utils.formatAmount
+import com.pennywiseai.tracker.utils.formatCreditLimit
 import java.math.BigDecimal
 
 @Composable
@@ -143,7 +146,7 @@ fun UnifiedAccountsCard(
                             CompactAccountItem(
                                 bankName = account.bankName,
                                 accountLast4 = account.accountLast4,
-                                amount = account.balance,
+                                formattedAmount = account.formatBalance(),
                                 subtitle = "Balance",
                                 isCredit = false,
                                 onClick = { onAccountClick(account.bankName, account.accountLast4) }
@@ -167,12 +170,12 @@ fun UnifiedAccountsCard(
                             CompactAccountItem(
                                 bankName = card.bankName,
                                 accountLast4 = card.accountLast4,
-                                amount = card.creditLimit ?: BigDecimal.ZERO,
+                                formattedAmount = card.formatCreditLimit(),
                                 subtitle = if (card.balance > BigDecimal.ZERO) {
                                     val utilization = if (card.creditLimit != null && card.creditLimit > BigDecimal.ZERO) {
                                         ((card.balance.toDouble() / card.creditLimit.toDouble()) * 100).toInt()
                                     } else 0
-                                    "Used: ${CurrencyFormatter.formatCurrency(card.balance)} ($utilization%)"
+                                    "Used: ${card.formatBalance()} ($utilization%)"
                                 } else "Available Limit",
                                 isCredit = true,
                                 onClick = { onAccountClick(card.bankName, card.accountLast4) },
@@ -212,7 +215,7 @@ fun UnifiedAccountsCard(
 private fun CompactAccountItem(
     bankName: String,
     accountLast4: String,
-    amount: BigDecimal,
+    formattedAmount: String,
     subtitle: String,
     isCredit: Boolean,
     onClick: () -> Unit,
@@ -254,7 +257,7 @@ private fun CompactAccountItem(
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                text = CurrencyFormatter.formatCurrency(amount),
+                text = formattedAmount,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium
             )

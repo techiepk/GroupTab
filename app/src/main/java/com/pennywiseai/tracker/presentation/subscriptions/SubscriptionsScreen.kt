@@ -28,6 +28,7 @@ import com.pennywiseai.tracker.ui.components.*
 import com.pennywiseai.tracker.ui.theme.*
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.utils.CurrencyFormatter
+import com.pennywiseai.tracker.utils.formatAmount
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -302,7 +303,7 @@ private fun SwipeableSubscriptionItem(
                         }
                         
                         Text(
-                            text = CurrencyFormatter.formatCurrency(subscription.amount),
+                            text = subscription.formatAmount(),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = if (!isSystemInDarkTheme()) expense_light else expense_dark

@@ -48,5 +48,8 @@ data class AccountBalanceEntity(
     val sourceType: String? = null,  // TRANSACTION, SMS_BALANCE, MANUAL, CARD_LINK
     
     @ColumnInfo(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @ColumnInfo(name = "currency", defaultValue = "INR")
+    val currency: String = "INR"
 )

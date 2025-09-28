@@ -21,6 +21,12 @@ abstract class BankParser {
      * Checks if this parser can handle messages from the given sender.
      */
     abstract fun canHandle(sender: String): Boolean
+
+    /**
+     * Returns the currency used by this bank.
+     * Defaults to INR for Indian banks. International banks should override this.
+     */
+    open fun getCurrency(): String = "INR"
     
     /**
      * Parses an SMS message and extracts transaction information.
@@ -62,7 +68,8 @@ abstract class BankParser {
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName(),
-            isFromCard = detectIsCard(smsBody)
+            isFromCard = detectIsCard(smsBody),
+            currency = getCurrency()
         )
     }
     

@@ -93,7 +93,8 @@ class AccountBalanceRepository @Inject constructor(
         balance: BigDecimal,
         timestamp: LocalDateTime,
         smsSource: String? = null,
-        sourceType: String? = null
+        sourceType: String? = null,
+        currency: String = "INR"
     ): Long {
         val balanceEntity = AccountBalanceEntity(
             bankName = bankName,
@@ -102,7 +103,8 @@ class AccountBalanceRepository @Inject constructor(
             timestamp = timestamp,
             transactionId = null,
             smsSource = smsSource?.take(500),  // Limit to 500 chars
-            sourceType = sourceType
+            sourceType = sourceType,
+            currency = currency
         )
         return insertBalance(balanceEntity)
     }

@@ -55,6 +55,7 @@ import com.pennywiseai.tracker.ui.components.CreditCardsCard
 import com.pennywiseai.tracker.ui.components.UnifiedAccountsCard
 import com.pennywiseai.tracker.ui.components.spotlightTarget
 import com.pennywiseai.tracker.utils.CurrencyFormatter
+import com.pennywiseai.tracker.utils.formatAmount
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -366,7 +367,7 @@ private fun SimpleTransactionItem(
     ListItemCard(
         title = transaction.merchantName,
         subtitle = dateTimeText,
-        amount = CurrencyFormatter.formatCurrency(transaction.amount),
+        amount = transaction.formatAmount(),
         amountColor = amountColor,
         onClick = onClick,
         leadingContent = {
@@ -465,7 +466,7 @@ private fun TransactionItem(
     ListItemCard(
         title = transaction.merchantName,
         subtitle = transaction.dateTime.format(DateTimeFormatter.ofPattern("MMM d, h:mm a")),
-        amount = CurrencyFormatter.formatCurrency(transaction.amount),
+        amount = transaction.formatAmount(),
         amountColor = amountColor,
         onClick = onClick,
         leadingContent = {
@@ -516,7 +517,7 @@ private fun TransactionItem(
                 
                 // Always show amount
                 Text(
-                    text = CurrencyFormatter.formatCurrency(transaction.amount),
+                    text = transaction.formatAmount(),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = amountColor

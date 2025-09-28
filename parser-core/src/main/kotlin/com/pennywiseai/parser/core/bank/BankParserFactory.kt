@@ -40,7 +40,8 @@ object BankParserFactory {
         AMEXBankParser(),
         OneCardParser(),
         UCOBankParser(),
-        AUBankParser()
+        AUBankParser(),
+        FABParser()  // First Abu Dhabi Bank (UAE)
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
