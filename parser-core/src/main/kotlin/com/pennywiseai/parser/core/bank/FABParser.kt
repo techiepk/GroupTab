@@ -336,10 +336,15 @@ class FABParser : BankParser() {
             "funds transfer request has failed",
             "card has been successfully activated",
             "temporarily blocked",
-            "never share credit/debit card"
+            "never share credit/debit card",
+            "debit card.*replacement request",  // Card replacement requests
+            "card will be ready for dispatch",  // Card delivery notifications
+            "replacement request has been registered"  // Card replacement confirmations
         )
 
-        if (nonTransactionKeywords.any { lowerMessage.contains(it) }) {
+        if (nonTransactionKeywords.any { keyword ->
+            lowerMessage.contains(Regex(keyword, RegexOption.IGNORE_CASE))
+        }) {
             return false
         }
 
