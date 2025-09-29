@@ -49,8 +49,9 @@ class FABParser : BankParser() {
 
         return when {
             // Credit card transactions
-            lowerMessage.contains("credit card purchase") -> TransactionType.CREDIT
-            lowerMessage.contains("card purchase") -> TransactionType.CREDIT
+            lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
+            lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
+            lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
 
             // Inward remittance is income
             lowerMessage.contains("inward remittance") -> TransactionType.INCOME
@@ -68,11 +69,16 @@ class FABParser : BankParser() {
             else -> null
         }
     }
+    
+    // centralized function to reduce repeated code for card purchase check
+    private fun containsCardPurchase(message: String): Boolean {
+        return message.contains(Regex("(Credit|Debit) Card Purchase", RegexOption.IGNORE_CASE))
+    }
 
     override fun extractMerchant(message: String, sender: String): String? {
         // Pattern 1: Credit card - merchant on third line after amount
         // "Card No XXXX\nAED 8.00\nT*** R** DUBAI ARE"
-        if (message.contains("Credit Card Purchase", ignoreCase = true)) {
+        if (containsCardPurchase(message)) {
             val lines = message.split("\n")
             // Find the line with AED amount
             val aedLineIndex = lines.indexOfFirst { it.contains("AED", ignoreCase = true) }
@@ -175,6 +181,7 @@ class FABParser : BankParser() {
         // FAB specific transaction keywords
         val fabTransactionKeywords = listOf(
             "credit card purchase",
+            "debit card purchase",
             "inward remittance",
             "payment instructions",
             "has been processed",
