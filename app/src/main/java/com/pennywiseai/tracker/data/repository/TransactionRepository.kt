@@ -164,6 +164,58 @@ class TransactionRepository @Inject constructor(
     fun getLastMonthTotal(): Flow<BigDecimal> {
         return getLastMonthBreakdown().map { it.total }
     }
+
+    // Currency-grouped breakdown methods
+    fun getCurrentMonthBreakdownByCurrency(): Flow<Map<String, MonthlyBreakdown>> {
+        val now = LocalDate.now()
+        val startDate = now.withDayOfMonth(1).atStartOfDay()
+        val endDate = now.atTime(23, 59, 59)
+
+        return transactionDao.getTransactionsBetweenDates(startDate, endDate)
+            .map { transactions ->
+                transactions.groupBy { it.currency }.mapValues { (_, currencyTransactions) ->
+                    val income = currencyTransactions
+                        .filter { it.transactionType == TransactionType.INCOME }
+                        .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                    val expenses = currencyTransactions
+                        .filter { it.transactionType == TransactionType.EXPENSE }
+                        .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                    MonthlyBreakdown(
+                        total = income - expenses,
+                        income = income,
+                        expenses = expenses
+                    )
+                }
+            }
+    }
+
+    fun getLastMonthBreakdownByCurrency(): Flow<Map<String, MonthlyBreakdown>> {
+        val now = LocalDate.now()
+        val dayOfMonth = now.dayOfMonth
+        val lastMonth = now.minusMonths(1)
+
+        // Compare same period: if today is 10th, compare 1st-10th of last month
+        val startDate = lastMonth.withDayOfMonth(1).atStartOfDay()
+        val lastMonthMaxDay = min(dayOfMonth, lastMonth.lengthOfMonth())
+        val endDate = lastMonth.withDayOfMonth(lastMonthMaxDay).atTime(23, 59, 59)
+
+        return transactionDao.getTransactionsBetweenDates(startDate, endDate)
+            .map { transactions ->
+                transactions.groupBy { it.currency }.mapValues { (_, currencyTransactions) ->
+                    val income = currencyTransactions
+                        .filter { it.transactionType == TransactionType.INCOME }
+                        .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                    val expenses = currencyTransactions
+                        .filter { it.transactionType == TransactionType.EXPENSE }
+                        .fold(BigDecimal.ZERO) { acc, transaction -> acc + transaction.amount }
+                    MonthlyBreakdown(
+                        total = income - expenses,
+                        income = income,
+                        expenses = expenses
+                    )
+                }
+            }
+    }
     
     fun getRecentTransactions(limit: Int = 5): Flow<List<TransactionEntity>> {
         return transactionDao.getAllTransactions()

@@ -46,6 +46,10 @@ class HomeViewModel @Inject constructor(
     
     private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
+
+    // Store currency breakdown maps for quick access when switching currencies
+    private var currentMonthBreakdownMap: Map<String, TransactionRepository.MonthlyBreakdown> = emptyMap()
+    private var lastMonthBreakdownMap: Map<String, TransactionRepository.MonthlyBreakdown> = emptyMap()
     
     init {
         loadHomeData()
@@ -53,14 +57,9 @@ class HomeViewModel @Inject constructor(
     
     private fun loadHomeData() {
         viewModelScope.launch {
-            // Load current month breakdown
-            transactionRepository.getCurrentMonthBreakdown().collect { breakdown ->
-                _uiState.value = _uiState.value.copy(
-                    currentMonthTotal = breakdown.total,
-                    currentMonthIncome = breakdown.income,
-                    currentMonthExpenses = breakdown.expenses
-                )
-                calculateMonthlyChange()
+            // Load current month breakdown by currency
+            transactionRepository.getCurrentMonthBreakdownByCurrency().collect { breakdownByCurrency ->
+                updateBreakdownForSelectedCurrency(breakdownByCurrency, isCurrentMonth = true)
             }
         }
         
@@ -95,42 +94,23 @@ class HomeViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            // Load current month transactions by type
+            // Load current month transactions by type (currency-filtered)
             val now = java.time.LocalDate.now()
             val startOfMonth = now.withDayOfMonth(1)
             val endOfMonth = now.withDayOfMonth(now.lengthOfMonth())
-            
+
             transactionRepository.getTransactionsBetweenDates(
                 startDate = startOfMonth,
                 endDate = endOfMonth
             ).collect { transactions ->
-                val creditCardTotal = transactions
-                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT }
-                    .sumOf { it.amount }
-                val transferTotal = transactions
-                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER }
-                    .sumOf { it.amount }
-                val investmentTotal = transactions
-                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT }
-                    .sumOf { it.amount }
-                
-                _uiState.value = _uiState.value.copy(
-                    currentMonthCreditCard = creditCardTotal,
-                    currentMonthTransfer = transferTotal,
-                    currentMonthInvestment = investmentTotal
-                )
+                updateTransactionTypeTotals(transactions)
             }
         }
         
         viewModelScope.launch {
-            // Load last month breakdown
-            transactionRepository.getLastMonthBreakdown().collect { breakdown ->
-                _uiState.value = _uiState.value.copy(
-                    lastMonthTotal = breakdown.total,
-                    lastMonthIncome = breakdown.income,
-                    lastMonthExpenses = breakdown.expenses
-                )
-                calculateMonthlyChange()
+            // Load last month breakdown by currency
+            transactionRepository.getLastMonthBreakdownByCurrency().collect { breakdownByCurrency ->
+                updateBreakdownForSelectedCurrency(breakdownByCurrency, isCurrentMonth = false)
             }
         }
         
@@ -293,6 +273,107 @@ class HomeViewModel @Inject constructor(
         }
     }
     
+    fun selectCurrency(currency: String) {
+        // Update monthly breakdown values from stored maps
+        val availableCurrencies = _uiState.value.availableCurrencies
+        updateUIStateForCurrency(currency, availableCurrencies)
+
+        // Also refresh transaction type totals for new currency
+        viewModelScope.launch {
+            val now = java.time.LocalDate.now()
+            val startOfMonth = now.withDayOfMonth(1)
+            val endOfMonth = now.withDayOfMonth(now.lengthOfMonth())
+
+            val transactions = transactionRepository.getTransactionsBetweenDates(
+                startDate = startOfMonth,
+                endDate = endOfMonth
+            ).first()
+            updateTransactionTypeTotals(transactions)
+        }
+    }
+
+    private fun updateTransactionTypeTotals(transactions: List<TransactionEntity>) {
+        // Filter transactions by selected currency
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currencyTransactions = transactions.filter { it.currency == selectedCurrency }
+
+        val creditCardTotal = currencyTransactions
+            .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.CREDIT }
+            .sumOf { it.amount }
+        val transferTotal = currencyTransactions
+            .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.TRANSFER }
+            .sumOf { it.amount }
+        val investmentTotal = currencyTransactions
+            .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INVESTMENT }
+            .sumOf { it.amount }
+
+        _uiState.value = _uiState.value.copy(
+            currentMonthCreditCard = creditCardTotal,
+            currentMonthTransfer = transferTotal,
+            currentMonthInvestment = investmentTotal
+        )
+    }
+
+    private fun updateBreakdownForSelectedCurrency(
+        breakdownByCurrency: Map<String, TransactionRepository.MonthlyBreakdown>,
+        isCurrentMonth: Boolean
+    ) {
+        // Store the breakdown map for later use when switching currencies
+        if (isCurrentMonth) {
+            currentMonthBreakdownMap = breakdownByCurrency
+        } else {
+            lastMonthBreakdownMap = breakdownByCurrency
+        }
+
+        // Update available currencies from all stored data
+        val allCurrencies = (currentMonthBreakdownMap.keys + lastMonthBreakdownMap.keys).distinct()
+        val availableCurrencies = allCurrencies.sortedWith { a, b ->
+            when {
+                a == "INR" -> -1 // INR first
+                b == "INR" -> 1
+                else -> a.compareTo(b) // Alphabetical for others
+            }
+        }
+
+        // Auto-select primary currency if not already selected or if current currency no longer exists
+        val currentSelectedCurrency = _uiState.value.selectedCurrency
+        val selectedCurrency = if (!availableCurrencies.contains(currentSelectedCurrency) && availableCurrencies.isNotEmpty()) {
+            if (availableCurrencies.contains("INR")) "INR" else availableCurrencies.first()
+        } else {
+            currentSelectedCurrency
+        }
+
+        // Update UI state with values for selected currency
+        updateUIStateForCurrency(selectedCurrency, availableCurrencies)
+    }
+
+    private fun updateUIStateForCurrency(selectedCurrency: String, availableCurrencies: List<String>) {
+        // Get breakdown for selected currency from stored maps
+        val currentBreakdown = currentMonthBreakdownMap[selectedCurrency] ?: TransactionRepository.MonthlyBreakdown(
+            total = BigDecimal.ZERO,
+            income = BigDecimal.ZERO,
+            expenses = BigDecimal.ZERO
+        )
+
+        val lastBreakdown = lastMonthBreakdownMap[selectedCurrency] ?: TransactionRepository.MonthlyBreakdown(
+            total = BigDecimal.ZERO,
+            income = BigDecimal.ZERO,
+            expenses = BigDecimal.ZERO
+        )
+
+        _uiState.value = _uiState.value.copy(
+            currentMonthTotal = currentBreakdown.total,
+            currentMonthIncome = currentBreakdown.income,
+            currentMonthExpenses = currentBreakdown.expenses,
+            lastMonthTotal = lastBreakdown.total,
+            lastMonthIncome = lastBreakdown.income,
+            lastMonthExpenses = lastBreakdown.expenses,
+            selectedCurrency = selectedCurrency,
+            availableCurrencies = availableCurrencies
+        )
+        calculateMonthlyChange()
+    }
+
     override fun onCleared() {
         super.onCleared()
         inAppUpdateManager.cleanup()
@@ -318,6 +399,8 @@ data class HomeUiState(
     val creditCards: List<AccountBalanceEntity> = emptyList(),
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,
+    val selectedCurrency: String = "INR",
+    val availableCurrencies: List<String> = emptyList(),
     val isLoading: Boolean = true,
     val isScanning: Boolean = false,
     val showBreakdownDialog: Boolean = false

@@ -4,16 +4,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
@@ -30,10 +34,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -150,7 +156,10 @@ fun HomeScreen(
         ) {
             // Transaction Summary Cards with HorizontalPager
             item {
-                TransactionSummaryCards(uiState = uiState)
+                TransactionSummaryCards(
+                    uiState = uiState,
+                    onCurrencySelected = { viewModel.selectCurrency(it) }
+                )
             }
             
             // Unified Accounts Section (Credit Cards + Bank Accounts)
@@ -385,15 +394,16 @@ private fun MonthSummaryCard(
     monthTotal: BigDecimal,
     monthlyChange: BigDecimal,
     monthlyChangePercent: Int,
+    currency: String,
     currentExpenses: BigDecimal = BigDecimal.ZERO,
     lastExpenses: BigDecimal = BigDecimal.ZERO,
     onShowBreakdown: () -> Unit = {}
 ) {
     val isPositive = monthTotal >= BigDecimal.ZERO
     val displayAmount = if (isPositive) {
-        "+${CurrencyFormatter.formatCurrency(monthTotal)}"
+        "+${CurrencyFormatter.formatCurrency(monthTotal, currency)}"
     } else {
-        CurrencyFormatter.formatCurrency(monthTotal)
+        CurrencyFormatter.formatCurrency(monthTotal, currency)
     }
     val amountColor = if (isPositive) {
         if (!isSystemInDarkTheme()) income_light else income_dark
@@ -413,15 +423,15 @@ private fun MonthSummaryCard(
         }
         // Spent more than last period
         expenseChange > BigDecimal.ZERO -> {
-            "😟 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs())} more $periodLabel"
+            "😟 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs(), currency)} more $periodLabel"
         }
-        // Spent less than last period  
+        // Spent less than last period
         expenseChange < BigDecimal.ZERO -> {
-            "😊 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs())} less $periodLabel"
+            "😊 Spent ${CurrencyFormatter.formatCurrency(expenseChange.abs(), currency)} less $periodLabel"
         }
         // Saved more (higher positive balance)
         monthlyChange > BigDecimal.ZERO && monthTotal > BigDecimal.ZERO -> {
-            "🎉 Saved ${CurrencyFormatter.formatCurrency(monthlyChange.abs())} more $periodLabel"
+            "🎉 Saved ${CurrencyFormatter.formatCurrency(monthlyChange.abs(), currency)} more $periodLabel"
         }
         // No change
         else -> {
@@ -430,7 +440,18 @@ private fun MonthSummaryCard(
     }
     
     val currentMonth = now.month.name.lowercase().replaceFirstChar { it.uppercase() }
-    val titleText = "Net Balance • $currentMonth 1-${now.dayOfMonth}"
+
+    // Currency symbol mapping for display
+    val currencySymbols = mapOf(
+        "INR" to "₹",
+        "USD" to "$",
+        "AED" to "د.إ",
+        "NPR" to "₨",
+        "ETB" to "ብর"
+    )
+    val currencySymbol = currencySymbols[currency] ?: currency
+
+    val titleText = "Net Balance ($currencySymbol) • $currentMonth 1-${now.dayOfMonth}"
     
     SummaryCard(
         title = titleText,
@@ -741,12 +762,35 @@ private fun UpcomingSubscriptionsCard(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TransactionSummaryCards(uiState: HomeUiState) {
+private fun TransactionSummaryCards(
+    uiState: HomeUiState,
+    onCurrencySelected: (String) -> Unit = {}
+) {
     val pagerState = rememberPagerState(pageCount = { 4 })
-    
+
     Column(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
+        // Enhanced Currency Selector (if multiple currencies available)
+        if (uiState.availableCurrencies.size > 1) {
+            EnhancedCurrencySelector(
+                selectedCurrency = uiState.selectedCurrency,
+                availableCurrencies = uiState.availableCurrencies,
+                onCurrencySelected = onCurrencySelected,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        // Show empty state if no transactions in selected currency
+        if (uiState.currentMonthTotal == BigDecimal.ZERO &&
+            uiState.currentMonthIncome == BigDecimal.ZERO &&
+            uiState.currentMonthExpenses == BigDecimal.ZERO &&
+            uiState.availableCurrencies.size > 1) {
+            CurrencyEmptyState(
+                selectedCurrency = uiState.selectedCurrency,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth(),
@@ -759,6 +803,7 @@ private fun TransactionSummaryCards(uiState: HomeUiState) {
                         monthTotal = uiState.currentMonthTotal,
                         monthlyChange = uiState.monthlyChange,
                         monthlyChangePercent = uiState.monthlyChangePercent,
+                        currency = uiState.selectedCurrency,
                         currentExpenses = uiState.currentMonthExpenses,
                         lastExpenses = uiState.lastMonthExpenses,
                         onShowBreakdown = { /* TODO */ }
@@ -771,7 +816,8 @@ private fun TransactionSummaryCards(uiState: HomeUiState) {
                         icon = Icons.Default.CreditCard,
                         amount = uiState.currentMonthCreditCard,
                         color = if (!isSystemInDarkTheme()) credit_light else credit_dark,
-                        emoji = "💳"
+                        emoji = "💳",
+                        currency = uiState.selectedCurrency
                     )
                 }
                 2 -> {
@@ -781,7 +827,8 @@ private fun TransactionSummaryCards(uiState: HomeUiState) {
                         icon = Icons.Default.SwapHoriz,
                         amount = uiState.currentMonthTransfer,
                         color = if (!isSystemInDarkTheme()) transfer_light else transfer_dark,
-                        emoji = "↔️"
+                        emoji = "↔️",
+                        currency = uiState.selectedCurrency
                     )
                 }
                 3 -> {
@@ -791,7 +838,8 @@ private fun TransactionSummaryCards(uiState: HomeUiState) {
                         icon = Icons.AutoMirrored.Filled.ShowChart,
                         amount = uiState.currentMonthInvestment,
                         color = if (!isSystemInDarkTheme()) investment_light else investment_dark,
-                        emoji = "📈"
+                        emoji = "📈",
+                        currency = uiState.selectedCurrency
                     )
                 }
             }
@@ -831,7 +879,8 @@ private fun TransactionTypeCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     amount: BigDecimal,
     color: Color,
-    emoji: String
+    emoji: String,
+    currency: String
 ) {
     val currentMonth = LocalDate.now().month.name.lowercase().replaceFirstChar { it.uppercase() }
     val now = LocalDate.now()
@@ -858,8 +907,186 @@ private fun TransactionTypeCard(
     SummaryCard(
         title = "$emoji $title • $currentMonth",
         subtitle = subtitle,
-        amount = CurrencyFormatter.formatCurrency(amount),
+        amount = CurrencyFormatter.formatCurrency(amount, currency),
         amountColor = color,
         onClick = { /* TODO: Navigate to filtered view */ }
     )
+}
+
+@Composable
+private fun EnhancedCurrencySelector(
+    selectedCurrency: String,
+    availableCurrencies: List<String>,
+    onCurrencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Currency symbol mapping
+    val currencySymbols = mapOf(
+        "INR" to "₹",
+        "USD" to "$",
+        "AED" to "د.إ",
+        "NPR" to "₨",
+        "ETB" to "ብር"
+    )
+
+    PennyWiseCard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.Padding.content)
+        ) {
+            // Header with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = Spacing.sm)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CurrencyExchange,
+                    contentDescription = "Currency",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(Spacing.xs))
+                Text(
+                    text = "Currency View",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "${availableCurrencies.size} available",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+
+            // Currency chips with FlowRow for better wrapping
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                availableCurrencies.forEach { currency ->
+                    val isSelected = selectedCurrency == currency
+                    val symbol = currencySymbols[currency] ?: currency
+
+                    Surface(
+                        onClick = { onCurrencySelected(currency) },
+                        modifier = Modifier.animateContentSize(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            }
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(
+                                horizontal = if (isSelected) 16.dp else 12.dp,
+                                vertical = 8.dp
+                            )
+                        ) {
+                            // Currency symbol with enhanced styling
+                            Text(
+                                text = symbol,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+
+                            if (symbol != currency) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = currency,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    }
+                                )
+                            }
+
+                            // Selected indicator
+                            if (isSelected) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyEmptyState(
+    selectedCurrency: String,
+    modifier: Modifier = Modifier
+) {
+    val currencySymbols = mapOf(
+        "INR" to "₹",
+        "USD" to "$",
+        "AED" to "د.إ",
+        "NPR" to "₨",
+        "ETB" to "ብር"
+    )
+    val currencySymbol = currencySymbols[selectedCurrency] ?: selectedCurrency
+
+    PennyWiseCard(
+        modifier = modifier,
+        containerColor = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.Padding.content),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "💰",
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm))
+            Text(
+                text = "No $selectedCurrency transactions yet",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            Text(
+                text = "Start spending or earning in $currencySymbol to see insights here",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
 }
