@@ -52,9 +52,17 @@ class FABParser : BankParser() {
             lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
+            
+            lowerMessage.contains("atm cash withdrawal") -> TransactionType.EXPENSE
 
             // Inward remittance is income
             lowerMessage.contains("inward remittance") -> TransactionType.INCOME
+            //cash deposit is income
+            lowerMessage.contains("cash deposit") -> TransactionType.INCOME
+            lowerMessage.contains("has been credited to your fab account") -> TransactionType.INCOME
+
+            // Outward remittance is expense
+            lowerMessage.contains("outward remittance") -> TransactionType.EXPENSE
 
             // Payment instructions are expenses
             lowerMessage.contains("payment instructions") -> TransactionType.EXPENSE
@@ -183,6 +191,8 @@ class FABParser : BankParser() {
             "credit card purchase",
             "debit card purchase",
             "inward remittance",
+            "outward remittance",
+            "atm cash withdrawal",
             "payment instructions",
             "has been processed",
             "available balance aed"
