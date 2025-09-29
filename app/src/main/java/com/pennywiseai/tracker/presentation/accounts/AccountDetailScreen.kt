@@ -93,7 +93,8 @@ fun AccountDetailScreen(
                     totalExpenses = uiState.totalExpenses,
                     netBalance = uiState.netBalance,
                     period = selectedDateRange.label,
-                    primaryCurrency = uiState.primaryCurrency
+                    primaryCurrency = uiState.primaryCurrency,
+                    hasMultipleCurrencies = uiState.hasMultipleCurrencies
                 )
             }
             
@@ -301,7 +302,8 @@ private fun SummaryStatistics(
     totalExpenses: BigDecimal,
     netBalance: BigDecimal,
     period: String,
-    primaryCurrency: String
+    primaryCurrency: String,
+    hasMultipleCurrencies: Boolean = false
 ) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
@@ -324,28 +326,44 @@ private fun SummaryStatistics(
             ) {
                 StatisticItem(
                     label = "Income",
-                    value = CurrencyFormatter.formatCurrency(totalIncome, primaryCurrency),
+                    value = formatWithEstimatedDisplay(totalIncome, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
                     color = if (!isSystemInDarkTheme()) income_light else income_dark
                 )
                 StatisticItem(
                     label = "Expenses",
-                    value = CurrencyFormatter.formatCurrency(totalExpenses, primaryCurrency),
+                    value = formatWithEstimatedDisplay(totalExpenses, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.AutoMirrored.Filled.TrendingDown,
                     color = if (!isSystemInDarkTheme()) expense_light else expense_dark
                 )
                 StatisticItem(
                     label = "Net",
-                    value = CurrencyFormatter.formatCurrency(netBalance, primaryCurrency),
+                    value = formatWithEstimatedDisplay(netBalance, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.Default.AccountBalanceWallet,
                     color = if (netBalance >= BigDecimal.ZERO) {
                         if (!isSystemInDarkTheme()) income_light else income_dark
                     } else {
-                        if (!isSystemInDarkTheme()) expense_light else expense_dark
+                        if (!isSystemInDarkTheme()) expense_light else income_dark
                     }
                 )
             }
         }
+    }
+}
+
+/**
+ * Formats currency with estimated display for multi-currency accounts
+ */
+private fun formatWithEstimatedDisplay(
+    amount: BigDecimal,
+    currency: String,
+    hasMultipleCurrencies: Boolean
+): String {
+    val formattedAmount = CurrencyFormatter.formatCurrency(amount, currency)
+    return if (hasMultipleCurrencies) {
+        "est. $formattedAmount"
+    } else {
+        formattedAmount
     }
 }
 

@@ -3,6 +3,8 @@ package com.pennywiseai.tracker.presentation.accounts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.data.currency.CurrencyConversionService
+import com.pennywiseai.tracker.data.currency.CurrencyConversionService.TransactionData
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
@@ -22,7 +24,8 @@ import javax.inject.Inject
 class AccountDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val transactionRepository: TransactionRepository,
-    private val accountBalanceRepository: AccountBalanceRepository
+    private val accountBalanceRepository: AccountBalanceRepository,
+    private val currencyConversionService: CurrencyConversionService
 ) : ViewModel() {
     
     private val bankName: String = savedStateHandle.get<String>("bankName") ?: ""
@@ -56,31 +59,58 @@ class AccountDetailViewModel @Inject constructor(
                 transactionRepository.getTransactionsByAccount(bankName, accountLast4)
             ) { dateRange, allTransactions ->
                 val (startDate, endDate) = getDateRangeValues(dateRange)
-                
+
                 val filteredTransactions = if (dateRange == DateRange.ALL_TIME) {
                     allTransactions
                 } else {
                     allTransactions.filter { transaction ->
-                        transaction.dateTime.isAfter(startDate) && 
+                        transaction.dateTime.isAfter(startDate) &&
                         transaction.dateTime.isBefore(endDate)
                     }
                 }
-                
-                val totalIncome = filteredTransactions
-                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
-                    
-                val totalExpenses = filteredTransactions
-                    .filter { it.transactionType != com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
-                
+
+                val primaryCurrency = getPrimaryCurrencyForAccount(filteredTransactions)
+                val hasMultipleCurrencies = filteredTransactions
+                    .map { it.currency }
+                    .distinct()
+                    .size > 1
+
+                // Refresh exchange rates if we have multiple currencies
+                if (hasMultipleCurrencies) {
+                    val accountCurrencies = filteredTransactions.map { it.currency }.distinct()
+                    currencyConversionService.refreshExchangeRatesForAccount(accountCurrencies)
+                }
+
+                // Calculate total income and expenses with currency conversion
+                var totalIncome = BigDecimal.ZERO
+                var totalExpenses = BigDecimal.ZERO
+
+                filteredTransactions.forEach { transaction ->
+                    val convertedAmount = if (transaction.currency != primaryCurrency) {
+                        currencyConversionService.convertAmount(
+                            amount = transaction.amount,
+                            fromCurrency = transaction.currency,
+                            toCurrency = primaryCurrency
+                        ) ?: transaction.amount
+                    } else {
+                        transaction.amount
+                    }
+
+                    if (transaction.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME) {
+                        totalIncome += convertedAmount
+                    } else {
+                        totalExpenses += convertedAmount
+                    }
+                }
+
                 _uiState.update { state ->
                     state.copy(
                         transactions = filteredTransactions,
                         totalIncome = totalIncome,
                         totalExpenses = totalExpenses,
                         netBalance = totalIncome - totalExpenses,
-                        primaryCurrency = getPrimaryCurrencyForAccount(filteredTransactions),
+                        primaryCurrency = primaryCurrency,
+                        hasMultipleCurrencies = hasMultipleCurrencies,
                         isLoading = false
                     )
                 }
@@ -193,6 +223,7 @@ data class AccountDetailUiState(
     val totalExpenses: BigDecimal = BigDecimal.ZERO,
     val netBalance: BigDecimal = BigDecimal.ZERO,
     val primaryCurrency: String = "INR",
+    val hasMultipleCurrencies: Boolean = false,
     val isLoading: Boolean = true
 )
 

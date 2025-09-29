@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import java.math.BigDecimal
 import com.pennywiseai.tracker.ui.components.BrandIcon
 import com.pennywiseai.tracker.ui.components.CategoryChip
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
@@ -65,6 +66,8 @@ fun TransactionDetailScreen(
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
     val isDeleting by viewModel.isDeleting.collectAsStateWithLifecycle()
     val deleteSuccess by viewModel.deleteSuccess.collectAsStateWithLifecycle()
+    val accountPrimaryCurrency by viewModel.primaryCurrency.collectAsStateWithLifecycle()
+    val convertedAmount by viewModel.convertedAmount.collectAsStateWithLifecycle()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -198,6 +201,8 @@ fun TransactionDetailScreen(
                 updateExistingTransactions = updateExistingTransactions,
                 existingTransactionCount = existingTransactionCount,
                 viewModel = viewModel,
+                accountPrimaryCurrency = accountPrimaryCurrency,
+                convertedAmount = convertedAmount,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -246,6 +251,8 @@ private fun TransactionDetailContent(
     updateExistingTransactions: Boolean,
     existingTransactionCount: Int,
     viewModel: TransactionDetailViewModel,
+    accountPrimaryCurrency: String,
+    convertedAmount: BigDecimal?,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -264,7 +271,7 @@ private fun TransactionDetailContent(
                 viewModel = viewModel
             )
         } else {
-            TransactionHeader(transaction)
+            TransactionHeader(transaction, accountPrimaryCurrency, convertedAmount)
         }
         
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -303,7 +310,11 @@ private fun TransactionDetailContent(
 }
 
 @Composable
-private fun TransactionHeader(transaction: TransactionEntity) {
+private fun TransactionHeader(
+    transaction: TransactionEntity,
+    primaryCurrency: String,
+    convertedAmount: BigDecimal?
+) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -351,7 +362,18 @@ private fun TransactionHeader(transaction: TransactionEntity) {
                 fontWeight = FontWeight.Bold,
                 color = amountColor
             )
-            
+
+            // Show converted amount if different from transaction currency
+            if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, primaryCurrency)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+
             // Date and Time
             Text(
                 text = transaction.dateTime.format(

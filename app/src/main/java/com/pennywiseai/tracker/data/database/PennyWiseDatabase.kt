@@ -13,6 +13,7 @@ import com.pennywiseai.tracker.data.database.dao.AccountBalanceDao
 import com.pennywiseai.tracker.data.database.dao.CardDao
 import com.pennywiseai.tracker.data.database.dao.CategoryDao
 import com.pennywiseai.tracker.data.database.dao.ChatDao
+import com.pennywiseai.tracker.data.database.dao.ExchangeRateDao
 import com.pennywiseai.tracker.data.database.dao.MerchantMappingDao
 import com.pennywiseai.tracker.data.database.dao.RuleApplicationDao
 import com.pennywiseai.tracker.data.database.dao.RuleDao
@@ -23,6 +24,7 @@ import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.CardEntity
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.ChatMessage
+import com.pennywiseai.tracker.data.database.entity.ExchangeRateEntity
 import com.pennywiseai.tracker.data.database.entity.MerchantMappingEntity
 import com.pennywiseai.tracker.data.database.entity.RuleApplicationEntity
 import com.pennywiseai.tracker.data.database.entity.RuleEntity
@@ -41,8 +43,8 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  * @property autoMigrations List of automatic migrations between versions.
  */
 @Database(
-    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class, RuleEntity::class, RuleApplicationEntity::class],
-    version = 24,
+    entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class, RuleEntity::class, RuleApplicationEntity::class, ExchangeRateEntity::class],
+    version = 25,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -64,7 +66,8 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
         AutoMigration(from = 18, to = 19),
         AutoMigration(from = 19, to = 20),
         // Note: v20 to v21 uses manual migration to handle nullable field change
-        AutoMigration(from = 23, to = 24)
+        AutoMigration(from = 23, to = 24),
+        AutoMigration(from = 24, to = 25)
     ]
 )
 @TypeConverters(Converters::class)
@@ -79,6 +82,7 @@ abstract class PennyWiseDatabase : RoomDatabase() {
     abstract fun cardDao(): CardDao
     abstract fun ruleDao(): RuleDao
     abstract fun ruleApplicationDao(): RuleApplicationDao
+    abstract fun exchangeRateDao(): ExchangeRateDao
     
     companion object {
         const val DATABASE_NAME = "pennywise_database"

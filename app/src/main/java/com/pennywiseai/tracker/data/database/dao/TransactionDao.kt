@@ -94,6 +94,12 @@ interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE merchant_name = :merchantName AND id != :excludeId")
     suspend fun getTransactionCountForMerchant(merchantName: String, excludeId: Long): Int
 
+    @Query("SELECT DISTINCT currency FROM transactions WHERE is_deleted = 0 ORDER BY currency")
+    fun getAllCurrencies(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT currency FROM transactions WHERE is_deleted = 0 AND date_time BETWEEN :startDate AND :endDate ORDER BY currency")
+    fun getCurrenciesForPeriod(startDate: LocalDateTime, endDate: LocalDateTime): Flow<List<String>>
+
     // Soft delete methods
     @Query("UPDATE transactions SET is_deleted = 1 WHERE id = :transactionId")
     suspend fun softDeleteTransaction(transactionId: Long)

@@ -33,6 +33,7 @@ class UserPreferencesRepository @Inject constructor(
         val SMS_SCAN_MONTHS = intPreferencesKey("sms_scan_months")
         val LAST_SCAN_TIMESTAMP = longPreferencesKey("last_scan_timestamp")
         val LAST_SCAN_PERIOD = intPreferencesKey("last_scan_period")
+        val BASE_CURRENCY = stringPreferencesKey("base_currency")
         
         // In-App Review preferences
         val FIRST_LAUNCH_TIME = longPreferencesKey("first_launch_time")
@@ -48,10 +49,16 @@ class UserPreferencesRepository @Inject constructor(
                 hasSkippedSmsPermission = preferences[PreferencesKeys.HAS_SKIPPED_SMS_PERMISSION] ?: false,
                 isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false,
                 hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false,
-                smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 // Default to 3 months
+                smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3, // Default to 3 months
+                baseCurrency = preferences[PreferencesKeys.BASE_CURRENCY] ?: "INR" // Default to INR
             )
         }
-    
+
+    val baseCurrency: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.BASE_CURRENCY] ?: "INR"
+        }
+
     val isDeveloperModeEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false
@@ -238,5 +245,6 @@ data class UserPreferences(
     val hasSkippedSmsPermission: Boolean = false,
     val isDeveloperModeEnabled: Boolean = false,
     val hasShownScanTutorial: Boolean = false,
-    val smsScanMonths: Int = 3 // Default to 3 months
+    val smsScanMonths: Int = 3, // Default to 3 months
+    val baseCurrency: String = "INR" // Default to INR
 )
