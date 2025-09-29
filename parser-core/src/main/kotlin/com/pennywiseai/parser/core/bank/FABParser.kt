@@ -141,29 +141,31 @@ class FABParser : BankParser() {
         val lowerMessage = message.lowercase()
 
         return when {
-            // Credit card transactions
+            // Credit card transactions (always expenses)
             lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
-            
+
+            // ATM withdrawals are expenses
             lowerMessage.contains("atm cash withdrawal") -> TransactionType.EXPENSE
 
-            // Inward remittance is income
+            // Income transactions
             lowerMessage.contains("inward remittance") -> TransactionType.INCOME
-            //cash deposit is income
             lowerMessage.contains("cash deposit") -> TransactionType.INCOME
             lowerMessage.contains("has been credited to your fab account") -> TransactionType.INCOME
 
-            // Outward remittance is expense
+            // Outward remittance and payment instructions are expenses
             lowerMessage.contains("outward remittance") -> TransactionType.EXPENSE
-
-            // Payment instructions are expenses
             lowerMessage.contains("payment instructions") -> TransactionType.EXPENSE
             lowerMessage.contains("has been processed") -> TransactionType.EXPENSE
 
-            // Standard keywords
-            lowerMessage.contains("credit") && !lowerMessage.contains("credit card") -> TransactionType.INCOME
-            lowerMessage.contains("debit") -> TransactionType.EXPENSE
+            // Standard keywords - but be more careful with context
+            lowerMessage.contains("credit") && !lowerMessage.contains("credit card") &&
+                !lowerMessage.contains("debit") &&
+                !lowerMessage.contains("purchase") &&
+                !lowerMessage.contains("payment") -> TransactionType.INCOME
+
+            lowerMessage.contains("debit") && !lowerMessage.contains("credit") -> TransactionType.EXPENSE
             lowerMessage.contains("purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("payment") -> TransactionType.EXPENSE
 
@@ -314,6 +316,33 @@ class FABParser : BankParser() {
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
 
+        // Skip administrative and non-transaction messages
+        val nonTransactionKeywords = listOf(
+            "declined due to insufficient balance",
+            "transaction has been declined",
+            "address update request",
+            "statement request",
+            "stamped statement",
+            "cannot process your",
+            "amazing rate",
+            "conditions apply",
+            "bit.ly",
+            "instalments at 0% interest",
+            "cheque returned",
+            "request has been logged",
+            "reference number",
+            "funds transfer request is under process",  // Only pending requests, not completed ones
+            "has been resolved",
+            "funds transfer request has failed",
+            "card has been successfully activated",
+            "temporarily blocked",
+            "never share credit/debit card"
+        )
+
+        if (nonTransactionKeywords.any { lowerMessage.contains(it) }) {
+            return false
+        }
+
         // Skip promotional messages
         if (lowerMessage.contains("bit.ly") ||
             lowerMessage.contains("conditions apply") ||
@@ -326,7 +355,7 @@ class FABParser : BankParser() {
             }
         }
 
-        // FAB specific transaction keywords
+        // FAB specific transaction keywords - only actual completed transactions
         val fabTransactionKeywords = listOf(
             "credit card purchase",
             "debit card purchase",
@@ -335,19 +364,31 @@ class FABParser : BankParser() {
             "atm cash withdrawal",
             "payment instructions",
             "has been processed",
-            "available balance"  // Remove hardcoded "aed" to support all currencies
+            "has been credited to your fab account",
+            "cash deposit"
         )
+
+        // Special handling for funds transfer - only completed ones
+        if (lowerMessage.contains("funds transfer request of")) {
+            // Only allow if it's been processed successfully (not pending)
+            if (lowerMessage.contains("has been processed successfully")) {
+                return true
+            }
+        }
 
         if (fabTransactionKeywords.any { lowerMessage.contains(it) }) {
             return true
         }
 
-        // FAB specific: Also check for "credit" (not in base keywords) and other patterns
-        if (lowerMessage.contains("credit") ||
+        // Only check for these if they contain actual transaction amounts
+        if ((lowerMessage.contains("credit") && !lowerMessage.contains("credit card")) ||
             lowerMessage.contains("debit") ||
             lowerMessage.contains("remittance") ||
             lowerMessage.contains("available balance")) {
-            return true
+
+            // Only return true if there's a currency amount pattern
+            val amountPattern = Regex("""[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE)
+            return amountPattern.containsMatchIn(message)
         }
 
         return super.isTransactionMessage(message)

@@ -27,7 +27,11 @@ object CurrencyFormatter {
         "JPY" to "¥",
         "CNY" to "¥",
         "NPR" to "₨",
-        "ETB" to "ብር"
+        "ETB" to "ብር",
+        "THB" to "฿",
+        "MYR" to "RM",
+        "KWD" to "KD",
+        "KRW" to "₩"
     )
 
     /**
@@ -45,7 +49,11 @@ object CurrencyFormatter {
         "JPY" to Locale.JAPAN,
         "CNY" to Locale.CHINA,
         "NPR" to Locale.Builder().setLanguage("ne").setRegion("NP").build(),
-        "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build()
+        "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build(),
+        "THB" to Locale.Builder().setLanguage("th").setRegion("TH").build(),
+        "MYR" to Locale.Builder().setLanguage("ms").setRegion("MY").build(),
+        "KWD" to Locale.Builder().setLanguage("ar").setRegion("KW").build(),
+        "KRW" to Locale.KOREA
     )
 
     /**

@@ -17,8 +17,9 @@ data class CurrencyGroupedTotals(
     fun hasAnyCurrency(): Boolean = availableCurrencies.isNotEmpty()
 
     fun getPrimaryCurrency(): String {
-        // Return INR if available, otherwise first available currency
+        // Prioritize AED for FAB bank transactions, otherwise INR if available, then first available currency
         return when {
+            availableCurrencies.contains("AED") -> "AED"  // FAB bank uses AED
             availableCurrencies.contains("INR") -> "INR"
             availableCurrencies.isNotEmpty() -> availableCurrencies.first()
             else -> "INR" // Default fallback

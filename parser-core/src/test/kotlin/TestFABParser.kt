@@ -76,7 +76,9 @@ fun main() {
         FABTestCase(
             name = "Debit Card payment in thb",
             sender = "FAB",
-            message = """Debit Card Purchase 
+            message =
+"""
+Debit Card Purchase 
 Debit 
 Account XXXX0002 
 Card XXXX2865
@@ -84,7 +86,7 @@ THB 283.00
 WWW.GRAB.COM          BANGKOK         TH 
 26/06/25 11:51 
 Available Balance AED 9999
-""".trimIndent()
+"""
         )
     )
 
