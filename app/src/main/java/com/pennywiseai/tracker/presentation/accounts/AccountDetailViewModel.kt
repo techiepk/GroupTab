@@ -116,25 +116,37 @@ class AccountDetailViewModel @Inject constructor(
     }
     
     private fun observeBalanceChartData() {
-        // Always fetch last 3 months for the chart, independent of filter
+        // Fetch balance chart data based on selected date range
         viewModelScope.launch {
-            val endDate = LocalDateTime.now()
-            val startDate = endDate.minusMonths(3)
-            
-            accountBalanceRepository.getBalanceHistory(
-                bankName,
-                accountLast4,
-                startDate,
-                endDate
-            ).collect { balanceHistory ->
+            selectedDateRange.flatMapLatest { dateRange ->
+                val (startDate, endDate) = getDateRangeValues(dateRange)
+
+                // For chart purposes, extend the range to show more context
+                val chartStartDate = when (dateRange) {
+                    DateRange.LAST_7_DAYS -> endDate.minusDays(14)  // Show 2 weeks for 7-day view
+                    DateRange.LAST_30_DAYS -> endDate.minusMonths(2)  // Show 2 months for 30-day view
+                    DateRange.LAST_3_MONTHS -> endDate.minusMonths(4)  // Show 4 months for 3-month view
+                    DateRange.LAST_6_MONTHS -> endDate.minusMonths(8)  // Show 8 months for 6-month view
+                    DateRange.LAST_YEAR -> endDate.minusMonths(15)  // Show 15 months for 1-year view
+                    DateRange.ALL_TIME -> LocalDateTime.of(2000, 1, 1, 0, 0)  // Show all available data
+                }
+
+                accountBalanceRepository.getBalanceHistory(
+                    bankName,
+                    accountLast4,
+                    chartStartDate,
+                    endDate
+                )
+            }.collect { balanceHistory ->
                 // Convert to BalancePoint for chart
                 val chartData = balanceHistory.map { entity ->
                     BalancePoint(
                         timestamp = entity.timestamp,
-                        balance = entity.balance
+                        balance = entity.balance,
+                        currency = entity.currency
                     )
                 }
-                
+
                 _uiState.update { state ->
                     state.copy(balanceChartData = chartData)
                 }

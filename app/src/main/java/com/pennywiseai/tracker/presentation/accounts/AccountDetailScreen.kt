@@ -68,16 +68,7 @@ fun AccountDetailScreen(
                     primaryCurrency = uiState.primaryCurrency
                 )
             }
-            
-            // Balance Chart (Expandable) - Always shows last 3 months
-            if (uiState.balanceChartData.isNotEmpty()) {
-                item {
-                    ExpandableBalanceChart(
-                        balanceHistory = uiState.balanceChartData
-                    )
-                }
-            }
-            
+
             // Date Range Filter
             item {
                 DateRangeFilter(
@@ -85,7 +76,16 @@ fun AccountDetailScreen(
                     onRangeSelected = viewModel::selectDateRange
                 )
             }
-            
+
+            // Balance Chart (Expandable) - Updates based on selected timeframe
+            if (uiState.balanceChartData.isNotEmpty()) {
+                item {
+                    ExpandableBalanceChart(
+                        balanceHistory = uiState.balanceChartData
+                    )
+                }
+            }
+
             // Summary Statistics
             item {
                 SummaryStatistics(
