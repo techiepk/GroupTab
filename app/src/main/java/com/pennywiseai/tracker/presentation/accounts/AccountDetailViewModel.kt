@@ -80,6 +80,7 @@ class AccountDetailViewModel @Inject constructor(
                         totalIncome = totalIncome,
                         totalExpenses = totalExpenses,
                         netBalance = totalIncome - totalExpenses,
+                        primaryCurrency = getPrimaryCurrencyForAccount(filteredTransactions),
                         isLoading = false
                     )
                 }
@@ -157,6 +158,16 @@ class AccountDetailViewModel @Inject constructor(
         }
         return startDate to endDate
     }
+
+    private fun getPrimaryCurrencyForAccount(transactions: List<TransactionEntity>): String {
+        val availableCurrencies = transactions.map { it.currency }.distinct()
+        return when {
+            availableCurrencies.contains("AED") -> "AED"  // FAB bank uses AED
+            availableCurrencies.contains("INR") -> "INR"
+            availableCurrencies.isNotEmpty() -> availableCurrencies.first()
+            else -> "INR" // Default fallback
+        }
+    }
 }
 
 data class AccountDetailUiState(
@@ -169,6 +180,7 @@ data class AccountDetailUiState(
     val totalIncome: BigDecimal = BigDecimal.ZERO,
     val totalExpenses: BigDecimal = BigDecimal.ZERO,
     val netBalance: BigDecimal = BigDecimal.ZERO,
+    val primaryCurrency: String = "INR",
     val isLoading: Boolean = true
 )
 
