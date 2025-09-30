@@ -1,5 +1,5 @@
-import com.pennywiseai.parser.core.bank.FABParser
 import com.pennywiseai.parser.core.TransactionType
+import com.pennywiseai.parser.core.bank.FABParser
 import java.math.BigDecimal
 
 data class FABTestCase(
@@ -52,7 +52,7 @@ fun main() {
                 balance = BigDecimal("4530.16")
             )
         ),
-        
+
         FABTestCase(
             name = "Inward Remittance",
             message = """
@@ -71,7 +71,7 @@ fun main() {
                 balance = BigDecimal("5444.00")
             )
         ),
-        
+
         FABTestCase(
             name = "Payment Instructions",
             message = "Dear Customer, Your payment instructions of AED 250.00 to 5xxx**1xxx has been processed on 10/09/2025 15:28",
@@ -82,7 +82,7 @@ fun main() {
                 // Note: Parser doesn't extract reference from this message format
             )
         ),
-        
+
         FABTestCase(
             name = "Debit Card Purchase (THB)",
             message = """
@@ -104,7 +104,7 @@ fun main() {
                 balance = BigDecimal("8500.25")
             )
         ),
-        
+
         FABTestCase(
             name = "ATM Cash Withdrawal (THB)",
             message = """
@@ -125,7 +125,7 @@ fun main() {
                 balance = BigDecimal("15000.00")
             )
         ),
-        
+
         FABTestCase(
             name = "Grab Payment (THB)",
             message = """
@@ -147,7 +147,7 @@ fun main() {
                 balance = BigDecimal("9999.00")
             )
         ),
-        
+
         FABTestCase(
             name = "Outward Remittance",
             message = """
@@ -166,7 +166,7 @@ fun main() {
                 balance = BigDecimal("6337.92")
             )
         ),
-        
+
         FABTestCase(
             name = "USD Payment",
             message = """
@@ -189,7 +189,7 @@ fun main() {
             )
         ),
 
-            
+
         FABTestCase(
             name = "Grab Payment in Thailand (THB)",
             message = """
@@ -211,7 +211,7 @@ fun main() {
                 balance = BigDecimal("8888.30")
             )
         ),
-        
+
         FABTestCase(
             name = "Outward Remittance without Merchant",
             message = """
@@ -230,7 +230,7 @@ fun main() {
                 balance = BigDecimal("12345.67")
             )
         ),
-        
+
         FABTestCase(
             name = "Cash Deposit (Income)",
             message = """
@@ -247,7 +247,7 @@ fun main() {
                 accountLast4 = "4321"
             )
         ),
-        
+
         FABTestCase(
             name = "ATM Withdrawal in Thailand (THB)",
             message = """
@@ -269,37 +269,65 @@ fun main() {
             )
         ),
         FABTestCase(
-    name = "Cheque Credited",
-    message = """
+            name = "Cheque Credited",
+            message = """
         Cheque Credited
         Cheque No 000020 for AED 9999.00 deposited in your account XXXX0002 has been credited on 01/10/2024 
         Your available balance is AED 7777.62.
     """.trimIndent(),
-    expected = ExpectedTransaction(
-        amount = BigDecimal("9999.00"),
-        currency = "AED",
-        type = TransactionType.INCOME,
-        merchant = "Cheque Credited",
-        accountLast4 = "0002",
-        balance = BigDecimal("7777.62")
-    )
-),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("9999.00"),
+                currency = "AED",
+                type = TransactionType.INCOME,
+                merchant = "Cheque Credited",
+                accountLast4 = "0002",
+                balance = BigDecimal("7777.62")
+            )
+        ),
 
-FABTestCase(
-    name = "Cheque Returned",
-    message = """
+        FABTestCase(
+            name = "Cheque Returned",
+            message = """
         Cheque Returned
         Cheque No 000020 for AED 8888.00 deposited in your account XXXX0002  has been returned unpaid.
         Please contact the branch.
     """.trimIndent(),
-    expected = ExpectedTransaction(
-        amount = BigDecimal("8888.00"),
-        currency = "AED",
-        type = TransactionType.EXPENSE,
-        merchant = "Cheque Returned",
-        accountLast4 = "0002"
-    )
-)
+            expected = ExpectedTransaction(
+                amount = BigDecimal("8888.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                merchant = "Cheque Returned",
+                accountLast4 = "0002"
+            )
+        ),
+        FABTestCase(
+            name = "Unsuccessful Transaction Refund",
+            message = """
+        Dear customer, unsuccessful transaction of AED 42.13 has been credited to your account XXXX0002 Card XXXX2865 on 19/06/25 02:50 and your current available balance is AED 4444.13
+    """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("42.13"),
+                currency = "AED",
+                type = TransactionType.INCOME,
+                merchant = "Refund",
+                accountLast4 = "0002",
+                balance = BigDecimal("4444.13")
+            )
+        ),
+
+        FABTestCase(
+            name = "Funds Transfer with Comma Amount",
+            message = """
+        Dear Customer, your funds transfer request of  AED 3,555.00 to IBAN/Account/Card XXXX0001  has been processed successfully from your account/card XXXX0002 on 12/06/2025 16:43
+    """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("3555.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                merchant = "Transfer to XXXX0001",
+                accountLast4 = "0001"
+            )
+        )
     )
 
     var passed = 0

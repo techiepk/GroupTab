@@ -1,7 +1,7 @@
 package com.pennywiseai.parser.core.bank
 
-import com.pennywiseai.parser.core.TransactionType
 import com.pennywiseai.parser.core.ParsedTransaction
+import com.pennywiseai.parser.core.TransactionType
 import java.math.BigDecimal
 
 /**
@@ -61,18 +61,27 @@ class FABParser : BankParser() {
     override fun canHandle(sender: String): Boolean {
         val upperSender = sender.uppercase()
         return upperSender == "FAB" ||
-               upperSender.contains("FABBANK") ||
-               upperSender.contains("ADFAB") ||
-               // DLT patterns for UAE might be different
-               upperSender.matches(Regex("^[A-Z]{2}-FAB-[A-Z]$"))
+                upperSender.contains("FABBANK") ||
+                upperSender.contains("ADFAB") ||
+                // DLT patterns for UAE might be different
+                upperSender.matches(Regex("^[A-Z]{2}-FAB-[A-Z]$"))
     }
 
     override fun extractAmount(message: String): BigDecimal? {
         // FAB patterns: Support global currencies - "AED 8.00", "THB ###.##", "USD 10.00", etc.
         val patterns = listOf(
-            Regex("""for\s+([A-Z]{3})\s+([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),  // Add this line
-            Regex("""([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),  // Explicit asterisk pattern
-            Regex("""([A-Z]{3})\s+([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),   // General pattern with asterisks
+            Regex(
+                """for\s+([A-Z]{3})\s+([0-9,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            ),  // Add this line
+            Regex(
+                """([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            ),  // Explicit asterisk pattern
+            Regex(
+                """([A-Z]{3})\s+([0-9*,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            ),   // General pattern with asterisks
             Regex("""Amount\s*([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             Regex("""Amount\s*([A-Z]{3})\s+([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
             Regex("""payment.*?([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
@@ -121,8 +130,14 @@ class FABParser : BankParser() {
         val currencyPatterns = listOf(
             Regex("""^[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE),  // Start of line
             Regex("""\n[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE), // After newline
-            Regex("""Amount\s+([A-Z]{3})\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE), // After "Amount"
-            Regex("""[A-Z]{3}\s+\*?[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE)  // With optional asterisk
+            Regex(
+                """Amount\s+([A-Z]{3})\s+[0-9,]+(?:\.\d{2})?""",
+                RegexOption.IGNORE_CASE
+            ), // After "Amount"
+            Regex(
+                """[A-Z]{3}\s+\*?[0-9,]+(?:\.\d{2})?""",
+                RegexOption.IGNORE_CASE
+            )  // With optional asterisk
         )
 
         for (pattern in currencyPatterns) {
@@ -146,11 +161,11 @@ class FABParser : BankParser() {
             lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
-            
+
             //Cheque transactions
             lowerMessage.contains("cheque credited") -> TransactionType.INCOME
             lowerMessage.contains("cheque returned") -> TransactionType.EXPENSE
-            
+
             // ATM withdrawals are expenses
             lowerMessage.contains("atm cash withdrawal") -> TransactionType.EXPENSE
 
@@ -166,9 +181,9 @@ class FABParser : BankParser() {
 
             // Standard keywords - but be more careful with context
             lowerMessage.contains("credit") && !lowerMessage.contains("credit card") &&
-                !lowerMessage.contains("debit") &&
-                !lowerMessage.contains("purchase") &&
-                !lowerMessage.contains("payment") -> TransactionType.INCOME
+                    !lowerMessage.contains("debit") &&
+                    !lowerMessage.contains("purchase") &&
+                    !lowerMessage.contains("payment") -> TransactionType.INCOME
 
             lowerMessage.contains("debit") && !lowerMessage.contains("credit") -> TransactionType.EXPENSE
             lowerMessage.contains("purchase") -> TransactionType.EXPENSE
@@ -177,7 +192,7 @@ class FABParser : BankParser() {
             else -> null
         }
     }
-    
+
     // centralized function to reduce repeated code for card purchase check
     private fun containsCardPurchase(message: String): Boolean {
         return message.contains(Regex("(Credit|Debit) Card Purchase", RegexOption.IGNORE_CASE))
@@ -190,7 +205,14 @@ class FABParser : BankParser() {
             val lines = message.split("\n")
 
             // Find the line with currency amount (AED, THB, USD, etc.)
-            val currencyLineIndex = lines.indexOfFirst { it.matches(Regex(".*[A-Z]{3}\\s+[0-9,]+(?:\\.\\d{2})?.*", RegexOption.IGNORE_CASE)) }
+            val currencyLineIndex = lines.indexOfFirst {
+                it.matches(
+                    Regex(
+                        ".*[A-Z]{3}\\s+[0-9,]+(?:\\.\\d{2})?.*",
+                        RegexOption.IGNORE_CASE
+                    )
+                )
+            }
             if (currencyLineIndex != -1 && currencyLineIndex + 1 < lines.size) {
                 val merchantLine = lines[currencyLineIndex + 1].trim()
                 // Clean up asterisks but keep the text
@@ -210,14 +232,16 @@ class FABParser : BankParser() {
                     val merchantLine = lines[cardLineIndex + 2].trim()
                     if (merchantLine.isNotEmpty() &&
                         !merchantLine.contains("Available Balance") &&
-                        !merchantLine.matches(Regex("""\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}"""))) {
+                        !merchantLine.matches(Regex("""\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}"""))
+                    ) {
                         return cleanMerchantName(merchantLine)
                     }
                 }
             }
 
             // Fallback: Look for merchant pattern directly (website names, etc.)
-            val merchantPattern = Regex("""([A-Z]+\.(?:COM|NET|ORG|IN)[^\n]*)""", RegexOption.IGNORE_CASE)
+            val merchantPattern =
+                Regex("""([A-Z]+\.(?:COM|NET|ORG|IN)[^\n]*)""", RegexOption.IGNORE_CASE)
             merchantPattern.find(message)?.let { match ->
                 val merchant = match.groupValues[1].trim()
                 if (merchant.isNotEmpty()) {
@@ -227,15 +251,17 @@ class FABParser : BankParser() {
         }
 
 
-        // Pattern 3: Payment instructions - extract recipient
-        // "payment instructions of [CURRENCY] *.00 to 5xxx**1xxx"
-        if (message.contains("payment instructions", ignoreCase = true)) {
-            val toPattern = Regex("""to\s+([^\s]+)""", RegexOption.IGNORE_CASE)
+// Pattern 3: Payment instructions and funds transfer - extract recipient account
+        if (message.contains("payment instructions", ignoreCase = true) ||
+            message.contains("funds transfer request", ignoreCase = true)
+        ) {
+
+            // Pattern: "to IBAN/Account/Card XXXX1234"
+            val toPattern =
+                Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4}[X\d]*)""", RegexOption.IGNORE_CASE)
             toPattern.find(message)?.let { match ->
-                val recipient = match.groupValues[1].replace("*", "").trim()
-                if (recipient.isNotEmpty()) {
-                    return cleanMerchantName(recipient)
-                }
+                val recipient = match.groupValues[1]
+                return "Transfer to $recipient"
             }
         }
 
@@ -247,12 +273,13 @@ class FABParser : BankParser() {
             "Cash Deposit" to "Cash Deposit",
             "Cheque Credited" to "Cheque Credited",
             "Cheque Returned" to "Cheque Returned",
-            "Cash withdrawal" to "Cash Withdrawal"
+            "Cash withdrawal" to "Cash Withdrawal",
+            "unsuccessful transaction" to "Refund" // unsuccessful transaction of AED xx.xx has been credited to your account XXXX ,this only happens during a refund of a failed transaction
         )
 
         for ((keyword, merchantName) in transactionTypeMerchants) {
             if (message.contains(keyword, ignoreCase = true)) {
-            return merchantName
+                return merchantName
             }
         }
 
@@ -281,7 +308,10 @@ class FABParser : BankParser() {
 
     override fun extractBalance(message: String): BigDecimal? {
         // Pattern: "Available Balance [CURRENCY] **30.16" or "Available Balance AED ***0.00"
-        val balancePattern = Regex("""(?:Available|available)\s+[Bb]alance\s+(?:is\s+)?([A-Z]{3})\s*\*{0,}([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        val balancePattern = Regex(
+            """(?:Available|available)\s+[Bb]alance\s+(?:is\s+)?([A-Z]{3})\s*\*{0,}([0-9*,]+(?:\.\d{2})?)""",
+            RegexOption.IGNORE_CASE
+        )
         balancePattern.find(message)?.let { match ->
             var balanceStr = match.groupValues[2].replace(",", "")
 
@@ -318,7 +348,8 @@ class FABParser : BankParser() {
         }
 
         // Value Date for remittances
-        val valueDatePattern = Regex("""Value\s+Date\s+(\d{2}/\d{2}/\d{4})""", RegexOption.IGNORE_CASE)
+        val valueDatePattern =
+            Regex("""Value\s+Date\s+(\d{2}/\d{2}/\d{4})""", RegexOption.IGNORE_CASE)
         valueDatePattern.find(message)?.let { match ->
             return match.groupValues[1]
         }
@@ -336,50 +367,52 @@ class FABParser : BankParser() {
 
         // Skip administrative and non-transaction messages
         val nonTransactionKeywords = listOf(
-        "declined due to insufficient balance",
-        "transaction has been declined",
-        "address update request",
-        "statement request",
-        "stamped statement",
-        "cannot process your",
-        "amazing rate",
-        "conditions apply",
-        "bit.ly",
-        "instalments at 0% interest",
-        "request has been logged",
-        "reference number",
-        "beneficiary creation/modification request",
-        "funds transfer request is under process",
-        "has been resolved",
-        "funds transfer request has failed",
-        "card has been successfully activated",
-        "temporarily blocked",
-        "never share credit/debit card",
-        "debit card.*replacement request",  // Card replacement requests
-        "card will be ready for dispatch",  // Card delivery notifications
-        "replacement request has been registered",  // Card replacement confirmations
-        "otp",
-        "activation",
-        "thank you for activating",
-        "do not disclose your otp",
-        "atyourservice@bankfab.com",
-        "has been blocked on"  // Email-only messages
+            "declined due to insufficient balance",
+            "transaction has been declined",
+            "address update request",
+            "statement request",
+            "stamped statement",
+            "cannot process your",
+            "amazing rate",
+            "conditions apply",
+            "bit.ly",
+            "instalments at 0% interest",
+            "request has been logged",
+            "reference number",
+            "beneficiary creation/modification request",
+            "funds transfer request is under process",
+            "has been resolved",
+            "funds transfer request has failed",
+            "card has been successfully activated",
+            "temporarily blocked",
+            "never share credit/debit card",
+            "debit card.*replacement request",  // Card replacement requests
+            "card will be ready for dispatch",  // Card delivery notifications
+            "replacement request has been registered",  // Card replacement confirmations
+            "otp",
+            "activation",
+            "thank you for activating",
+            "do not disclose your otp",
+            "atyourservice@bankfab.com",
+            "has been blocked on"  // Email-only messages
         )
 
         if (nonTransactionKeywords.any { keyword ->
-            lowerMessage.contains(Regex(keyword, RegexOption.IGNORE_CASE))
-        }) {
+                lowerMessage.contains(Regex(keyword, RegexOption.IGNORE_CASE))
+            }) {
             return false
         }
 
         // Skip promotional messages
         if (lowerMessage.contains("bit.ly") ||
             lowerMessage.contains("conditions apply") ||
-            lowerMessage.contains("instalments at 0% interest")) {
+            lowerMessage.contains("instalments at 0% interest")
+        ) {
             // But still process if it has transaction info
             if (!lowerMessage.contains("purchase") &&
                 !lowerMessage.contains("payment instructions") &&
-                !lowerMessage.contains("remittance")) {
+                !lowerMessage.contains("remittance")
+            ) {
                 return false
             }
         }
@@ -396,7 +429,7 @@ class FABParser : BankParser() {
             "has been credited to your fab account",
             "cash deposit",
             "cheque credited",
-            "cheque returned"  
+            "cheque returned"
         )
 
         // Special handling for funds transfer - only completed ones
@@ -415,7 +448,8 @@ class FABParser : BankParser() {
         if ((lowerMessage.contains("credit") && !lowerMessage.contains("credit card")) ||
             lowerMessage.contains("debit") ||
             lowerMessage.contains("remittance") ||
-            lowerMessage.contains("available balance")) {
+            lowerMessage.contains("available balance")
+        ) {
 
             // Only return true if there's a currency amount pattern
             val amountPattern = Regex("""[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE)
