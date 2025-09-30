@@ -89,7 +89,7 @@ fun testFABParserWithXMLData(parser: FABParser) {
                     println()
                 }
             } else {
-                val shouldBeParsed = shouldParseAsTransaction(smsData.body)
+                val shouldBeParsed = parser.shouldParseTransactionMessage(smsData.body)
 
                 if (shouldBeParsed) {
                     failedTests++
@@ -264,76 +264,5 @@ fun generateDescription(body: String, readableDate: String): String {
         body.contains("OTP") -> "OTP Message"
         body.contains("Samsung Pay") -> "Samsung Pay Notification"
         else -> "General SMS - $readableDate"
-    }
-}
-
-fun shouldParseAsTransaction(body: String): Boolean {
-    val lowerBody = body.lowercase()
-
-    // Administrative and non-transaction messages that should NOT be parsed
-    val nonTransactionKeywords = listOf(
-        "declined due to insufficient balance",
-        "transaction has been declined",
-        "address update request",
-        "statement request",
-        "stamped statement",
-        "cannot process your",
-        "amazing rate",
-        "conditions apply",
-        "bit.ly",
-        "instalments at 0% interest",
-        "cheque returned",
-        "request has been logged",
-        "reference number",
-        "beneficiary creation/modification request",
-        "funds transfer request is under process",
-        "has been resolved",
-        "funds transfer request has failed",
-        "card has been successfully activated",
-        "temporarily blocked",
-        "never share credit/debit card",
-        "debit card.*replacement request",  // Card replacement requests
-        "card will be ready for dispatch",  // Card delivery notifications
-        "replacement request has been registered",  // Card replacement confirmations
-        "otp",
-        "activation",
-        "thank you for activating",
-        "do not disclose your otp",
-        "atyourservice@bankfab.com"  // Email-only messages
-    )
-
-    // Only return true if it contains actual transaction keywords
-    val transactionKeywords = listOf(
-        "credit card purchase",
-        "debit card purchase",
-        "inward remittance",
-        "outward remittance",
-        "atm cash withdrawal",
-        "payment instructions",
-        "has been processed",
-        "has been credited to your fab account",
-        "cash deposit"
-    )
-
-    return if (nonTransactionKeywords.any { keyword ->
-            lowerBody.contains(Regex(keyword, RegexOption.IGNORE_CASE))
-        }) {
-        false
-    } else {
-        // Special handling for funds transfer - only completed ones
-        if (lowerBody.contains("funds transfer request of")) {
-            // Only allow if it's been processed successfully (not pending)
-            if (lowerBody.contains("has been processed successfully")) {
-                return true
-            }
-        }
-
-        transactionKeywords.any { lowerBody.contains(it) } ||
-        (lowerBody.contains("credit") && !lowerBody.contains("credit card") &&
-         !lowerBody.contains("debit") && !lowerBody.contains("purchase") && !lowerBody.contains("payment")) ||
-        (lowerBody.contains("debit") && !lowerBody.contains("credit")) ||
-        lowerBody.contains("purchase") ||
-        lowerBody.contains("payment") ||
-        lowerBody.contains("remittance")
     }
 }

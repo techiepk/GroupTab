@@ -313,6 +313,11 @@ class FABParser : BankParser() {
         return super.extractReference(message)
     }
 
+    //Added public getter for test case
+    fun shouldParseTransactionMessage(message: String): Boolean {
+        return isTransactionMessage(message);
+    }
+
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
 
