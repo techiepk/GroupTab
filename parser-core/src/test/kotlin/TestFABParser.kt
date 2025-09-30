@@ -1,117 +1,350 @@
 import com.pennywiseai.parser.core.bank.FABParser
+import com.pennywiseai.parser.core.TransactionType
+import java.math.BigDecimal
 
 data class FABTestCase(
     val name: String,
     val message: String,
-    val sender: String
+    val sender: String = "FAB",
+    val expected: ExpectedTransaction
+)
+
+data class ExpectedTransaction(
+    val amount: BigDecimal,
+    val currency: String,
+    val type: TransactionType,
+    val merchant: String? = null,
+    val accountLast4: String? = null,
+    val balance: BigDecimal? = null,
+    val reference: String? = null
 )
 
 fun main() {
     val parser = FABParser()
 
-    println("=== First Abu Dhabi Bank Parser Tests ===")
+    println("=" * 80)
+    println("First Abu Dhabi Bank (FAB) Parser Test Suite")
+    println("=" * 80)
     println("Bank Name: ${parser.getBankName()}")
     println("Currency: ${parser.getCurrency()}")
+    println("Can Handle 'FAB': ${parser.canHandle("FAB")}")
     println()
 
     val testCases = listOf(
         FABTestCase(
             name = "Credit Card Purchase",
-            sender = "FAB",
             message = """
                 Credit Card Purchase
-                Card No XXXX
+                Debit
+                Account XXXX0002
+                Card XXXX1234
                 AED 8.00
-                T*** R** DUBAI ARE
+                TR              DUBAI           ARE
                 23/09/25 16:17
-                Available Balance AED **30.16
-                Your September statement payment due date is 26/09/2025
-                Pay school fees in 12 instalments at 0% interest with no fee. bit.ly/47nWGYG Conditions apply.
-            """.trimIndent()
+                Available Balance AED 4530.16
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("8.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                merchant = "TR              DUBAI           ARE",
+                accountLast4 = "0002",
+                balance = BigDecimal("4530.16")
+            )
         ),
+        
         FABTestCase(
             name = "Inward Remittance",
-            sender = "FAB",
             message = """
                 Inward Remittance
                 Credit
-                Account XXXX**
+                Account XXXX5678
                 AED 444.00
                 Value Date 18/09/2025
-                Available Balance AED ***0.00
-            """.trimIndent()
+                Available Balance AED 5444.00
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("444.00"),
+                currency = "AED",
+                type = TransactionType.INCOME,
+                accountLast4 = "5678",
+                balance = BigDecimal("5444.00")
+            )
         ),
+        
         FABTestCase(
             name = "Payment Instructions",
-            sender = "FAB",
-            message = "Dear Customer, Your payment instructions of AED 250.00 to 5xxx**1xxx has been processed on 10/09/2025 15:28"
+            message = "Dear Customer, Your payment instructions of AED 250.00 to 5xxx**1xxx has been processed on 10/09/2025 15:28",
+            expected = ExpectedTransaction(
+                amount = BigDecimal("250.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE
+                // Note: Parser doesn't extract reference from this message format
+            )
         ),
+        
         FABTestCase(
-            name = "Global Currency (THB) Transaction",
-            sender = "FAB",
+            name = "Debit Card Purchase (THB)",
             message = """
                 Debit Card Purchase
                 Debit
-                Account XXXX####
-                Card XXXX####
+                Account XXXX9876
+                Card XXXX2865
                 THB 1500.50
                 WWW.GRAB.COM          BANGKOK         TH
                 26/07/25 17:55
                 Available Balance AED 8500.25
-            """.trimIndent()
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("1500.50"),
+                currency = "THB",
+                type = TransactionType.EXPENSE,
+                merchant = "WWW.GRAB.COM          BANGKOK         TH",
+                accountLast4 = "9876",
+                balance = BigDecimal("8500.25")
+            )
         ),
+        
         FABTestCase(
             name = "ATM Cash Withdrawal (THB)",
-            sender = "FAB",
             message = """
                 ATM Cash withdrawal
                 Debit
-                Account XXXX####
-                Card XXXX####
+                Account XXXX4321
+                Card XXXX8765
                 THB 5000.00
                 18/06/25 13:06
                 Available Balance AED 15000.00
-            """.trimIndent()
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("5000.00"),
+                currency = "THB",
+                type = TransactionType.EXPENSE,
+                merchant = "ATM Withdrawal",
+                accountLast4 = "4321",
+                balance = BigDecimal("15000.00")
+            )
         ),
+        
         FABTestCase(
-            name = "Debit Card payment in thb",
-            sender = "FAB",
-            message =
-"""
-Debit Card Purchase 
-Debit 
-Account XXXX0002 
-Card XXXX2865
-THB 283.00
-WWW.GRAB.COM          BANGKOK         TH 
-26/06/25 11:51 
-Available Balance AED 9999
-"""
+            name = "Grab Payment (THB)",
+            message = """
+                Debit Card Purchase 
+                Debit 
+                Account XXXX0002 
+                Card XXXX2865
+                THB 283.00
+                WWW.GRAB.COM          BANGKOK         TH 
+                26/06/25 11:51 
+                Available Balance AED 9999.00
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("283.00"),
+                currency = "THB",
+                type = TransactionType.EXPENSE,
+                merchant = "WWW.GRAB.COM          BANGKOK         TH",
+                accountLast4 = "0002",
+                balance = BigDecimal("9999.00")
+            )
+        ),
+        
+        FABTestCase(
+            name = "Outward Remittance",
+            message = """
+                Outward Remittance
+                Debit
+                Account XXXX0002
+                AED 150.00
+                Value Date 10/07/24
+                Available Balance AED 6337.92
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("150.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                accountLast4 = "0002",
+                balance = BigDecimal("6337.92")
+            )
+        ),
+        
+        FABTestCase(
+            name = "USD Payment",
+            message = """
+                Debit Card Purchase
+                Debit
+                Account XXXX0002
+                Card XXXX9879
+                USD 20.00
+                CLAUDE.AI SUBSCRIPTION+14152360599 CA US
+                10/07/24 20:07
+                Available Balance AED 5978.78
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("20.00"),
+                currency = "USD",
+                type = TransactionType.EXPENSE,
+                merchant = "CLAUDE.AI SUBSCRIPTION+14152360599 CA US",
+                accountLast4 = "0002",
+                balance = BigDecimal("5978.78")
+            )
+        ),
+
+            
+        FABTestCase(
+            name = "Grab Payment in Thailand (THB)",
+            message = """
+                Debit Card Purchase 
+                Debit 
+                Account XXXX1234
+                Card XXXX5678
+                THB 636.00
+                WWW.GRAB.COM          BANGKOK         TH 
+                26/07/25 17:55 
+                Available Balance AED 8888.30
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("636.00"),
+                currency = "THB",
+                type = TransactionType.EXPENSE,
+                merchant = "WWW.GRAB.COM          BANGKOK         TH",
+                accountLast4 = "1234",
+                balance = BigDecimal("8888.30")
+            )
+        ),
+        
+        FABTestCase(
+            name = "Outward Remittance without Merchant",
+            message = """
+                Outward Remittance 
+                Debit 
+                Account XXXX9876
+                AED 500.00
+                Value Date 20/06/2025  
+                Available Balance AED 12345.67
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("500.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                accountLast4 = "9876",
+                balance = BigDecimal("12345.67")
+            )
+        ),
+        
+        FABTestCase(
+            name = "Cash Deposit (Income)",
+            message = """
+                Cash Deposit 
+                Credit 
+                Account XXXX4321
+                AED 10000.00
+                Date 20/06/25
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("10000.00"),
+                currency = "AED",
+                type = TransactionType.INCOME,
+                accountLast4 = "4321"
+            )
+        ),
+        
+        FABTestCase(
+            name = "ATM Withdrawal in Thailand (THB)",
+            message = """
+                ATM Cash withdrawal 
+                Debit 
+                Account XXXX8888
+                Card XXXX9999
+                THB 3000.00
+                18/06/25 13:06 
+                Available Balance AED 5500.50
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("3000.00"),
+                currency = "THB",
+                type = TransactionType.EXPENSE,
+                merchant = "ATM Withdrawal",
+                accountLast4 = "8888",
+                balance = BigDecimal("5500.50")
+            )
         )
     )
 
-    testCases.forEachIndexed { index, testCase ->
-        println("=== Test ${index + 1}: ${testCase.name} ===")
+    var passed = 0
+    var failed = 0
 
-        if (index == 0) {
-            println("Can handle sender '${testCase.sender}': ${parser.canHandle(testCase.sender)}")
-        }
+    testCases.forEachIndexed { index, testCase ->
+        println("Test ${index + 1}: ${testCase.name}")
+        println("-" * 80)
 
         val result = parser.parse(testCase.message, testCase.sender, System.currentTimeMillis())
+        val expected = testCase.expected
 
-        if (result != null) {
-            println("✓ Parsed successfully!")
-            println("  Amount: ${result.amount}")
-            println("  Currency: ${result.currency}")
-            println("  Type: ${result.type}")
-            println("  Merchant: ${result.merchant}")
-            result.accountLast4?.let { println("  Account: $it") }
-            result.balance?.let { println("  Balance: $it") }
-            result.reference?.let { println("  Reference: $it") }
+        if (result == null) {
+            println("✗ FAILED: Parser returned null")
+            failed++
+            println()
+            return@forEachIndexed
+        }
+
+        val failures = mutableListOf<String>()
+
+        // Validate amount
+        if (result.amount != expected.amount) {
+            failures.add("Amount: expected ${expected.amount}, got ${result.amount}")
+        }
+
+        // Validate currency
+        if (result.currency != expected.currency) {
+            failures.add("Currency: expected ${expected.currency}, got ${result.currency}")
+        }
+
+        // Validate type
+        if (result.type != expected.type) {
+            failures.add("Type: expected ${expected.type}, got ${result.type}")
+        }
+
+        // Validate merchant (if expected)
+        if (expected.merchant != null && result.merchant != expected.merchant) {
+            failures.add("Merchant: expected '${expected.merchant}', got '${result.merchant}'")
+        }
+
+        // Validate account (if expected)
+        if (expected.accountLast4 != null && result.accountLast4 != expected.accountLast4) {
+            failures.add("Account: expected '${expected.accountLast4}', got '${result.accountLast4}'")
+        }
+
+        // Validate balance (if expected)
+        if (expected.balance != null && result.balance != expected.balance) {
+            failures.add("Balance: expected ${expected.balance}, got ${result.balance}")
+        }
+
+        // Validate reference (if expected)
+        if (expected.reference != null && result.reference != expected.reference) {
+            failures.add("Reference: expected '${expected.reference}', got '${result.reference}'")
+        }
+
+        if (failures.isEmpty()) {
+            println("✓ PASSED")
+            passed++
         } else {
-            println("✗ Failed to parse")
+            println("✗ FAILED:")
+            failures.forEach { println("  - $it") }
+            failed++
         }
 
         println()
     }
+
+    // Summary
+    println("=" * 80)
+    println("Test Summary")
+    println("=" * 80)
+    println("Total: ${testCases.size}")
+    println("Passed: $passed ✓")
+    println("Failed: $failed ✗")
+    println("Success Rate: ${(passed * 100.0 / testCases.size).toInt()}%")
+    println("=" * 80)
 }
+
+private operator fun String.times(count: Int): String = this.repeat(count)
