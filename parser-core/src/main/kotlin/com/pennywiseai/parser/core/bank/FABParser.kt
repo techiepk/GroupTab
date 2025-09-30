@@ -221,10 +221,6 @@ class FABParser : BankParser() {
             }
         }
 
-        // Pattern 2: ATM Cash withdrawal - no merchant, return "ATM Withdrawal"
-        if (message.contains("ATM Cash withdrawal", ignoreCase = true)) {
-            return "ATM Withdrawal"
-        }
 
         // Pattern 3: Payment instructions - extract recipient
         // "payment instructions of [CURRENCY] *.00 to 5xxx**1xxx"
@@ -238,9 +234,18 @@ class FABParser : BankParser() {
             }
         }
 
-        // Pattern 4: Inward remittance
-        if (message.contains("Inward Remittance", ignoreCase = true)) {
-            return "Inward Remittance"
+        // Patterns for specific transaction types that act as merchants
+        val transactionTypeMerchants = mapOf(
+            "ATM Cash withdrawal" to "ATM Withdrawal",
+            "Inward Remittance" to "Inward Remittance",
+            "Outward Remittance" to "Outward Remittance",
+            "Cash Deposit" to "Cash Deposit"
+        )
+
+        for ((keyword, merchantName) in transactionTypeMerchants) {
+            if (message.contains(keyword, ignoreCase = true)) {
+            return merchantName
+            }
         }
 
         return super.extractMerchant(message, sender)
