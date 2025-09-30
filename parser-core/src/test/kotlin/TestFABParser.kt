@@ -267,7 +267,39 @@ fun main() {
                 accountLast4 = "8888",
                 balance = BigDecimal("5500.50")
             )
-        )
+        ),
+        FABTestCase(
+    name = "Cheque Credited",
+    message = """
+        Cheque Credited
+        Cheque No 000020 for AED 9999.00 deposited in your account XXXX0002 has been credited on 01/10/2024 
+        Your available balance is AED 7777.62.
+    """.trimIndent(),
+    expected = ExpectedTransaction(
+        amount = BigDecimal("9999.00"),
+        currency = "AED",
+        type = TransactionType.INCOME,
+        merchant = "Cheque Credited",
+        accountLast4 = "0002",
+        balance = BigDecimal("7777.62")
+    )
+),
+
+FABTestCase(
+    name = "Cheque Returned",
+    message = """
+        Cheque Returned
+        Cheque No 000020 for AED 8888.00 deposited in your account XXXX0002  has been returned unpaid.
+        Please contact the branch.
+    """.trimIndent(),
+    expected = ExpectedTransaction(
+        amount = BigDecimal("8888.00"),
+        currency = "AED",
+        type = TransactionType.EXPENSE,
+        merchant = "Cheque Returned",
+        accountLast4 = "0002"
+    )
+)
     )
 
     var passed = 0

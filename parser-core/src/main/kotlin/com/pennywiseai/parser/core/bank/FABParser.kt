@@ -70,6 +70,7 @@ class FABParser : BankParser() {
     override fun extractAmount(message: String): BigDecimal? {
         // FAB patterns: Support global currencies - "AED 8.00", "THB ###.##", "USD 10.00", etc.
         val patterns = listOf(
+            Regex("""for\s+([A-Z]{3})\s+([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),  // Add this line
             Regex("""([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),  // Explicit asterisk pattern
             Regex("""([A-Z]{3})\s+([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),   // General pattern with asterisks
             Regex("""Amount\s*([A-Z]{3})\s+\*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE),
@@ -145,7 +146,11 @@ class FABParser : BankParser() {
             lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
-
+            
+            //Cheque transactions
+            lowerMessage.contains("cheque credited") -> TransactionType.INCOME
+            lowerMessage.contains("cheque returned") -> TransactionType.EXPENSE
+            
             // ATM withdrawals are expenses
             lowerMessage.contains("atm cash withdrawal") -> TransactionType.EXPENSE
 
@@ -241,6 +246,7 @@ class FABParser : BankParser() {
             "Outward Remittance" to "Outward Remittance",
             "Cash Deposit" to "Cash Deposit",
             "Cheque Credited" to "Cheque Credited",
+            "Cheque Returned" to "Cheque Returned",
             "Cash withdrawal" to "Cash Withdrawal"
         )
 
@@ -275,7 +281,7 @@ class FABParser : BankParser() {
 
     override fun extractBalance(message: String): BigDecimal? {
         // Pattern: "Available Balance [CURRENCY] **30.16" or "Available Balance AED ***0.00"
-        val balancePattern = Regex("""Available\s+Balance\s+([A-Z]{3})\s*\*{0,}([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        val balancePattern = Regex("""(?:Available|available)\s+[Bb]alance\s+(?:is\s+)?([A-Z]{3})\s*\*{0,}([0-9*,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
         balancePattern.find(message)?.let { match ->
             var balanceStr = match.groupValues[2].replace(",", "")
 
@@ -340,7 +346,6 @@ class FABParser : BankParser() {
         "conditions apply",
         "bit.ly",
         "instalments at 0% interest",
-        "cheque returned",
         "request has been logged",
         "reference number",
         "beneficiary creation/modification request",
@@ -389,7 +394,9 @@ class FABParser : BankParser() {
             "payment instructions",
             "has been processed",
             "has been credited to your fab account",
-            "cash deposit"
+            "cash deposit",
+            "cheque credited",
+            "cheque returned"  
         )
 
         // Special handling for funds transfer - only completed ones
