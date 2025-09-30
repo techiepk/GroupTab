@@ -239,7 +239,9 @@ class FABParser : BankParser() {
             "ATM Cash withdrawal" to "ATM Withdrawal",
             "Inward Remittance" to "Inward Remittance",
             "Outward Remittance" to "Outward Remittance",
-            "Cash Deposit" to "Cash Deposit"
+            "Cash Deposit" to "Cash Deposit",
+            "Cheque Credited" to "Cheque Credited",
+            "Cash withdrawal" to "Cash Withdrawal"
         )
 
         for ((keyword, merchantName) in transactionTypeMerchants) {
@@ -355,7 +357,8 @@ class FABParser : BankParser() {
         "activation",
         "thank you for activating",
         "do not disclose your otp",
-        "atyourservice@bankfab.com"  // Email-only messages
+        "atyourservice@bankfab.com",
+        "has been blocked on"  // Email-only messages
         )
 
         if (nonTransactionKeywords.any { keyword ->
