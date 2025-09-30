@@ -35,7 +35,7 @@ import java.math.BigDecimal
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel = hiltViewModel(),
     onNavigateToChat: () -> Unit = {},
-    onNavigateToTransactions: (category: String?, merchant: String?, period: String?) -> Unit = { _, _, _ -> }
+    onNavigateToTransactions: (category: String?, merchant: String?, period: String?, currency: String?) -> Unit = { _, _, _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
@@ -171,8 +171,9 @@ fun AnalyticsScreen(
             item {
                 CategoryBreakdownCard(
                     categories = uiState.categoryBreakdown,
+                    currency = selectedCurrency,
                     onCategoryClick = { category ->
-                        onNavigateToTransactions(category.name, null, selectedPeriod.name)
+                        onNavigateToTransactions(category.name, null, selectedPeriod.name, selectedCurrency)
                     }
                 )
             }
@@ -195,8 +196,9 @@ fun AnalyticsScreen(
                 ) { merchant ->
                     MerchantListItem(
                         merchant = merchant,
+                        currency = selectedCurrency,
                         onClick = {
-                            onNavigateToTransactions(null, merchant.name, selectedPeriod.name)
+                            onNavigateToTransactions(null, merchant.name, selectedPeriod.name, selectedCurrency)
                         }
                     )
                 }
@@ -231,7 +233,8 @@ fun AnalyticsScreen(
 
 @Composable
 private fun CategoryListItem(
-    category: CategoryData
+    category: CategoryData,
+    currency: String
 ) {
     val categoryInfo = CategoryMapping.categories[category.name]
         ?: CategoryMapping.categories["Others"]!!
@@ -254,7 +257,7 @@ private fun CategoryListItem(
         },
         title = category.name,
         subtitle = "${category.transactionCount} transactions",
-        amount = CurrencyFormatter.formatCurrency(category.amount),
+        amount = CurrencyFormatter.formatCurrency(category.amount, currency),
         trailingContent = {
             Text(
                 text = "${category.percentage.toInt()}%",
@@ -268,6 +271,7 @@ private fun CategoryListItem(
 @Composable
 private fun MerchantListItem(
     merchant: MerchantData,
+    currency: String,
     onClick: () -> Unit = {}
 ) {
     val subtitle = buildString {
@@ -288,7 +292,7 @@ private fun MerchantListItem(
         },
         title = merchant.name,
         subtitle = subtitle,
-        amount = CurrencyFormatter.formatCurrency(merchant.amount),
+        amount = CurrencyFormatter.formatCurrency(merchant.amount, currency),
         onClick = onClick
     )
 }

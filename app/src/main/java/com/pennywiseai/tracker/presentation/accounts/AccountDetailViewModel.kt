@@ -3,6 +3,8 @@ package com.pennywiseai.tracker.presentation.accounts
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.data.currency.CurrencyConversionService
+import com.pennywiseai.tracker.data.currency.CurrencyConversionService.TransactionData
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
@@ -22,7 +24,8 @@ import javax.inject.Inject
 class AccountDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val transactionRepository: TransactionRepository,
-    private val accountBalanceRepository: AccountBalanceRepository
+    private val accountBalanceRepository: AccountBalanceRepository,
+    private val currencyConversionService: CurrencyConversionService
 ) : ViewModel() {
     
     private val bankName: String = savedStateHandle.get<String>("bankName") ?: ""
@@ -56,30 +59,58 @@ class AccountDetailViewModel @Inject constructor(
                 transactionRepository.getTransactionsByAccount(bankName, accountLast4)
             ) { dateRange, allTransactions ->
                 val (startDate, endDate) = getDateRangeValues(dateRange)
-                
+
                 val filteredTransactions = if (dateRange == DateRange.ALL_TIME) {
                     allTransactions
                 } else {
                     allTransactions.filter { transaction ->
-                        transaction.dateTime.isAfter(startDate) && 
+                        transaction.dateTime.isAfter(startDate) &&
                         transaction.dateTime.isBefore(endDate)
                     }
                 }
-                
-                val totalIncome = filteredTransactions
-                    .filter { it.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
-                    
-                val totalExpenses = filteredTransactions
-                    .filter { it.transactionType != com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc + t.amount }
-                
+
+                val primaryCurrency = getPrimaryCurrencyForAccount(filteredTransactions)
+                val hasMultipleCurrencies = filteredTransactions
+                    .map { it.currency }
+                    .distinct()
+                    .size > 1
+
+                // Refresh exchange rates if we have multiple currencies
+                if (hasMultipleCurrencies) {
+                    val accountCurrencies = filteredTransactions.map { it.currency }.distinct()
+                    currencyConversionService.refreshExchangeRatesForAccount(accountCurrencies)
+                }
+
+                // Calculate total income and expenses with currency conversion
+                var totalIncome = BigDecimal.ZERO
+                var totalExpenses = BigDecimal.ZERO
+
+                filteredTransactions.forEach { transaction ->
+                    val convertedAmount = if (transaction.currency != primaryCurrency) {
+                        currencyConversionService.convertAmount(
+                            amount = transaction.amount,
+                            fromCurrency = transaction.currency,
+                            toCurrency = primaryCurrency
+                        ) ?: transaction.amount
+                    } else {
+                        transaction.amount
+                    }
+
+                    if (transaction.transactionType == com.pennywiseai.tracker.data.database.entity.TransactionType.INCOME) {
+                        totalIncome += convertedAmount
+                    } else {
+                        totalExpenses += convertedAmount
+                    }
+                }
+
                 _uiState.update { state ->
                     state.copy(
                         transactions = filteredTransactions,
                         totalIncome = totalIncome,
                         totalExpenses = totalExpenses,
                         netBalance = totalIncome - totalExpenses,
+                        primaryCurrency = primaryCurrency,
+                        hasMultipleCurrencies = hasMultipleCurrencies,
                         isLoading = false
                     )
                 }
@@ -115,25 +146,37 @@ class AccountDetailViewModel @Inject constructor(
     }
     
     private fun observeBalanceChartData() {
-        // Always fetch last 3 months for the chart, independent of filter
+        // Fetch balance chart data based on selected date range
         viewModelScope.launch {
-            val endDate = LocalDateTime.now()
-            val startDate = endDate.minusMonths(3)
-            
-            accountBalanceRepository.getBalanceHistory(
-                bankName,
-                accountLast4,
-                startDate,
-                endDate
-            ).collect { balanceHistory ->
+            selectedDateRange.flatMapLatest { dateRange ->
+                val (startDate, endDate) = getDateRangeValues(dateRange)
+
+                // For chart purposes, extend the range to show more context
+                val chartStartDate = when (dateRange) {
+                    DateRange.LAST_7_DAYS -> endDate.minusDays(14)  // Show 2 weeks for 7-day view
+                    DateRange.LAST_30_DAYS -> endDate.minusMonths(2)  // Show 2 months for 30-day view
+                    DateRange.LAST_3_MONTHS -> endDate.minusMonths(4)  // Show 4 months for 3-month view
+                    DateRange.LAST_6_MONTHS -> endDate.minusMonths(8)  // Show 8 months for 6-month view
+                    DateRange.LAST_YEAR -> endDate.minusMonths(15)  // Show 15 months for 1-year view
+                    DateRange.ALL_TIME -> LocalDateTime.of(2000, 1, 1, 0, 0)  // Show all available data
+                }
+
+                accountBalanceRepository.getBalanceHistory(
+                    bankName,
+                    accountLast4,
+                    chartStartDate,
+                    endDate
+                )
+            }.collect { balanceHistory ->
                 // Convert to BalancePoint for chart
                 val chartData = balanceHistory.map { entity ->
                     BalancePoint(
                         timestamp = entity.timestamp,
-                        balance = entity.balance
+                        balance = entity.balance,
+                        currency = entity.currency
                     )
                 }
-                
+
                 _uiState.update { state ->
                     state.copy(balanceChartData = chartData)
                 }
@@ -157,6 +200,16 @@ class AccountDetailViewModel @Inject constructor(
         }
         return startDate to endDate
     }
+
+    private fun getPrimaryCurrencyForAccount(transactions: List<TransactionEntity>): String {
+        val availableCurrencies = transactions.map { it.currency }.distinct()
+        return when {
+            availableCurrencies.contains("AED") -> "AED"  // FAB bank uses AED
+            availableCurrencies.contains("INR") -> "INR"
+            availableCurrencies.isNotEmpty() -> availableCurrencies.first()
+            else -> "INR" // Default fallback
+        }
+    }
 }
 
 data class AccountDetailUiState(
@@ -169,6 +222,8 @@ data class AccountDetailUiState(
     val totalIncome: BigDecimal = BigDecimal.ZERO,
     val totalExpenses: BigDecimal = BigDecimal.ZERO,
     val netBalance: BigDecimal = BigDecimal.ZERO,
+    val primaryCurrency: String = "INR",
+    val hasMultipleCurrencies: Boolean = false,
     val isLoading: Boolean = true
 )
 

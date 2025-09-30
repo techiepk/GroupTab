@@ -445,7 +445,7 @@ private fun MonthSummaryCard(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብর"
     )
@@ -924,7 +924,7 @@ private fun EnhancedCurrencySelector(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብር"
     )
@@ -1052,7 +1052,7 @@ private fun CurrencyEmptyState(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብር"
     )

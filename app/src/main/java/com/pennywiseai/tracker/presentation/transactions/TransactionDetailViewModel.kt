@@ -2,6 +2,7 @@ package com.pennywiseai.tracker.presentation.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pennywiseai.tracker.data.currency.CurrencyConversionService
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
@@ -25,11 +26,18 @@ class TransactionDetailViewModel @Inject constructor(
     private val merchantMappingRepository: MerchantMappingRepository,
     private val categoryRepository: CategoryRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
+    private val currencyConversionService: CurrencyConversionService,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     
     private val _transaction = MutableStateFlow<TransactionEntity?>(null)
     val transaction: StateFlow<TransactionEntity?> = _transaction.asStateFlow()
+
+    private val _primaryCurrency = MutableStateFlow("INR")
+    val primaryCurrency: StateFlow<String> = _primaryCurrency.asStateFlow()
+
+    private val _convertedAmount = MutableStateFlow<BigDecimal?>(null)
+    val convertedAmount: StateFlow<BigDecimal?> = _convertedAmount.asStateFlow()
     
     private val _isEditMode = MutableStateFlow(false)
     val isEditMode: StateFlow<Boolean> = _isEditMode.asStateFlow()
@@ -110,10 +118,62 @@ class TransactionDetailViewModel @Inject constructor(
     
     fun loadTransaction(transactionId: Long) {
         viewModelScope.launch {
-            _transaction.value = transactionRepository.getTransactionById(transactionId)
+            val transaction = transactionRepository.getTransactionById(transactionId)
+            _transaction.value = transaction
+            transaction?.let {
+                determinePrimaryCurrency(it)
+                calculateConvertedAmount(it)
+            }
         }
     }
-    
+
+    private suspend fun determinePrimaryCurrency(transaction: TransactionEntity) {
+        // Get all transactions for this account to determine primary currency
+        val bankName = transaction.bankName
+        val accountLast4 = transaction.accountNumber?.takeLast(4) ?: ""
+
+        if (!bankName.isNullOrEmpty() && accountLast4.isNotEmpty()) {
+            val accountTransactions = transactionRepository.getTransactionsByAccount(bankName, accountLast4)
+                .firstOrNull() ?: emptyList()
+
+            val primaryCurrency = when {
+                // Prioritize AED for FAB bank
+                bankName.equals("FAB", ignoreCase = true) &&
+                accountTransactions.any { it.currency.equals("AED", ignoreCase = true) } -> "AED"
+                // Otherwise use the most common currency in the account
+                accountTransactions.isNotEmpty() -> {
+                    val currencyCounts = accountTransactions
+                        .map { it.currency }
+                        .groupingBy { it }
+                        .eachCount()
+                    currencyCounts.maxByOrNull { it.value }?.key ?: "INR"
+                }
+                // Fallback to transaction currency or INR
+                else -> transaction.currency.takeIf { it.isNotEmpty() } ?: "INR"
+            }
+            _primaryCurrency.value = primaryCurrency
+        } else {
+            // Fallback to transaction currency or INR
+            _primaryCurrency.value = transaction.currency.takeIf { it.isNotEmpty() } ?: "INR"
+        }
+    }
+
+    private suspend fun calculateConvertedAmount(transaction: TransactionEntity) {
+        val primaryCurrency = _primaryCurrency.value
+        if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true)) {
+            // Convert the amount to the primary currency
+            val converted = currencyConversionService.convertAmount(
+                amount = transaction.amount,
+                fromCurrency = transaction.currency,
+                toCurrency = primaryCurrency
+            )
+            _convertedAmount.value = converted
+        } else {
+            // No conversion needed if currencies are the same
+            _convertedAmount.value = null
+        }
+    }
+
     fun enterEditMode() {
         _editableTransaction.value = _transaction.value?.copy()
         _isEditMode.value = true

@@ -28,7 +28,8 @@ import java.time.format.DateTimeFormatter
 
 data class BalancePoint(
     val timestamp: LocalDateTime,
-    val balance: BigDecimal
+    val balance: BigDecimal,
+    val currency: String = "INR"
 )
 
 @Composable
@@ -38,19 +39,29 @@ fun BalanceChart(
     height: Int = 200
 ) {
     if (balanceHistory.isEmpty()) return
-    
+
     // Sort by timestamp to ensure chronological order (oldest to newest)
     val sortedHistory = remember(balanceHistory) {
         balanceHistory.sortedBy { it.timestamp }
+    }
+
+    // Apply data smoothing to reduce noise
+    val smoothedHistory = remember(sortedHistory) {
+        smoothBalanceData(sortedHistory)
+    }
+
+    // Get the primary currency from the data (use first non-empty currency)
+    val primaryCurrency = remember(sortedHistory) {
+        sortedHistory.firstOrNull { it.currency.isNotEmpty() }?.currency ?: "INR"
     }
     
     val lineColor = MaterialTheme.colorScheme.primary
     val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
     val backgroundColor = MaterialTheme.colorScheme.surface
     
-    // Calculate min and max for scaling
-    val maxBalance = sortedHistory.maxOf { it.balance }
-    val minBalance = sortedHistory.minOf { it.balance }
+    // Calculate min and max for scaling using smoothed data
+    val maxBalance = smoothedHistory.maxOf { it.balance }
+    val minBalance = smoothedHistory.minOf { it.balance }
     val balanceRange = maxBalance - minBalance
     
     // Add some padding to the range
@@ -74,7 +85,7 @@ fun BalanceChart(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = CurrencyFormatter.formatCurrency(paddedMax),
+                    text = CurrencyFormatter.formatCurrency(paddedMax, primaryCurrency),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -110,9 +121,9 @@ fun BalanceChart(
                         )
                     }
                     
-                    if (sortedHistory.size < 2) {
+                    if (smoothedHistory.size < 2) {
                         // Just draw a single point if we only have one data point
-                        val point = sortedHistory.first()
+                        val point = smoothedHistory.first()
                         val y = canvasHeight * (1f - ((point.balance - paddedMin).toFloat() / paddedRange.toFloat()))
                         drawCircle(
                             color = lineColor,
@@ -123,14 +134,14 @@ fun BalanceChart(
                         // Draw the line chart
                         val path = Path()
                         val points = mutableListOf<Offset>()
-                        
-                        sortedHistory.forEachIndexed { index, point ->
-                            val x = canvasWidth * (index.toFloat() / (sortedHistory.size - 1).coerceAtLeast(1))
+
+                        smoothedHistory.forEachIndexed { index, point ->
+                            val x = canvasWidth * (index.toFloat() / (smoothedHistory.size - 1).coerceAtLeast(1))
                             val y = canvasHeight * (1f - ((point.balance - paddedMin).toFloat() / paddedRange.toFloat()))
-                            
+
                             val offset = Offset(x, y)
                             points.add(offset)
-                            
+
                             if (index == 0) {
                                 path.moveTo(x, y)
                             } else {
@@ -192,20 +203,20 @@ fun BalanceChart(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (sortedHistory.isNotEmpty()) {
+                if (smoothedHistory.isNotEmpty()) {
                     // First (oldest) date on the left
                     Text(
-                        text = sortedHistory.first().timestamp.format(
+                        text = smoothedHistory.first().timestamp.format(
                             DateTimeFormatter.ofPattern("MMM d")
                         ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
-                    if (sortedHistory.size > 1) {
+
+                    if (smoothedHistory.size > 1) {
                         // Last (newest) date on the right
                         Text(
-                            text = sortedHistory.last().timestamp.format(
+                            text = smoothedHistory.last().timestamp.format(
                                 DateTimeFormatter.ofPattern("MMM d")
                             ),
                             style = MaterialTheme.typography.labelSmall,
@@ -217,10 +228,50 @@ fun BalanceChart(
             
             // Min balance label
             Text(
-                text = CurrencyFormatter.formatCurrency(paddedMin),
+                text = CurrencyFormatter.formatCurrency(paddedMin, primaryCurrency),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
+}
+
+/**
+ * Smooth balance data to reduce noise in the chart
+ * Applies time-based aggregation and moving average smoothing
+ */
+private fun smoothBalanceData(
+    balanceHistory: List<BalancePoint>,
+    maxPoints: Int = 50  // Maximum number of points to display
+): List<BalancePoint> {
+    if (balanceHistory.size <= maxPoints) {
+        return balanceHistory
+    }
+
+    // Calculate the time span of the data
+    val timeSpan = balanceHistory.last().timestamp.toLocalDate()
+        .toEpochDay() - balanceHistory.first().timestamp.toLocalDate().toEpochDay()
+
+    // Determine the aggregation interval based on time span and desired max points
+    val intervalDays = maxOf(1, (timeSpan / maxPoints).toInt())
+
+    // Group data by intervals and calculate averages
+    val groupedData = balanceHistory.groupBy { point ->
+        val dayIndex = (point.timestamp.toLocalDate().toEpochDay() -
+            balanceHistory.first().timestamp.toLocalDate().toEpochDay()) / intervalDays
+        dayIndex
+    }
+
+    return groupedData.map { (_, group) ->
+        val avgBalance = group.map { it.balance }.reduce { acc, balance -> acc + balance } /
+            BigDecimal(group.size.toLong())
+        val middleIndex = group.size / 2
+        val representativePoint = group[middleIndex]
+
+        BalancePoint(
+            timestamp = representativePoint.timestamp,
+            balance = avgBalance,
+            currency = representativePoint.currency
+        )
+    }.sortedBy { it.timestamp }
 }
