@@ -327,6 +327,20 @@ fun main() {
                 merchant = "Transfer to XXXX0001",
                 accountLast4 = "0001"
             )
+        ),
+        FABTestCase(
+            name = "Generic Account Credit",
+            message = """
+        An amount of AED 555.00 has been credited to your FAB account XXXX0002 on 08/06/25 .Your Available Balance is AED 5555.43
+    """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("555.00"),
+                currency = "AED",
+                type = TransactionType.INCOME,
+                merchant = "Account Credited",
+                accountLast4 = "0002",
+                balance = BigDecimal("5555.43")
+            )
         )
     )
 

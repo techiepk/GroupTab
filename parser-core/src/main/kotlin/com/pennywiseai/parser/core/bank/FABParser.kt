@@ -265,6 +265,11 @@ class FABParser : BankParser() {
             }
         }
 
+        if (message.contains("has been credited to your fab account", ignoreCase = true) &&
+            !message.contains("unsuccessful transaction", ignoreCase = true)) {
+            return "Account Credited"
+        }
+
         // Patterns for specific transaction types that act as merchants
         val transactionTypeMerchants = mapOf(
             "ATM Cash withdrawal" to "ATM Withdrawal",
