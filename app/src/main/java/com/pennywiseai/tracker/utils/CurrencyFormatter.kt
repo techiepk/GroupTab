@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.utils
 
+import com.pennywiseai.parser.core.bank.BankParserFactory
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Currency
@@ -120,5 +121,20 @@ object CurrencyFormatter {
      */
     fun getCurrencySymbol(currencyCode: String): String {
         return CURRENCY_SYMBOLS[currencyCode] ?: currencyCode
+    }
+
+    /**
+     * Gets the base currency for a bank using the BankParserFactory
+     * Returns INR as default for unknown banks
+     */
+    fun getBankBaseCurrency(bankName: String?): String {
+        if (bankName == null) return "INR"
+
+        // Try to find a parser that can handle this bank name
+        val parser = BankParserFactory.getParserByName(bankName)
+        return parser?.getCurrency() ? : "INR"
+
+        // Default to INR for unknown banks
+        return "INR"
     }
 }

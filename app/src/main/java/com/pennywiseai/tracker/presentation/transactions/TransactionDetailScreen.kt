@@ -555,9 +555,10 @@ private fun AdditionalDetailsCard(transaction: TransactionEntity) {
             
             // Balance After
             transaction.balanceAfter?.let {
+                val bankBaseCurrency = CurrencyFormatter.getBankBaseCurrency(transaction.bankName)
                 InfoRow(
                     label = "Balance After",
-                    value = CurrencyFormatter.formatCurrency(it),
+                    value = CurrencyFormatter.formatCurrency(it, bankBaseCurrency),
                     icon = Icons.Default.AccountBalanceWallet
                 )
             }
@@ -635,7 +636,11 @@ private fun EditableTransactionHeader(
                 value = transaction.amount.toPlainString(),
                 onValueChange = { viewModel.updateAmount(it) },
                 label = { Text("Amount") },
-                prefix = { Text("₹") },
+                prefix = {
+                    val bankBaseCurrency = CurrencyFormatter.getBankBaseCurrency(transaction.bankName)
+                    val currencySymbol = CurrencyFormatter.getCurrencySymbol(bankBaseCurrency)
+                    Text(currencySymbol)
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
