@@ -162,17 +162,39 @@ object CategoryMapping {
         "the daily",
         "subway",
         "wagamama",
-        "caffe nero"
+        "caffe nero",
+        "fresh and tasty", "alkanz lakeshore", "cafe bateel", "bateel", "hutong",
+        "asiakitchen", "asia kitchen", "tbk", "smoked meat world", "nandos", "nando's", "the meydan"
+
     )
 
     private val GROCERY = setOf(
-        "bigbasket", "blinkit", "zepto", "grofers", "jiomart",
-        "dmart", "reliance fresh", "more", "grocery", "dunzo",
-        "careem groceries", "careem quik",
+        "bigbasket",
+        "blinkit",
+        "zepto",
+        "grofers",
+        "jiomart",
+        "dmart",
+        "reliance fresh",
+        "more",
+        "grocery",
+        "dunzo",
+        "careem groceries",
+        "careem quik",
         // Dubai / uae grocieries
-        "carrefour", "spinneys", "lulu", "choithrams", "waitrose",
-        "geant", "union coop", "abu dhabi co-op", "emirates cooperative",
-        "nesto", "almaya", "rawabi", "safeer",
+        "carrefour",
+        "spinneys",
+        "lulu",
+        "choithrams",
+        "waitrose",
+        "geant",
+        "union coop",
+        "abu dhabi co-op",
+        "emirates cooperative",
+        "nesto",
+        "almaya",
+        "rawabi",
+        "safeer",
 
         // --- Newly Added Merchants ---
         "hippo box",
@@ -186,7 +208,15 @@ object CategoryMapping {
         "all day mini",
         "all day plus",
         "fresh good day",
-        "al ghabat city"
+        "al ghabat city",
+        "zoom",
+        "zoom site",
+        "all day",
+        "all day advantage mini",
+        "noon minutes",
+        "crrefour",
+        "maf mkt"
+
     )
 
     private val TRANSPORT = setOf(
@@ -205,7 +235,9 @@ object CategoryMapping {
         "big boss rent a car",
         "presidential transport",
         "q mobility",
-        "valtrans"
+        "valtrans",
+        "eppco", "eppco site", "eppco-site", "tasjeel", "integrated transport"
+
     )
 
     private val SHOPPING = setOf(
@@ -244,12 +276,27 @@ object CategoryMapping {
         "brands for less",
         "sharaf dg",
         "american eagle",
-        "dufry"
+        "dufry",
+        "a j a international", "aja international", "noon e-commerce", "noon",
+        "m h al shaya", "beside trading", "intelligent oud", "qissat aloud perfumes"
+
     )
 
     private val UTILITIES = setOf(
-        "electricity", "water", "gas", "broadband", "wifi", "internet",
-        "tata sky", "dish", "d2h", "bill", "tata power", "adani", "bses", "act fibernet",
+        "electricity",
+        "water",
+        "gas",
+        "broadband",
+        "wifi",
+        "internet",
+        "tata sky",
+        "dish",
+        "d2h",
+        "bill",
+        "tata power",
+        "adani",
+        "bses",
+        "act fibernet",
 
         // --- Newly Added Merchants ---
         "sdgdubaipay",
@@ -257,7 +304,13 @@ object CategoryMapping {
         "noqejari",
         "saya",
         "aljada developments",
-        "nshama"
+        "nshama",
+        "tasleem",
+        "tasleem address harbour",
+        "greenland environment",
+        "noq south energy",
+        "noqsouth energy dwc"
+
     )
 
     private val ENTERTAINMENT = setOf(
@@ -278,7 +331,9 @@ object CategoryMapping {
         "watson",
         "dr nutrition",
         "boots",
-        "supercare"
+        "supercare",
+        "life pharmacy", "life phy"
+
     )
 
     private val INVESTMENT = setOf(
@@ -296,7 +351,9 @@ object CategoryMapping {
         "bank account operation",
         "bank cheque operation",
         "bank cash operation",
-        "my fatoorah"
+        "my fatoorah",
+        "cash withdrawal"
+
     )
 
     private val PERSONAL_CARE = setOf(
@@ -362,7 +419,9 @@ object CategoryMapping {
     private val BANK_CHARGE = setOf(
         "recovery", "charge", "fee", "penalty", "maintenance", "non-maintenance",
         "minimum balance", "sms charge", "atm recovery", "service charge",
-        "annual fee", "processing fee", "convenience fee", "late payment"
+        "annual fee", "processing fee", "convenience fee", "late payment",
+        "cheque returned"
+
     )
 
     private val CC_PAYMENT = setOf(
@@ -486,7 +545,9 @@ object CategoryMapping {
         "six senses",
         "rosewood",
         "capella",
-
+        "kempinski",
+        "kimpton maa-lai",
+        "the ritz-carlton reserve",
         // --- International airlines (selected) ---
         "ryanair",
         "lufthansa",
@@ -511,7 +572,14 @@ object CategoryMapping {
 
         // --- Newly Added Merchants ---
         "vfs global",
-        "dubai world trade centre"
+        "dubai world trade centre",
+        "vfs uk",
+        "vfs world trade centre",
+        "vfs wtc",
+        "address downtown",
+        "the address downtown",
+        "the meydan"
+
     )
 
 
