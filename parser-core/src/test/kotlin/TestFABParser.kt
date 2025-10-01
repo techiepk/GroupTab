@@ -16,7 +16,9 @@ data class ExpectedTransaction(
     val merchant: String? = null,
     val accountLast4: String? = null,
     val balance: BigDecimal? = null,
-    val reference: String? = null
+    val reference: String? = null,
+    val fromAccount: String? = null,
+    val toAccount: String? = null
 )
 
 fun main() {
@@ -323,9 +325,11 @@ fun main() {
             expected = ExpectedTransaction(
                 amount = BigDecimal("3555.00"),
                 currency = "AED",
-                type = TransactionType.EXPENSE,
-                merchant = "Transfer to 001",
-                accountLast4 = "0001"
+                type = TransactionType.TRANSFER,
+                merchant = "Transfer: 002 → 001",
+                accountLast4 = "0002",
+                fromAccount = "0002",
+                toAccount = "0001"
             )
         ),
         FABTestCase(
@@ -350,9 +354,11 @@ fun main() {
             expected = ExpectedTransaction(
                 amount = BigDecimal("130.00"),
                 currency = "AED",
-                type = TransactionType.EXPENSE,
-                merchant = "Transfer to 002",
-                accountLast4 = "0003"
+                type = TransactionType.TRANSFER,
+                merchant = "Transfer: 003 → 002",
+                accountLast4 = "0003",
+                fromAccount = "0003",
+                toAccount = "0002"
             )
         ),
 
@@ -364,9 +370,26 @@ fun main() {
             expected = ExpectedTransaction(
                 amount = BigDecimal("250.00"),
                 currency = "AED",
-                type = TransactionType.EXPENSE,
-                merchant = "Transfer to 003",
-                accountLast4 = "0001"
+                type = TransactionType.TRANSFER,
+                merchant = "Transfer: 001 → 003",
+                accountLast4 = "0001",
+                fromAccount = "0001",
+                toAccount = "0003"
+            )
+        ),
+        FABTestCase(
+            name = "Funds Transfer AED 7,000.00 with comma",
+            message = """
+                Dear Customer, your funds transfer request of AED 7,000.00 from account XXXX0003 to account XXXX0002 has been processed on 11/02/2025 00:11. For more information please call 600525500 (+97126811511 if calling from overseas).
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("7000.00"),
+                currency = "AED",
+                type = TransactionType.TRANSFER,
+                merchant = "Transfer: 003 → 002",
+                accountLast4 = "0003",
+                fromAccount = "0003",
+                toAccount = "0002"
             )
         )
     )
@@ -423,6 +446,16 @@ fun main() {
         // Validate reference (if expected)
         if (expected.reference != null && result.reference != expected.reference) {
             failures.add("Reference: expected '${expected.reference}', got '${result.reference}'")
+        }
+
+        // Validate fromAccount (if expected)
+        if (expected.fromAccount != null && result.fromAccount != expected.fromAccount) {
+            failures.add("From Account: expected '${expected.fromAccount}', got '${result.fromAccount}'")
+        }
+
+        // Validate toAccount (if expected)
+        if (expected.toAccount != null && result.toAccount != expected.toAccount) {
+            failures.add("To Account: expected '${expected.toAccount}', got '${result.toAccount}'")
         }
 
         if (failures.isEmpty()) {

@@ -299,7 +299,8 @@ private fun TransactionDetailContent(
         Spacer(modifier = Modifier.height(Spacing.md))
         
         // Additional Details - Always read-only
-        if (transaction.balanceAfter != null || transaction.accountNumber != null) {
+        if (transaction.balanceAfter != null || transaction.accountNumber != null ||
+            transaction.fromAccount != null || transaction.toAccount != null) {
             AdditionalDetailsCard(viewModel,transaction)
         }
         
@@ -542,18 +543,45 @@ private fun AdditionalDetailsCard(viewModel: TransactionDetailViewModel, transac
             
             Spacer(modifier = Modifier.height(Spacing.md))
             
-            // Account Number (masked)
+            // Account Number (masked) - only show for non-transfer transactions
             transaction.accountNumber?.let {
-                val masked = if (it.length > 4) {
-                    "*".repeat(it.length - 4) + it.takeLast(4)
-                } else it
-                InfoRow(
-                    label = "Account",
-                    value = masked,
-                    icon = Icons.Default.CreditCard
-                )
+                // Don't show generic account field when we have specific transfer accounts
+                if (transaction.fromAccount == null && transaction.toAccount == null) {
+                    val masked = if (it.length > 4) {
+                        "*".repeat(it.length - 4) + it.takeLast(4)
+                    } else it
+                    InfoRow(
+                        label = "Account",
+                        value = masked,
+                        icon = Icons.Default.CreditCard
+                    )
+                }
             }
             
+            // From Account (for transfers)
+            transaction.fromAccount?.let { from ->
+                val masked = if (from.length > 4) {
+                    "*".repeat(from.length - 4) + from.takeLast(4)
+                } else from
+                InfoRow(
+                    label = "From Account",
+                    value = masked,
+                    icon = Icons.Default.ArrowUpward
+                )
+            }
+
+            // To Account (for transfers)
+            transaction.toAccount?.let { to ->
+                val masked = if (to.length > 4) {
+                    "*".repeat(to.length - 4) + to.takeLast(4)
+                } else to
+                InfoRow(
+                    label = "To Account",
+                    value = masked,
+                    icon = Icons.Default.ArrowDownward
+                )
+            }
+
             // Balance After
             transaction.balanceAfter?.let {
                 InfoRow(

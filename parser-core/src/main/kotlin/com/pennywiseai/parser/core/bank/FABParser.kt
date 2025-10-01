@@ -41,7 +41,13 @@ class FABParser : BankParser() {
             null
         }
 
-        return ParsedTransaction(
+        val (fromAccount, toAccount) = if (type == TransactionType.TRANSFER) {
+        extractTransferAccounts(smsBody)
+    } else {
+        Pair(null, null)
+    }
+
+    return ParsedTransaction(
             amount = amount,
             type = type,
             merchant = extractMerchant(smsBody, sender),
@@ -54,7 +60,9 @@ class FABParser : BankParser() {
             timestamp = timestamp,
             bankName = getBankName(),
             isFromCard = detectIsCard(smsBody),
-            currency = currency
+            currency = currency,
+            fromAccount = fromAccount,
+            toAccount = toAccount
         )
     }
 
@@ -70,6 +78,10 @@ class FABParser : BankParser() {
     override fun extractAmount(message: String): BigDecimal? {
         // FAB patterns: Support global currencies - "AED 8.00", "THB ###.##", "USD 10.00", etc.
         val patterns = listOf(
+            Regex(
+                """funds transfer request of\s+([A-Z]{3})\s+([0-9,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            ),  // Funds transfer pattern
             Regex(
                 """for\s+([A-Z]{3})\s+([0-9,]+(?:\.\d{2})?)""",
                 RegexOption.IGNORE_CASE
@@ -125,19 +137,10 @@ class FABParser : BankParser() {
     }
 
     override fun extractCurrency(message: String): String? {
-        // Extract currency code from transaction message
-        // Look for currency pattern at the beginning of a line or with specific formatting
+        // Extract currency code from transaction message - simplified pattern matching
         val currencyPatterns = listOf(
-            Regex("""^[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE),  // Start of line
-            Regex("""\n[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE), // After newline
-            Regex(
-                """Amount\s+([A-Z]{3})\s+[0-9,]+(?:\.\d{2})?""",
-                RegexOption.IGNORE_CASE
-            ), // After "Amount"
-            Regex(
-                """[A-Z]{3}\s+\*?[0-9,]+(?:\.\d{2})?""",
-                RegexOption.IGNORE_CASE
-            )  // With optional asterisk
+            Regex("""Amount\s+([A-Z]{3})""", RegexOption.IGNORE_CASE),
+            Regex("""[A-Z]{3}\s+[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE)
         )
 
         for (pattern in currencyPatterns) {
@@ -149,7 +152,6 @@ class FABParser : BankParser() {
             }
         }
 
-        // Fallback to AED if no currency found in message
         return "AED"
     }
 
@@ -177,6 +179,7 @@ class FABParser : BankParser() {
             // Outward remittance and payment instructions are expenses
             lowerMessage.contains("outward remittance") -> TransactionType.EXPENSE
             lowerMessage.contains("payment instructions") -> TransactionType.EXPENSE
+            lowerMessage.contains("funds transfer request") -> TransactionType.TRANSFER
             lowerMessage.contains("has been processed") -> TransactionType.EXPENSE
 
             // Standard keywords - but be more careful with context
@@ -254,23 +257,22 @@ class FABParser : BankParser() {
 if (message.contains("payment instructions", ignoreCase = true) ||
     message.contains("funds transfer request", ignoreCase = true)
 ) {
-    // Pattern: "to account XXXX0002 has been processed" - extract just the account number
-    // CHANGED LINE: Modified regex to extract just the account number and format as "Transfer to XXX" where XXX are the last 3 digits
-    val toPattern = Regex("""to\s+(?:IBAN/Account/Card\s+)?account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE)
-    toPattern.find(message)?.let { match ->
-        val recipient = match.groupValues[1]
-        // Extract just the last 3 digits of the account number
-        val lastThreeDigits = recipient.takeLast(3)
-        return "Transfer to $lastThreeDigits"
+    // For funds transfer messages, use the same logic as extractTransferAccounts to ensure consistency
+    if (message.contains("funds transfer request", ignoreCase = true)) {
+        return formatTransferMerchant(extractTransferAccounts(message))
     }
-    
-    // Fallback pattern: "to IBAN/Account/Card XXXX0002" without "has been processed"
-    val fallbackPattern = Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4,})""", RegexOption.IGNORE_CASE)
-    fallbackPattern.find(message)?.let { match ->
-        val recipient = match.groupValues[1]
-        // Extract just the last 3 digits of the account number
-        val lastThreeDigits = recipient.takeLast(3)
-        return "Transfer to $lastThreeDigits"
+
+    // Pattern: "to account XXXX0002" - extract last 3 digits
+    val toPatterns = listOf(
+        Regex("""to\s+(?:IBAN/Account/Card\s+)?account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+        Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4,})""", RegexOption.IGNORE_CASE)
+    )
+
+    for (pattern in toPatterns) {
+        pattern.find(message)?.let { match ->
+            val recipient = match.groupValues[1]
+            return "Transfer to ${recipient.takeLast(3)}"
+        }
     }
 }
 
@@ -301,23 +303,16 @@ if (message.contains("payment instructions", ignoreCase = true) ||
     }
 
     override fun extractAccountLast4(message: String): String? {
-        // Pattern: "Card No XXXX" or "Account XXXX**"
-        val patterns = listOf(
-            Regex("""Card\s+No\s+([X\d]{4})""", RegexOption.IGNORE_CASE),
-            Regex("""Account\s+([X\d]{4})\*{0,2}""", RegexOption.IGNORE_CASE),
-            Regex("""Account\s+[X\*]+(\d{4})""", RegexOption.IGNORE_CASE)
-        )
-
-        for (pattern in patterns) {
-            pattern.find(message)?.let { match ->
-                val accountStr = match.groupValues[1].replace("X", "")
-                if (accountStr.isNotEmpty()) {
-                    return accountStr
-                }
+        // For funds transfer messages, extract the source account (from account)
+        if (message.contains("funds transfer request", ignoreCase = true)) {
+            val (fromAccount, _) = extractTransferAccounts(message)
+            if (fromAccount != null) {
+                return fromAccount
             }
         }
 
-        return super.extractAccountLast4(message)
+        // Use standard account extraction for non-transfer transactions
+        return extractStandardAccountLast4(message)
     }
 
     override fun extractBalance(message: String): BigDecimal? {
@@ -374,6 +369,75 @@ if (message.contains("payment instructions", ignoreCase = true) ||
     //Added public getter for test case
     fun shouldParseTransactionMessage(message: String): Boolean {
         return isTransactionMessage(message);
+    }
+
+    // Format transfer merchant information based on extracted accounts
+    private fun formatTransferMerchant(accounts: Pair<String?, String?>): String {
+        val (fromAccount, toAccount) = accounts
+
+        if (fromAccount != null && toAccount != null) {
+            val fromLastThree = fromAccount.takeLast(3)
+            val toLastThree = toAccount.takeLast(3)
+            return "Transfer: $fromLastThree → $toLastThree"
+        } else if (fromAccount != null) {
+            val fromLastThree = fromAccount.takeLast(3)
+            return "Transfer from $fromLastThree"
+        } else if (toAccount != null) {
+            val toLastThree = toAccount.takeLast(3)
+            return "Transfer to $toLastThree"
+        }
+
+        return "Transfer"
+    }
+
+    // Extract standard account patterns (for non-transfer transactions)
+    private fun extractStandardAccountLast4(message: String): String? {
+        val patterns = listOf(
+            Regex("""Card\s+No\s+([X\d]{4})""", RegexOption.IGNORE_CASE),
+            Regex("""Account\s+([X\d]{4})\*{0,2}""", RegexOption.IGNORE_CASE),
+            Regex("""Account\s+[X\*]+(\d{4})""", RegexOption.IGNORE_CASE)
+        )
+
+        for (pattern in patterns) {
+            pattern.find(message)?.let { match ->
+                val accountStr = match.groupValues[1].replace("X", "")
+                if (accountStr.isNotEmpty()) {
+                    return accountStr
+                }
+            }
+        }
+
+        return super.extractAccountLast4(message)
+    }
+
+    // Extract from and to accounts for transfer transactions
+    private fun extractTransferAccounts(message: String): Pair<String?, String?> {
+        val fromPatterns = listOf(
+            Regex("""from\s+account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+            Regex("""from\s+account/card\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+            Regex("""from your account/card\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+            Regex("""from\s+([X\d]{4,})\s+to\s+account""", RegexOption.IGNORE_CASE)
+        )
+
+        val toPatterns = listOf(
+            Regex("""to\s+account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+            Regex("""to\s+IBAN/Account/Card\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
+            Regex("""to\s+IBAN/Account/Card\s+([X\d]{4,})\s+has been processed successfully from""", RegexOption.IGNORE_CASE),
+            Regex("""to\s+([X\d]{4,})\s+from\s+account""", RegexOption.IGNORE_CASE)
+        )
+
+        val extractAccount = { patterns: List<Regex>, default: String? ->
+            patterns.firstNotNullOfOrNull { pattern ->
+                pattern.find(message)?.groupValues?.get(1)?.let { account ->
+                    account.replace("X", "").takeLast(4)
+                }
+            } ?: default
+        }
+
+        val fromAccount = extractAccount(fromPatterns, null)
+        val toAccount = extractAccount(toPatterns, null)
+
+        return Pair(fromAccount, toAccount)
     }
 
     override fun isTransactionMessage(message: String): Boolean {
@@ -448,8 +512,8 @@ if (message.contains("payment instructions", ignoreCase = true) ||
 
         // Special handling for funds transfer - only completed ones
         if (lowerMessage.contains("funds transfer request of")) {
-            // Only allow if it's been processed successfully (not pending)
-            if (lowerMessage.contains("has been processed successfully")) {
+            // Only allow if it's been processed (not pending)
+            if (lowerMessage.contains("has been processed")) {
                 return true
             }
         }

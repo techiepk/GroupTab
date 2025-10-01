@@ -47,7 +47,9 @@ fun ParsedTransaction.toEntity(): TransactionEntity {
         isRecurring = false, // Will be determined later
         createdAt = LocalDateTime.now(),
         updatedAt = LocalDateTime.now(),
-        currency = currency
+        currency = currency,
+        fromAccount = fromAccount,
+        toAccount = toAccount
     )
 }
 

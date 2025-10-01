@@ -68,6 +68,9 @@ class CategoryMappingTest {
         assertEquals("Bills & Utilities", getCategory("WWW.PAYSOLUT*WWW.PAYSOBANGKOK  TH"))
 
         assertEquals("Banking", getCategory("My Fatoorah"))
+        assertEquals("Banking", getCategory("Transfer: 002 → 001"))
+        assertEquals("Banking", getCategory("Transfer from 001 to 002"))
+        assertEquals("Banking", getCategory("Transfer to 0001"))
 
         // Test some should remain as Others (too generic)
         assertEquals("Others", getCategory("Twin Made"))

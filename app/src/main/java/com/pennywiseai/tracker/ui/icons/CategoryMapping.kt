@@ -647,6 +647,7 @@ object CategoryMapping {
         "inward remittance",
         "transfer to",
         "transfer from",
+        "transfer: "
     )
 
     private val PERSONAL_CARE = setOf(
