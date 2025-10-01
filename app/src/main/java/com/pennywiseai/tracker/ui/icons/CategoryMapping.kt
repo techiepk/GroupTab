@@ -3,23 +3,529 @@ package com.pennywiseai.tracker.ui.icons
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AirplanemodeActive
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Commute
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.MoneyOff
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.MovieFilter
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.SportsMartialArts
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import java.util.Locale
 
 /**
  * Centralized category mapping system for consistent categorization
  * across transactions and subscriptions
  */
 object CategoryMapping {
-    
+
     data class CategoryInfo(
         val displayName: String,
         val icon: ImageVector,
         val color: Color,
         val fallbackIcon: ImageVector = Icons.Default.Category
     )
-    
+
+    // --- helpers ---
+    private fun matches(
+        merchantRaw: String,
+        anyOf: Set<String>,
+        noneOf: Set<String> = emptySet()
+    ): Boolean {
+        val m = merchantRaw.lowercase(Locale.ROOT)
+        if (noneOf.any { m.contains(it) }) return false
+        return anyOf.any { m.contains(it) }
+        // If you later want stricter matching, swap to Regex word boundaries here.
+    }
+
+    // --- keyword sets (single source of truth) ---
+    private val FOOD = setOf(
+        "swiggy",
+        "zomato",
+        "dominos",
+        "pizza",
+        "burger",
+        "kfc",
+        "mcdonalds",
+        "restaurant",
+        "cafe",
+        "food",
+        "starbucks",
+        "haldiram",
+        "barbeque",
+
+        //Careem delivery
+        "careem food",
+        "careem dineout",
+        "deliveroo",
+        "talabat",
+
+        //Dubai / UAE foods
+        "peets",
+        "safadi",
+        "gazebo",
+        "al baik",
+        "jollibee",
+        "raising canes",
+        "chipotle",
+        "kitopi",
+        "sangeetha",
+        "maharaja bhog",
+        "al beiruti",
+        "malabar tiffin house",
+        "calicut paragon",
+        "bikanervala",
+        "karak house",
+        "puranmal",
+        "chicking",
+        "papa johns",
+        "phosphorus",
+        "rang indian",
+
+        // --- Newly Added Merchants ---
+        "moishi",
+        "cravings",
+        "the matcha tokyo",
+        "shawarma emprator",
+        "shawrma alemprator",
+        "tabaq alhejazi",
+        "mehfil biriyani",
+        "desert shawarma",
+        "mr tea",
+        "papparoti",
+        "samak alhejazi",
+        "fresh cookies corner",
+        "trucillo",
+        "p.f. chang's",
+        "neychor kada",
+        "salt",
+        "koob al gahwa",
+        "tanuki",
+        "asiankitchen",
+        "bkry",
+        "nguyen cimit",
+        "miyabi",
+        "tashas",
+        "desi village",
+        "vietnamese",
+        "firas al diyafa",
+        "manooshe",
+        "awani",
+        "sultan saray",
+        "pincode",
+        "commonground",
+        "nala",
+        "bombay bungalow",
+        "punjab by amritsr",
+        "the daily",
+        "subway",
+        "wagamama",
+        "caffe nero"
+    )
+
+    private val GROCERY = setOf(
+        "bigbasket", "blinkit", "zepto", "grofers", "jiomart",
+        "dmart", "reliance fresh", "more", "grocery", "dunzo",
+        "careem groceries", "careem quik",
+        // Dubai / uae grocieries
+        "carrefour", "spinneys", "lulu", "choithrams", "waitrose",
+        "geant", "union coop", "abu dhabi co-op", "emirates cooperative",
+        "nesto", "almaya", "rawabi", "safeer",
+
+        // --- Newly Added Merchants ---
+        "hippo box",
+        "247 corner",
+        "new era super market",
+        "baqala",
+        "lebanese fruit co",
+        "al tayeb meat",
+        "west zone fresh",
+        "majid al futtaim hypermarket",
+        "all day mini",
+        "all day plus",
+        "fresh good day",
+        "al ghabat city"
+    )
+
+    private val TRANSPORT = setOf(
+        "uber", "ola", "rapido", "metro", "irctc", "redbus", "makemytrip",
+        "goibibo", "petrol", "fuel", "parking", "toll", "fastag",
+        "indigo", "air india", "spicejet", "vistara", "cleartrip",
+        "careem ride", "careem hala ride", "yango",
+
+        //Dubai gas stations
+        "emarat", "adnoc", "enoc", "epc", "dolphin energy",
+
+        // --- Newly Added Merchants ---
+        "careem", // Generic fallback
+        "farid car park",
+        "big boss rent a car",
+        "presidential transport",
+        "q mobility",
+        "valtrans"
+    )
+
+    private val SHOPPING = setOf(
+        "amazon", "flipkart", "myntra", "ajio", "nykaa", "meesho",
+        "snapdeal", "shopclues", "firstcry", "pepperfry", "urban ladder",
+        "store", "mart"
+    )
+    private val SHOPPING_EXCLUDE = setOf("jiomart", "dmart")
+
+    // --- Newly Added Merchants ---
+    private val SHOPPING_EXTENDED = setOf(
+        "paypal",
+        "gmg consumer",
+        "bloomingdales",
+        "dubizzle",
+        "veda inc investment",
+        "al futtaim trading",
+        "tipr tech",
+        "jumbo electronics",
+        "shake shack",
+        "home centre",
+        "qissat al oud",
+        "citywalk retail",
+        "ova accessories",
+        "the sport shack",
+        "dubai duty free",
+        "level shoes",
+        "balmain",
+        "zara",
+        "daikan",
+        "king koil",
+        "asas auto accessories",
+        "easy blinds",
+        "dubai furniture",
+        "whsmith",
+        "brands for less",
+        "sharaf dg",
+        "american eagle",
+        "dufry"
+    )
+
+    private val UTILITIES = setOf(
+        "electricity", "water", "gas", "broadband", "wifi", "internet",
+        "tata sky", "dish", "d2h", "bill", "tata power", "adani", "bses", "act fibernet",
+
+        // --- Newly Added Merchants ---
+        "sdgdubaipay",
+        "careem plus",
+        "noqejari",
+        "saya",
+        "aljada developments",
+        "nshama"
+    )
+
+    private val ENTERTAINMENT = setOf(
+        "netflix", "spotify", "prime", "hotstar", "sony liv", "zee5",
+        "voot", "youtube", "cinema", "pvr", "inox", "bookmyshow",
+        "gaana", "jiosaavn", "apple music", "wynk",
+
+        // --- Newly Added Merchants ---
+        "global village"
+    )
+
+    private val HEALTHCARE = setOf(
+        "1mg", "pharmeasy", "netmeds", "apollo", "pharmacy", "medical",
+        "hospital", "clinic", "doctor", "practo", "healthkart", "truemeds",
+
+        // --- Newly Added Merchants ---
+        "ascent e n t",
+        "watson",
+        "dr nutrition",
+        "boots",
+        "supercare"
+    )
+
+    private val INVESTMENT = setOf(
+        "groww", "zerodha", "upstox", "kuvera", "paytm money", "coin",
+        "smallcase", "mutual fund", "sip", "angel", "5paisa", "etmoney"
+    )
+
+    private val BANKING = setOf(
+        "hdfc", "icici", "axis", "sbi", "kotak", "bank", "loan", "emi",
+        "credit card", "yes bank", "idfc", "indusind", "pnb", "canara", "union bank", "rbl",
+
+        // --- Newly Added Merchants ---
+        "atm withdrawal",
+        "bank transfer",
+        "bank account operation",
+        "bank cheque operation",
+        "bank cash operation",
+        "my fatoorah"
+    )
+
+    private val PERSONAL_CARE = setOf(
+        "urban company", "salon", "spa", "barber", "beauty", "grooming", "housejoy",
+
+        // --- Newly Added Merchants ---
+        "green belt cleaning",
+        "magic washer laundry",
+        "stile di capelli",
+        "q2 general cleaning",
+        "ahmed sammie",
+        "clean car washers",
+        "italiano style men",
+        "high level car wash",
+        "home care",
+        "final touch cleaning",
+        "drip n dry",
+        "careem homeservices",
+        "skin iii"
+    )
+
+    private val EDUCATION = setOf(
+        "byju", "unacademy", "vedantu", "coursera", "udemy", "upgrade",
+        "school", "college", "university", "toppr", "udacity", "simplilearn",
+        "whitehat", "great learning"
+    )
+
+    private val MOBILE = setOf(
+        "airtel", "jio", "vodafone", "idea", "bsnl", "recharge", "prepaid", "postpaid", "mobile",
+
+        // --- Newly Added Merchants ---
+        "etisalat"
+    )
+
+    private val FITNESS = setOf(
+        "cult",
+        "gym",
+        "fitness",
+        "yoga",
+        "healthifyme",
+        "fitternity",
+        "gold's gym",
+        "anytime fitness"
+    )
+
+    private val INSURANCE = setOf(
+        "insurance", "lic", "policy", "hdfc life", "icici pru", "sbi life",
+        "max life", "bajaj allianz", "policybazaar", "acko", "digit"
+    )
+
+    private val TAX = setOf(
+        "tin", "tax information", "income tax", "gst", "tax payment", "challan",
+        "direct tax", "indirect tax", "tax deducted", "tds", "advance tax", "self assessment",
+
+        // --- Newly Added Merchants ---
+        "abu dhabi judicial dept",
+        "sharjah finance dept",
+        "tassheel",
+        "dubai courts",
+        "ministry of interior"
+    )
+
+    private val BANK_CHARGE = setOf(
+        "recovery", "charge", "fee", "penalty", "maintenance", "non-maintenance",
+        "minimum balance", "sms charge", "atm recovery", "service charge",
+        "annual fee", "processing fee", "convenience fee", "late payment"
+    )
+
+    private val CC_PAYMENT = setOf(
+        "bbps", "bill payment", "credit card payment", "cc payment", "card payment"
+    )
+
+    // Travel keywords (grouped for readability)
+    private val TRAVEL = setOf(
+        // --- OTAs / Meta / Booking platforms ---
+        "make my trip",
+        "makemytrip",
+        "yatra",
+        "goibibo",
+        "cleartrip",
+        "ixigo",
+        "booking.com",
+        "expedia",
+        "agoda",
+        "trip.com",
+        "trivago",
+        "hotels.com",
+        "kayak",
+        "travelocity",
+        "airbnb",
+        "vrbo",
+        "skyscanner",
+        "momondo",
+        "tripadvisor",
+
+        // --- Generic travel terms ---
+        "flight",
+        "airline",
+        "hotel",
+
+        // --- Hotel chains ---
+        "marriott",
+        "hyatt",
+        "hilton",
+        "accor",
+
+        // --- Indian premium / luxury ---
+        "taj",
+        "oberoi",
+        "itc hotels",
+        "leela",
+
+        // Dubai / UAE Brands
+        "jumeirah",
+        "address hotels",
+        "address grand",
+        "palace downtown",
+        "burj al arab",
+        "one&only",
+        "five luxe",
+        "five palm jumeirah",
+        "atlantis the palm",
+        "atlantis the royal",
+        "anantara the palm",
+        "vida downtown",
+        "vida dubai creek",
+        "vida emirates hills",
+
+        //Abu Dhabi Brands
+        "emirates palace",
+
+
+        // --- Global premium chains ---
+        "radisson",
+        "sheraton",
+        "westin",
+        "ritz carlton",
+        "four seasons",
+        "conrad",
+        "st regis",
+        "jw marriott",
+        "grand hyatt",
+        "le meridien",
+        "waldorf astoria",
+        "intercontinental",
+        "fairfield",
+        "holiday inn express",
+        "hampton by hilton",
+        "doubletree by hilton",
+        "courtyard by marriott",
+        "residence inn",
+        "homewood suites",
+        "aloft",
+        "element by westin",
+        "the edition",
+        "tribe living",
+        "s/o uptown",
+        "moxy",
+
+        // --- Mid-range / business / budget brands ---
+        "doubletree",
+        "holiday inn",
+        "novotel",
+        "mercure",
+        "ibis",
+        "fairmont",
+        "sofitel",
+        "pullman",
+        "movenpick",
+        "citadines",
+
+        // --- Budget aggregators (India & Asia) ---
+        "oyo",
+        "treebo",
+        "fabhotels",
+
+        // --- Ultra-luxury / boutique brands ---
+        "signiel",
+        "aman",
+        "aman resorts",
+        "anantara",
+        "banyan tree",
+        "six senses",
+        "rosewood",
+        "capella",
+
+        // --- International airlines (selected) ---
+        "ryanair",
+        "lufthansa",
+        "emirates",
+        "qatar airways",
+        "british airways",
+        "air france",
+        "klm",
+        "singapore airlines",
+        "etihad airways",
+        "turkish airlines",
+        "cathay pacific",
+        "ana",
+
+        // --- US carriers ---
+        "alaska airlines",
+        "hawaiian airlines",
+        "southwest airlines",
+        "jetblue",
+        "allegiant air",
+        "spirit airlines",
+
+        // --- Newly Added Merchants ---
+        "vfs global",
+        "dubai world trade centre"
+    )
+
+
+    // --- single ordered rule list (priority preserved) ---
+    private data class Rule(
+        val categoryName: String,
+        val includes: Set<String>,
+        val excludes: Set<String> = emptySet()
+    )
+
+    private val RULES: List<Rule> = listOf(
+        Rule("Tax", TAX),
+        Rule("Bank Charges", BANK_CHARGE),
+        Rule("Credit Card Payment", CC_PAYMENT),
+        Rule("Food & Dining", FOOD),
+        Rule("Groceries", GROCERY),
+        Rule("Transportation", TRANSPORT),
+        Rule("Shopping", SHOPPING + SHOPPING_EXTENDED, SHOPPING_EXCLUDE),
+        Rule("Bills & Utilities", UTILITIES),
+        Rule("Entertainment", ENTERTAINMENT),
+        Rule("Healthcare", HEALTHCARE),
+        Rule("Investments", INVESTMENT),
+        Rule("Banking", BANKING),
+        Rule("Personal Care", PERSONAL_CARE),
+        Rule("Education", EDUCATION),
+        Rule("Mobile", MOBILE),
+        Rule("Fitness", FITNESS),
+        Rule("Insurance", INSURANCE),
+        Rule("Travel", TRAVEL),
+    )
+
     // Define all categories with their visual properties
     val categories = mapOf(
         "Food & Dining" to CategoryInfo(
@@ -136,6 +642,12 @@ object CategoryMapping {
             color = Color(0xFF4CAF50), // Income green
             fallbackIcon = Icons.AutoMirrored.Filled.TrendingUp
         ),
+        "Travel" to CategoryInfo(
+            displayName = "Travel",
+            icon = Icons.Default.Flight,
+            color = Color(0xFF00BCD4), // Travel blue
+            fallbackIcon = Icons.Default.AirplanemodeActive
+        ),
         "Others" to CategoryInfo(
             displayName = "Others",
             icon = Icons.Default.Category,
@@ -143,215 +655,26 @@ object CategoryMapping {
             fallbackIcon = Icons.Default.MoreHoriz
         )
     )
-    
+
     /**
      * Get category for a merchant name (unified logic)
      */
     fun getCategory(merchantName: String): String {
-        val merchantLower = merchantName.lowercase()
-        
-        return when {
-            // Tax payments (high priority)
-            isTaxMerchant(merchantLower) -> "Tax"
-            
-            // Bank charges and fees (high priority)
-            isBankChargeMerchant(merchantLower) -> "Bank Charges"
-            
-            // Credit card payments
-            isCreditCardPaymentMerchant(merchantLower) -> "Credit Card Payment"
-            
-            // Food & Dining
-            isFoodMerchant(merchantLower) -> "Food & Dining"
-            
-            // Groceries
-            isGroceryMerchant(merchantLower) -> "Groceries"
-            
-            // Transportation
-            isTransportMerchant(merchantLower) -> "Transportation"
-            
-            // Shopping
-            isShoppingMerchant(merchantLower) -> "Shopping"
-            
-            // Bills & Utilities
-            isUtilityMerchant(merchantLower) -> "Bills & Utilities"
-            
-            // Entertainment
-            isEntertainmentMerchant(merchantLower) -> "Entertainment"
-            
-            // Healthcare
-            isHealthcareMerchant(merchantLower) -> "Healthcare"
-            
-            // Investment
-            isInvestmentMerchant(merchantLower) -> "Investments"
-            
-            // Banking
-            isBankingMerchant(merchantLower) -> "Banking"
-            
-            // Personal Care
-            isPersonalCareMerchant(merchantLower) -> "Personal Care"
-            
-            // Education
-            isEducationMerchant(merchantLower) -> "Education"
-            
-            // Mobile
-            isMobileMerchant(merchantLower) -> "Mobile"
-            
-            // Fitness
-            isFitnessMerchant(merchantLower) -> "Fitness"
-            
-            // Insurance
-            isInsuranceMerchant(merchantLower) -> "Insurance"
-            
-            else -> "Others"
+        val merchantLower = merchantName.lowercase(Locale.ROOT)
+        for (rule in RULES) {
+            if (matches(merchantLower, rule.includes, rule.excludes)) {
+                return rule.categoryName
+            }
         }
+        return "Others"
     }
-    
-    // Merchant detection functions
-    private fun isFoodMerchant(merchant: String) = 
-        merchant.contains("swiggy") || merchant.contains("zomato") || 
-        merchant.contains("dominos") || merchant.contains("pizza") ||
-        merchant.contains("burger") || merchant.contains("kfc") ||
-        merchant.contains("mcdonalds") || merchant.contains("restaurant") ||
-        merchant.contains("cafe") || merchant.contains("food") ||
-        merchant.contains("starbucks") || merchant.contains("haldiram") ||
-        merchant.contains("barbeque")
-    
-    private fun isGroceryMerchant(merchant: String) = 
-        merchant.contains("bigbasket") || merchant.contains("blinkit") ||
-        merchant.contains("zepto") || merchant.contains("grofers") ||
-        merchant.contains("jiomart") || merchant.contains("dmart") ||
-        merchant.contains("reliance fresh") || merchant.contains("more") ||
-        merchant.contains("grocery") || merchant.contains("dunzo")
-    
-    private fun isTransportMerchant(merchant: String) = 
-        merchant.contains("uber") || merchant.contains("ola") ||
-        merchant.contains("rapido") || merchant.contains("metro") ||
-        merchant.contains("irctc") || merchant.contains("redbus") ||
-        merchant.contains("makemytrip") || merchant.contains("goibibo") ||
-        merchant.contains("petrol") || merchant.contains("fuel") ||
-        merchant.contains("parking") || merchant.contains("toll") ||
-        merchant.contains("fastag") || merchant.contains("indigo") ||
-        merchant.contains("air india") || merchant.contains("spicejet") ||
-        merchant.contains("vistara") || merchant.contains("cleartrip")
-    
-    private fun isShoppingMerchant(merchant: String) = 
-        merchant.contains("amazon") || merchant.contains("flipkart") ||
-        merchant.contains("myntra") || merchant.contains("ajio") ||
-        merchant.contains("nykaa") || merchant.contains("meesho") ||
-        merchant.contains("snapdeal") || merchant.contains("shopclues") ||
-        merchant.contains("firstcry") || merchant.contains("pepperfry") ||
-        merchant.contains("urban ladder") || merchant.contains("store") ||
-        merchant.contains("mart") && !merchant.contains("jiomart") && !merchant.contains("dmart")
-    
-    private fun isUtilityMerchant(merchant: String) = 
-        merchant.contains("electricity") || merchant.contains("water") ||
-        merchant.contains("gas") || merchant.contains("broadband") ||
-        merchant.contains("wifi") || merchant.contains("internet") ||
-        merchant.contains("tata sky") || merchant.contains("dish") ||
-        merchant.contains("d2h") || merchant.contains("bill") ||
-        merchant.contains("tata power") || merchant.contains("adani") ||
-        merchant.contains("bses") || merchant.contains("act fibernet")
-    
-    private fun isEntertainmentMerchant(merchant: String) = 
-        merchant.contains("netflix") || merchant.contains("spotify") ||
-        merchant.contains("prime") || merchant.contains("hotstar") ||
-        merchant.contains("sony liv") || merchant.contains("zee5") ||
-        merchant.contains("voot") || merchant.contains("youtube") ||
-        merchant.contains("cinema") || merchant.contains("pvr") ||
-        merchant.contains("inox") || merchant.contains("bookmyshow") ||
-        merchant.contains("gaana") || merchant.contains("jiosaavn") ||
-        merchant.contains("apple music") || merchant.contains("wynk")
-    
-    private fun isHealthcareMerchant(merchant: String) = 
-        merchant.contains("1mg") || merchant.contains("pharmeasy") ||
-        merchant.contains("netmeds") || merchant.contains("apollo") ||
-        merchant.contains("pharmacy") || merchant.contains("medical") ||
-        merchant.contains("hospital") || merchant.contains("clinic") ||
-        merchant.contains("doctor") || merchant.contains("practo") ||
-        merchant.contains("healthkart") || merchant.contains("truemeds")
-    
-    private fun isInvestmentMerchant(merchant: String) = 
-        merchant.contains("groww") || merchant.contains("zerodha") ||
-        merchant.contains("upstox") || merchant.contains("kuvera") ||
-        merchant.contains("paytm money") || merchant.contains("coin") ||
-        merchant.contains("smallcase") || merchant.contains("mutual fund") ||
-        merchant.contains("sip") || merchant.contains("angel") ||
-        merchant.contains("5paisa") || merchant.contains("etmoney")
-    
-    private fun isBankingMerchant(merchant: String) = 
-        merchant.contains("hdfc") || merchant.contains("icici") ||
-        merchant.contains("axis") || merchant.contains("sbi") ||
-        merchant.contains("kotak") || merchant.contains("bank") ||
-        merchant.contains("loan") || merchant.contains("emi") ||
-        merchant.contains("credit card") || merchant.contains("yes bank") ||
-        merchant.contains("idfc") || merchant.contains("indusind") ||
-        merchant.contains("pnb") || merchant.contains("canara") ||
-        merchant.contains("union bank") || merchant.contains("rbl")
-    
-    private fun isPersonalCareMerchant(merchant: String) = 
-        merchant.contains("urban company") || merchant.contains("salon") ||
-        merchant.contains("spa") || merchant.contains("barber") ||
-        merchant.contains("beauty") || merchant.contains("grooming") ||
-        merchant.contains("housejoy")
-    
-    private fun isEducationMerchant(merchant: String) = 
-        merchant.contains("byju") || merchant.contains("unacademy") ||
-        merchant.contains("vedantu") || merchant.contains("coursera") ||
-        merchant.contains("udemy") || merchant.contains("upgrade") ||
-        merchant.contains("school") || merchant.contains("college") ||
-        merchant.contains("university") || merchant.contains("toppr") ||
-        merchant.contains("udacity") || merchant.contains("simplilearn") ||
-        merchant.contains("whitehat") || merchant.contains("great learning")
-    
-    private fun isMobileMerchant(merchant: String) = 
-        merchant.contains("airtel") || merchant.contains("jio") ||
-        merchant.contains("vodafone") || merchant.contains("idea") ||
-        merchant.contains("bsnl") || merchant.contains("recharge") ||
-        merchant.contains("prepaid") || merchant.contains("postpaid") ||
-        merchant.contains("mobile")
-    
-    private fun isFitnessMerchant(merchant: String) = 
-        merchant.contains("cult") || merchant.contains("gym") ||
-        merchant.contains("fitness") || merchant.contains("yoga") ||
-        merchant.contains("healthifyme") || merchant.contains("fitternity") ||
-        merchant.contains("gold's gym") || merchant.contains("anytime fitness")
-    
-    private fun isInsuranceMerchant(merchant: String) = 
-        merchant.contains("insurance") || merchant.contains("lic") ||
-        merchant.contains("policy") || merchant.contains("hdfc life") ||
-        merchant.contains("icici pru") || merchant.contains("sbi life") ||
-        merchant.contains("max life") || merchant.contains("bajaj allianz") ||
-        merchant.contains("policybazaar") || merchant.contains("acko") ||
-        merchant.contains("digit")
-    
-    private fun isTaxMerchant(merchant: String) = 
-        merchant.contains("tin") || merchant.contains("tax information") ||
-        merchant.contains("income tax") || merchant.contains("gst") ||
-        merchant.contains("tax payment") || merchant.contains("challan") ||
-        merchant.contains("direct tax") || merchant.contains("indirect tax") ||
-        merchant.contains("tax deducted") || merchant.contains("tds") ||
-        merchant.contains("advance tax") || merchant.contains("self assessment")
-    
-    private fun isBankChargeMerchant(merchant: String) = 
-        merchant.contains("recovery") || merchant.contains("charge") ||
-        merchant.contains("fee") || merchant.contains("penalty") ||
-        merchant.contains("maintenance") || merchant.contains("non-maintenance") ||
-        merchant.contains("minimum balance") || merchant.contains("sms charge") ||
-        merchant.contains("atm recovery") || merchant.contains("service charge") ||
-        merchant.contains("annual fee") || merchant.contains("processing fee") ||
-        merchant.contains("convenience fee") || merchant.contains("late payment")
-    
-    private fun isCreditCardPaymentMerchant(merchant: String) = 
-        merchant.contains("bbps") || merchant.contains("bill payment") ||
-        merchant.contains("credit card payment") || merchant.contains("cc payment") ||
-        merchant.contains("card payment")
 }
 
 /**
  * Icon provider with fallback mechanism
  */
 object IconProvider {
-    
+
     /**
      * Get icon for a merchant with fallback logic
      * 1. Try to get brand-specific icon
@@ -363,24 +686,24 @@ object IconProvider {
         BrandIcons.getIconResource(merchantName)?.let { iconRes ->
             return IconResource.DrawableResource(iconRes)
         }
-        
+
         // Fall back to category icon
         val category = CategoryMapping.getCategory(merchantName)
-        val categoryInfo = CategoryMapping.categories[category] 
+        val categoryInfo = CategoryMapping.categories[category]
             ?: CategoryMapping.categories["Others"]!!
-        
+
         return IconResource.VectorIcon(
             icon = categoryInfo.icon,
             tint = categoryInfo.color
         )
     }
-    
+
     /**
      * Get category info including icon and color
      */
     fun getCategoryInfo(merchantName: String): CategoryMapping.CategoryInfo {
         val category = CategoryMapping.getCategory(merchantName)
-        return CategoryMapping.categories[category] 
+        return CategoryMapping.categories[category]
             ?: CategoryMapping.categories["Others"]!!
     }
 }
