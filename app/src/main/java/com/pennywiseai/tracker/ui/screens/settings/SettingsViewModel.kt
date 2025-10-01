@@ -74,6 +74,7 @@ class SettingsViewModel @Inject constructor(
     
     // SMS scan period state
     val smsScanMonths = userPreferencesRepository.smsScanMonths
+    val smsScanAllTime = userPreferencesRepository.smsScanAllTime
     
     // Unrecognized SMS state
     val unreportedSmsCount = unrecognizedSmsRepository.getUnreportedCount()
@@ -366,14 +367,26 @@ class SettingsViewModel @Inject constructor(
     fun updateSmsScanMonths(months: Int) {
         viewModelScope.launch {
             val currentMonths = userPreferencesRepository.getSmsScanMonths()
-            
+
             // If increasing scan period, reset scan timestamp to force full scan
             if (months > currentMonths) {
                 userPreferencesRepository.setLastScanTimestamp(0L)
                 Log.d("SettingsViewModel", "Scan period increased from $currentMonths to $months months - will perform full scan")
             }
-            
+
             userPreferencesRepository.updateSmsScanMonths(months)
+        }
+    }
+
+    fun updateSmsScanAllTime(allTime: Boolean) {
+        viewModelScope.launch {
+            // If enabling all time scanning, reset scan timestamp to force full scan
+            if (allTime) {
+                userPreferencesRepository.setLastScanTimestamp(0L)
+                Log.d("SettingsViewModel", "All time scanning enabled - will perform full scan")
+            }
+
+            userPreferencesRepository.updateSmsScanAllTime(allTime)
         }
     }
     

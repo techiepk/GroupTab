@@ -53,6 +53,7 @@ fun SettingsScreen(
     val totalMB by settingsViewModel.totalMB.collectAsStateWithLifecycle()
     val isDeveloperModeEnabled by settingsViewModel.isDeveloperModeEnabled.collectAsStateWithLifecycle(initialValue = false)
     val smsScanMonths by settingsViewModel.smsScanMonths.collectAsStateWithLifecycle(initialValue = 3)
+    val smsScanAllTime by settingsViewModel.smsScanAllTime.collectAsStateWithLifecycle(initialValue = false)
     val importExportMessage by settingsViewModel.importExportMessage.collectAsStateWithLifecycle()
     val exportedBackupFile by settingsViewModel.exportedBackupFile.collectAsStateWithLifecycle()
     var showSmsScanDialog by remember { mutableStateOf(false) }
@@ -387,14 +388,14 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Scan last $smsScanMonths months of messages",
+                            text = if (smsScanAllTime) "Scan all SMS messages" else "Scan last $smsScanMonths months of messages",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 Text(
-                    text = "$smsScanMonths months",
+                    text = if (smsScanAllTime) "All Time" else "$smsScanMonths months",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -733,28 +734,43 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.md))
                     
-                    // Period options - including 24 months for 2 years coverage
-                    listOf(1, 2, 3, 6, 12, 24).forEach { months ->
+                    // All Time option first, then period options including 24 months for 2 years coverage
+                    val options = listOf(-1) + listOf(1, 2, 3, 6, 12, 24)
+                    options.forEach { months ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    settingsViewModel.updateSmsScanMonths(months)
-                                    showSmsScanDialog = false
+                                    if (months == -1) {
+                                        settingsViewModel.updateSmsScanAllTime(true)
+                                        showSmsScanDialog = false
+                                    } else {
+                                        settingsViewModel.updateSmsScanMonths(months)
+                                        settingsViewModel.updateSmsScanAllTime(false)
+                                        showSmsScanDialog = false
+                                    }
                                 }
                                 .padding(vertical = Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val isSelected = if (months == -1) smsScanAllTime else smsScanMonths == months && !smsScanAllTime
                             RadioButton(
-                                selected = smsScanMonths == months,
+                                selected = isSelected,
                                 onClick = {
-                                    settingsViewModel.updateSmsScanMonths(months)
-                                    showSmsScanDialog = false
+                                    if (months == -1) {
+                                        settingsViewModel.updateSmsScanAllTime(true)
+                                        showSmsScanDialog = false
+                                    } else {
+                                        settingsViewModel.updateSmsScanMonths(months)
+                                        settingsViewModel.updateSmsScanAllTime(false)
+                                        showSmsScanDialog = false
+                                    }
                                 }
                             )
                             Spacer(modifier = Modifier.width(Spacing.md))
                             Text(
                                 text = when(months) {
+                                    -1 -> "All Time"
                                     1 -> "1 month"
                                     24 -> "2 years"
                                     else -> "$months months"

@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.WorkInfo
+import androidx.work.workDataOf
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
@@ -17,7 +19,7 @@ import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.LlmRepository
 import com.pennywiseai.tracker.data.repository.SubscriptionRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
-import com.pennywiseai.tracker.worker.SmsReaderWorker
+import com.pennywiseai.tracker.worker.OptimizedSmsReaderWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +48,10 @@ class HomeViewModel @Inject constructor(
     
     private val _deletedTransaction = MutableStateFlow<TransactionEntity?>(null)
     val deletedTransaction: StateFlow<TransactionEntity?> = _deletedTransaction.asStateFlow()
+
+    // SMS scanning work progress tracking
+    private val _smsScanWorkInfo = MutableStateFlow<WorkInfo?>(null)
+    val smsScanWorkInfo: StateFlow<WorkInfo?> = _smsScanWorkInfo.asStateFlow()
 
     // Store currency breakdown maps for quick access when switching currencies
     private var currentMonthBreakdownMap: Map<String, TransactionRepository.MonthlyBreakdown> = emptyMap()
@@ -183,23 +189,53 @@ class HomeViewModel @Inject constructor(
     }
     
     fun scanSmsMessages() {
-        val workRequest = OneTimeWorkRequestBuilder<SmsReaderWorker>()
+        val workRequest = OneTimeWorkRequestBuilder<OptimizedSmsReaderWorker>()
+            .addTag(OptimizedSmsReaderWorker.WORK_NAME)
             .build()
-        
+
         WorkManager.getInstance(context).enqueueUniqueWork(
-            SmsReaderWorker.WORK_NAME,
+            OptimizedSmsReaderWorker.WORK_NAME,
             ExistingWorkPolicy.REPLACE,
             workRequest
         )
-        
+
         // Update UI to show scanning
         _uiState.value = _uiState.value.copy(isScanning = true)
-        
-        // Reset scanning state after a delay (WorkManager doesn't provide easy progress)
-        viewModelScope.launch {
-            kotlinx.coroutines.delay(3000)
-            _uiState.value = _uiState.value.copy(isScanning = false)
+
+        // Track work progress
+        observeWorkProgress()
+    }
+
+    private fun observeWorkProgress() {
+        val workManager = WorkManager.getInstance(context)
+
+        // Use getWorkInfosById for more direct observation
+        workManager.getWorkInfosByTagLiveData(OptimizedSmsReaderWorker.WORK_NAME).observeForever { workInfos ->
+            val currentWork = workInfos.firstOrNull { it.tags.contains(OptimizedSmsReaderWorker.WORK_NAME) }
+            if (currentWork != null) {
+                _smsScanWorkInfo.value = currentWork
+
+                // Update scanning state based on work state
+                when (currentWork.state) {
+                    WorkInfo.State.SUCCEEDED,
+                    WorkInfo.State.FAILED,
+                    WorkInfo.State.CANCELLED,
+                    WorkInfo.State.BLOCKED -> {
+                        _uiState.value = _uiState.value.copy(isScanning = false)
+                    }
+                    else -> {
+                        // Still running or enqueued
+                        _uiState.value = _uiState.value.copy(isScanning = true)
+                    }
+                }
+            }
         }
+    }
+
+    fun cancelSmsScan() {
+        val workManager = WorkManager.getInstance(context)
+        workManager.cancelUniqueWork(OptimizedSmsReaderWorker.WORK_NAME)
+        _uiState.value = _uiState.value.copy(isScanning = false)
     }
     
     fun updateSystemPrompt() {

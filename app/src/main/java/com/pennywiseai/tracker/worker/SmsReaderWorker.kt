@@ -569,24 +569,30 @@ class SmsReaderWorker @AssistedInject constructor(
             // Get scan parameters
             val lastScanTimestamp = userPreferencesRepository.getLastScanTimestamp().first() ?: 0L
             val scanMonths = userPreferencesRepository.getSmsScanMonths()
+            val scanAllTime = userPreferencesRepository.getSmsScanAllTime()
             val lastScanPeriod = userPreferencesRepository.getLastScanPeriod().first() ?: 0
             val now = System.currentTimeMillis()
-            
+
             // Determine if we need a full scan
-            val needsFullScan = lastScanTimestamp == 0L || scanMonths >
-            lastScanPeriod
+            val needsFullScan = lastScanTimestamp == 0L || scanAllTime || scanMonths > lastScanPeriod
             
             // Calculate scan start time with 3-day buffer for incremental scans
             val scanStartTime = if (needsFullScan) {
-                // Full scan - go back N months
+                // Full scan - go back N months or all time
                 val calendar = java.util.Calendar.getInstance().apply {
-                    add(java.util.Calendar.MONTH, -scanMonths)
+                    if (scanAllTime) {
+                        // Scan all time - go back 10 years (effectively all SMS)
+                        add(java.util.Calendar.YEAR, -10)
+                        Log.d(TAG, "Performing full SMS scan for all time")
+                    } else {
+                        add(java.util.Calendar.MONTH, -scanMonths)
+                        Log.d(TAG, "Performing full SMS scan for last $scanMonths months")
+                    }
                     set(java.util.Calendar.HOUR_OF_DAY, 0)
                     set(java.util.Calendar.MINUTE, 0)
                     set(java.util.Calendar.SECOND, 0)
                     set(java.util.Calendar.MILLISECOND, 0)
                 }
-                Log.d(TAG, "Performing full SMS scan for last $scanMonths months")
                 calendar.timeInMillis
             } else {
                 // Incremental scan with 3-day buffer
