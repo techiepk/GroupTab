@@ -144,7 +144,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
 ```bash
 ./gradlew test          # Run tests
-./gradlew ktlintCheck   # Check style
+./gradlew lint   # Check style
 ```
 
 ## Security

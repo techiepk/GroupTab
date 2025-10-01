@@ -39,7 +39,7 @@
 - [ ] Tests added/updated (if applicable)
 - [ ] Docs updated (if applicable)
 - [ ] `./gradlew test` passes locally
-- [ ] `./gradlew ktlintCheck` passes locally
+- [ ] `./gradlew lint` passes locally
 - [ ] Follows existing code style and patterns
 
 
