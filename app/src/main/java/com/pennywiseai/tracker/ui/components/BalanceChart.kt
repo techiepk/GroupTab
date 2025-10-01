@@ -34,6 +34,7 @@ data class BalancePoint(
 
 @Composable
 fun BalanceChart(
+    primaryCurrency: String,
     balanceHistory: List<BalancePoint>,
     modifier: Modifier = Modifier,
     height: Int = 200
@@ -48,11 +49,6 @@ fun BalanceChart(
     // Apply data smoothing to reduce noise
     val smoothedHistory = remember(sortedHistory) {
         smoothBalanceData(sortedHistory)
-    }
-
-    // Get the primary currency from the data (use first non-empty currency)
-    val primaryCurrency = remember(sortedHistory) {
-        sortedHistory.firstOrNull { it.currency.isNotEmpty() }?.currency ?: "INR"
     }
     
     val lineColor = MaterialTheme.colorScheme.primary

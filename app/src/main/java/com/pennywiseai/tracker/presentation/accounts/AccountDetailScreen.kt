@@ -81,6 +81,7 @@ fun AccountDetailScreen(
             if (uiState.balanceChartData.isNotEmpty()) {
                 item {
                     ExpandableBalanceChart(
+                        primaryCurrency = uiState.primaryCurrency,
                         balanceHistory = uiState.balanceChartData
                     )
                 }
@@ -146,6 +147,7 @@ fun AccountDetailScreen(
 
 @Composable
 private fun ExpandableBalanceChart(
+    primaryCurrency: String,
     balanceHistory: List<BalancePoint>
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -208,6 +210,7 @@ private fun ExpandableBalanceChart(
                 Column {
                     Spacer(modifier = Modifier.height(Spacing.md))
                     BalanceChart(
+                        primaryCurrency = primaryCurrency,
                         balanceHistory = balanceHistory,
                         height = 180
                     )

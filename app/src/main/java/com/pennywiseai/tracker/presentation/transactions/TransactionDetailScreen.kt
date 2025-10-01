@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
@@ -299,7 +300,7 @@ private fun TransactionDetailContent(
         
         // Additional Details - Always read-only
         if (transaction.balanceAfter != null || transaction.accountNumber != null) {
-            AdditionalDetailsCard(transaction)
+            AdditionalDetailsCard(viewModel,transaction)
         }
         
         // Add extra bottom padding when in edit mode to ensure description field is visible above keyboard
@@ -513,7 +514,7 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
 }
 
 @Composable
-private fun AdditionalDetailsCard(transaction: TransactionEntity) {
+private fun AdditionalDetailsCard(viewModel: TransactionDetailViewModel, transaction: TransactionEntity) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -555,10 +556,9 @@ private fun AdditionalDetailsCard(transaction: TransactionEntity) {
             
             // Balance After
             transaction.balanceAfter?.let {
-                val bankBaseCurrency = CurrencyFormatter.getBankBaseCurrency(transaction.bankName)
                 InfoRow(
                     label = "Balance After",
-                    value = CurrencyFormatter.formatCurrency(it, bankBaseCurrency),
+                    value = CurrencyFormatter.formatCurrency(it,viewModel.primaryCurrency.value),
                     icon = Icons.Default.AccountBalanceWallet
                 )
             }
@@ -637,8 +637,7 @@ private fun EditableTransactionHeader(
                 onValueChange = { viewModel.updateAmount(it) },
                 label = { Text("Amount") },
                 prefix = {
-                    val bankBaseCurrency = CurrencyFormatter.getBankBaseCurrency(transaction.bankName)
-                    val currencySymbol = CurrencyFormatter.getCurrencySymbol(bankBaseCurrency)
+                    val currencySymbol = CurrencyFormatter.getCurrencySymbol(viewModel.primaryCurrency.toString())
                     Text(currencySymbol)
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
