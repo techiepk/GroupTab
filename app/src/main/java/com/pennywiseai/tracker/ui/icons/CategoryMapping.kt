@@ -84,6 +84,18 @@ object CategoryMapping {
         "haldiram",
         "barbeque",
 
+        //Thailand
+        "foodpanda thailand",
+        "linepay",
+        "arabica",
+        "chatramue",
+        "after you",
+        "kyo roll en",
+        "roast",
+        "al saray",
+        "oh my juice",
+
+
         //Careem delivery
         "careem food",
         "careem dineout",
@@ -182,7 +194,8 @@ object CategoryMapping {
         "goibibo", "petrol", "fuel", "parking", "toll", "fastag",
         "indigo", "air india", "spicejet", "vistara", "cleartrip",
         "careem ride", "careem hala ride", "yango",
-
+        //Thailand
+        "www.grab.com",
         //Dubai gas stations
         "emarat", "adnoc", "enoc", "epc", "dolphin energy",
 
@@ -378,6 +391,10 @@ object CategoryMapping {
         "skyscanner",
         "momondo",
         "tripadvisor",
+
+        //Thailand hotels
+        "w bangkok",
+        "bangkok marriott",
 
         // --- Generic travel terms ---
         "flight",
