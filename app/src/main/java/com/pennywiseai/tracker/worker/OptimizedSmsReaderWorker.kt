@@ -95,9 +95,39 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         )
 
         // Parallel processing configuration
-        private const val BATCH_SIZE = 50 // Process 50 SMS messages at a time
-        private const val PARALLELISM = 4 // Number of parallel processing coroutines
         private const val PROGRESS_REPORT_INTERVAL = 10 // Report progress every 10 messages
+    }
+
+    /**
+     * Calculates optimal batch size based on available cores and total messages
+     */
+    private fun calculateOptimalBatchSize(totalMessages: Int, availableCores: Int): Int {
+        return when {
+            totalMessages < 100 -> 10 // Small datasets: small batches for better progress tracking
+            totalMessages < 500 -> 25 // Medium datasets: moderate batches
+            totalMessages < 2000 -> 50 // Large datasets: standard batches
+            else -> {
+                // Very large datasets: scale batch size with cores but cap at reasonable limit
+                val coreBasedBatch = availableCores * 15
+                minOf(coreBasedBatch, 200)
+            }
+        }
+    }
+
+    /**
+     * Calculates optimal parallelism based on available cores and message count
+     */
+    private fun calculateOptimalParallelism(totalMessages: Int, availableCores: Int): Int {
+        return when {
+            totalMessages < 50 -> 1 // Small datasets: no benefit from parallelization
+            totalMessages < 200 -> minOf(2, availableCores) // Small benefit from limited parallelism
+            totalMessages < 1000 -> minOf(4, availableCores) // Medium datasets: moderate parallelism
+            else -> {
+                // Large datasets: use more cores but leave one for system operations
+                val maxParallelism = maxOf(availableCores - 1, 2)
+                minOf(maxParallelism, 8) // Cap at 8 to avoid diminishing returns
+            }
+        }
     }
 
     data class ProcessingStats(
@@ -135,6 +165,17 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
             stats.totalMessages = messages.size
             Log.d(TAG, "Found ${messages.size} SMS messages to process")
 
+            // Calculate optimal batch size and parallelism based on available cores and message count
+            val availableCores = Runtime.getRuntime().availableProcessors()
+            val batchSize = calculateOptimalBatchSize(messages.size, availableCores)
+            val parallelism = calculateOptimalParallelism(messages.size, availableCores)
+
+            Log.d(TAG, "Auto-calculated optimization parameters:")
+            Log.d(TAG, "- Available CPU cores: $availableCores")
+            Log.d(TAG, "- Batch size: $batchSize")
+            Log.d(TAG, "- Parallelism: $parallelism")
+            Log.d(TAG, "- Total batches: ${(messages.size + batchSize - 1) / batchSize}")
+
             // Debug: Log first 20 unique senders to understand what we're working with
             val uniqueSenders = messages.take(50).map { it.sender }.distinct()
             Log.d(TAG, "First 20 unique senders: ${uniqueSenders.joinToString(", ")}")
@@ -157,13 +198,13 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
                     PROGRESS_TIME_ELAPSED to 0L,
                     PROGRESS_ESTIMATED_TIME_REMAINING to 0L,
                     PROGRESS_CURRENT_BATCH to 1,
-                    PROGRESS_TOTAL_BATCHES to (messages.size + BATCH_SIZE - 1) / BATCH_SIZE
+                    PROGRESS_TOTAL_BATCHES to (messages.size + batchSize - 1) / batchSize
                 )
             )
 
             // Process messages in parallel for maximum speed
             val processingTime = measureTimeMillis {
-                processMessagesInParallel(messages, stats)
+                processMessagesInParallel(messages, stats, batchSize, parallelism)
             }
 
             stats.updateTimeElapsed()
@@ -206,8 +247,8 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
                     PROGRESS_SAVED to stats.savedTransactions,
                     PROGRESS_TIME_ELAPSED to stats.updateTimeElapsed(),
                     PROGRESS_ESTIMATED_TIME_REMAINING to 0L,
-                    PROGRESS_CURRENT_BATCH to (messages.size + BATCH_SIZE - 1) / BATCH_SIZE,
-                    PROGRESS_TOTAL_BATCHES to (messages.size + BATCH_SIZE - 1) / BATCH_SIZE
+                    PROGRESS_CURRENT_BATCH to (messages.size + batchSize - 1) / batchSize,
+                    PROGRESS_TOTAL_BATCHES to (messages.size + batchSize - 1) / batchSize
                 )
             )
 
@@ -218,10 +259,10 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun processMessagesSequentially(messages: List<SmsMessage>, stats: ProcessingStats) {
-        val totalBatches = (messages.size + BATCH_SIZE - 1) / BATCH_SIZE
+    private suspend fun processMessagesSequentially(messages: List<SmsMessage>, stats: ProcessingStats, batchSize: Int) {
+        val totalBatches = (messages.size + batchSize - 1) / batchSize
 
-        messages.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
+        messages.chunked(batchSize).forEachIndexed { batchIndex, batch ->
             var parsedCount = 0
             var savedCount = 0
             var subscriptionCount = 0
@@ -326,8 +367,8 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun processMessagesInParallel(messages: List<SmsMessage>, stats: ProcessingStats) = coroutineScope {
-        val totalBatches = (messages.size + BATCH_SIZE - 1) / BATCH_SIZE
+    private suspend fun processMessagesInParallel(messages: List<SmsMessage>, stats: ProcessingStats, batchSize: Int, parallelism: Int) = coroutineScope {
+        val totalBatches = (messages.size + batchSize - 1) / batchSize
 
         // Use atomic counters for real-time progress tracking
         val atomicProcessed = java.util.concurrent.atomic.AtomicInteger(0)
@@ -335,9 +376,9 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         val atomicSaved = java.util.concurrent.atomic.AtomicInteger(0)
 
         // Create parallel processing coroutines that return results directly
-        val processingJobs = (1..PARALLELISM).map { coroutineId ->
+        val processingJobs = (1..parallelism).map { coroutineId ->
             async(Dispatchers.IO) {
-                processBatchCoroutinesDirect(messages, coroutineId, totalBatches, stats, atomicProcessed, atomicParsed, atomicSaved)
+                processBatchCoroutinesDirect(messages, coroutineId, totalBatches, stats, atomicProcessed, atomicParsed, atomicSaved, batchSize, parallelism)
             }
         }
 
@@ -367,7 +408,7 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
                             PROGRESS_SAVED to currentSaved,
                             PROGRESS_TIME_ELAPSED to stats.updateTimeElapsed(),
                             PROGRESS_ESTIMATED_TIME_REMAINING to stats.getEstimatedTimeRemaining(),
-                            PROGRESS_CURRENT_BATCH to (currentProcessed + BATCH_SIZE - 1) / BATCH_SIZE,
+                            PROGRESS_CURRENT_BATCH to (currentProcessed + batchSize - 1) / batchSize,
                             PROGRESS_TOTAL_BATCHES to totalBatches
                         )
                     )
@@ -412,22 +453,24 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         coroutineId: Int,
         totalBatches: Int,
         stats: ProcessingStats,
-        resultsChannel: Channel<ProcessingResult>
+        resultsChannel: Channel<ProcessingResult>,
+        batchSize: Int,
+        parallelism: Int
     ) {
-        val batchSize = (messages.size + PARALLELISM - 1) / PARALLELISM
-        val startIndex = (coroutineId - 1) * batchSize
-        val endIndex = minOf(startIndex + batchSize, messages.size)
+        val messageBatchSize = (messages.size + parallelism - 1) / parallelism
+        val startIndex = (coroutineId - 1) * messageBatchSize
+        val endIndex = minOf(startIndex + messageBatchSize, messages.size)
 
         if (startIndex >= messages.size) return
 
         val assignedMessages = messages.subList(startIndex, endIndex)
 
         // Process assigned messages in smaller chunks
-        for (i in assignedMessages.indices step BATCH_SIZE) {
-            val chunkEnd = minOf(i + BATCH_SIZE, assignedMessages.size)
+        for (i in assignedMessages.indices step batchSize) {
+            val chunkEnd = minOf(i + batchSize, assignedMessages.size)
             val chunk = assignedMessages.subList(i, chunkEnd)
 
-            val result = processMessageChunk(chunk, coroutineId, i / BATCH_SIZE + 1)
+            val result = processMessageChunk(chunk, coroutineId, i / batchSize + 1)
             resultsChannel.send(result)
         }
     }
@@ -497,21 +540,23 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         stats: ProcessingStats,
         atomicProcessed: java.util.concurrent.atomic.AtomicInteger,
         atomicParsed: java.util.concurrent.atomic.AtomicInteger,
-        atomicSaved: java.util.concurrent.atomic.AtomicInteger
+        atomicSaved: java.util.concurrent.atomic.AtomicInteger,
+        batchSize: Int,
+        parallelism: Int
     ): ProcessingResult {
         var parsedCount = 0
         var savedCount = 0
         var subscriptionCount = 0
 
         // Calculate batch assignments for this coroutine
-        val batchesPerCoroutine = (totalBatches + PARALLELISM - 1) / PARALLELISM
+        val batchesPerCoroutine = (totalBatches + parallelism - 1) / parallelism
         val startBatch = (coroutineId - 1) * batchesPerCoroutine
         val endBatch = minOf(startBatch + batchesPerCoroutine, totalBatches)
 
         // Process assigned batches
         for (batchIndex in startBatch until endBatch) {
-            val startIndex = batchIndex * BATCH_SIZE
-            val endIndex = minOf(startIndex + BATCH_SIZE, messages.size)
+            val startIndex = batchIndex * batchSize
+            val endIndex = minOf(startIndex + batchSize, messages.size)
             val batch = messages.subList(startIndex, endIndex)
 
             for (sms in batch) {
@@ -563,7 +608,7 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         }
 
         return ProcessingResult(
-            processedCount = (endBatch - startBatch) * BATCH_SIZE, // Approximate
+            processedCount = (endBatch - startBatch) * batchSize, // Approximate
             parsedCount = parsedCount,
             savedCount = savedCount,
             subscriptionCount = subscriptionCount,

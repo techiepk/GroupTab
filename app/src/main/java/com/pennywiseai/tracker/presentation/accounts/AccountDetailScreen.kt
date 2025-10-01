@@ -82,7 +82,8 @@ fun AccountDetailScreen(
                 item {
                     ExpandableBalanceChart(
                         primaryCurrency = uiState.primaryCurrency,
-                        balanceHistory = uiState.balanceChartData
+                        balanceHistory = uiState.balanceChartData,
+                        selectedTimeframe = selectedDateRange.label
                     )
                 }
             }
@@ -148,7 +149,8 @@ fun AccountDetailScreen(
 @Composable
 private fun ExpandableBalanceChart(
     primaryCurrency: String,
-    balanceHistory: List<BalancePoint>
+    balanceHistory: List<BalancePoint>,
+    selectedTimeframe: String
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     
@@ -185,7 +187,7 @@ private fun ExpandableBalanceChart(
                         )
                     }
                     Text(
-                        text = "Last 3 Months",
+                        text = selectedTimeframe,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 28.dp)
