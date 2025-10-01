@@ -577,6 +577,10 @@ object CategoryMapping {
         "bank cash operation",
         "my fatoorah",
         "cash withdrawal",
+        "cash deposit",
+        "refund",
+        "outward remittance",
+        "inward remittance",
         "transfer to",
         "transfer from",
     )
