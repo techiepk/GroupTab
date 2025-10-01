@@ -199,7 +199,7 @@ class FABParser : BankParser() {
     }
 
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: Credit card - merchant on third line after amount
+        // Pattern 1: Credit/Debit card - merchant on third line after amount
         // "Card No XXXX\nTHB ###.##\nWWW.GRAB.COM BANGKOK TH"
         if (containsCardPurchase(message)) {
             val lines = message.split("\n")
@@ -250,20 +250,29 @@ class FABParser : BankParser() {
             }
         }
 
-
-// Pattern 3: Payment instructions and funds transfer - extract recipient account
-        if (message.contains("payment instructions", ignoreCase = true) ||
-            message.contains("funds transfer request", ignoreCase = true)
-        ) {
-
-            // Pattern: "to IBAN/Account/Card XXXX1234"
-            val toPattern =
-                Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4}[X\d]*)""", RegexOption.IGNORE_CASE)
-            toPattern.find(message)?.let { match ->
-                val recipient = match.groupValues[1]
-                return "Transfer to $recipient"
-            }
-        }
+// Pattern 2: Payment instructions and funds transfer - extract recipient account
+if (message.contains("payment instructions", ignoreCase = true) ||
+    message.contains("funds transfer request", ignoreCase = true)
+) {
+    // Pattern: "to account XXXX0002 has been processed" - extract just the account number
+    // CHANGED LINE: Modified regex to extract just the account number and format as "Transfer to XXX" where XXX are the last 3 digits
+    val toPattern = Regex("""to\s+(?:IBAN/Account/Card\s+)?account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE)
+    toPattern.find(message)?.let { match ->
+        val recipient = match.groupValues[1]
+        // Extract just the last 3 digits of the account number
+        val lastThreeDigits = recipient.takeLast(3)
+        return "Transfer to $lastThreeDigits"
+    }
+    
+    // Fallback pattern: "to IBAN/Account/Card XXXX0002" without "has been processed"
+    val fallbackPattern = Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4,})""", RegexOption.IGNORE_CASE)
+    fallbackPattern.find(message)?.let { match ->
+        val recipient = match.groupValues[1]
+        // Extract just the last 3 digits of the account number
+        val lastThreeDigits = recipient.takeLast(3)
+        return "Transfer to $lastThreeDigits"
+    }
+}
 
         if (message.contains("has been credited to your fab account", ignoreCase = true) &&
             !message.contains("unsuccessful transaction", ignoreCase = true)) {

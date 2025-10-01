@@ -324,7 +324,7 @@ fun main() {
                 amount = BigDecimal("3555.00"),
                 currency = "AED",
                 type = TransactionType.EXPENSE,
-                merchant = "Transfer to XXXX0001",
+                merchant = "Transfer to 001",
                 accountLast4 = "0001"
             )
         ),
@@ -340,6 +340,33 @@ fun main() {
                 merchant = "Account Credited",
                 accountLast4 = "0002",
                 balance = BigDecimal("5555.43")
+            )
+        ),
+                FABTestCase(
+            name = "Funds Transfer to Account XXXX0002",
+            message = """
+                Dear Customer, your funds transfer request of AED 130.00 from account XXXX0003 to account XXXX0002 has been processed on 24/02/2025 00:31. For more information please call 600525500 (+97126811511 if calling from overseas).
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("130.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                merchant = "Transfer to 002",
+                accountLast4 = "0003"
+            )
+        ),
+
+        FABTestCase(
+            name = "Funds Transfer to Account XXXX0003",
+            message = """
+                Dear Customer, your funds transfer request of AED 250.00 from account XXXX0001 to account XXXX0003 has been processed on 24/02/2025 14:45. For more information please call 600525500 (+97126811511 if calling from overseas).
+            """.trimIndent(),
+            expected = ExpectedTransaction(
+                amount = BigDecimal("250.00"),
+                currency = "AED",
+                type = TransactionType.EXPENSE,
+                merchant = "Transfer to 003",
+                accountLast4 = "0001"
             )
         )
     )
