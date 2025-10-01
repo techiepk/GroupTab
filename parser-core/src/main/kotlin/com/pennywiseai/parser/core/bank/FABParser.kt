@@ -158,7 +158,7 @@ class FABParser : BankParser() {
 
         return when {
             // Credit card transactions (always expenses)
-            lowerMessage.contains("credit card purchase") -> TransactionType.EXPENSE
+            lowerMessage.contains("credit card purchase") -> TransactionType.CREDIT
             lowerMessage.contains("debit card purchase") -> TransactionType.EXPENSE
             lowerMessage.contains("card purchase") -> TransactionType.EXPENSE
 

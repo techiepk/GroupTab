@@ -46,7 +46,7 @@ fun main() {
             expected = ExpectedTransaction(
                 amount = BigDecimal("8.00"),
                 currency = "AED",
-                type = TransactionType.EXPENSE,
+                type = TransactionType.CREDIT,
                 merchant = "TR              DUBAI           ARE",
                 accountLast4 = "0002",
                 balance = BigDecimal("4530.16")
