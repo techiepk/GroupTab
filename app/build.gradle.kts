@@ -172,6 +172,13 @@ dependencies {
     
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // Ktor for HTTP requests
+    val ktorVersion = "2.3.12"
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     
     // Gson for backup/restore
     implementation("com.google.code.gson:gson:2.10.1")
@@ -191,7 +198,7 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
     
     // WorkManager
-    val workVersion = "2.10.3"
+    val workVersion = "2.10.5"
     implementation("androidx.work:work-runtime-ktx:$workVersion")
     
     // Hilt WorkManager integration
@@ -224,4 +231,5 @@ dependencies {
     
     // OpenCSV for CSV export
     implementation("com.opencsv:opencsv:5.12.0")
+    testImplementation(kotlin("test"))
 }

@@ -130,6 +130,19 @@ abstract class BankParser {
     }
     
     /**
+     * Extracts the transaction currency from the message.
+     * Can be overridden by specific bank parsers for custom logic.
+     */
+    protected open fun extractCurrency(message: String): String? {
+        // Default implementation - try to find currency pattern
+        val currencyPattern = Regex("""([A-Z]{3})\s*[0-9,]+(?:\.\d{2})?""", RegexOption.IGNORE_CASE)
+        currencyPattern.find(message)?.let { match ->
+            return match.groupValues[1].uppercase()
+        }
+        return null
+    }
+
+    /**
      * Extracts the transaction amount from the message.
      */
     protected open fun extractAmount(message: String): BigDecimal? {

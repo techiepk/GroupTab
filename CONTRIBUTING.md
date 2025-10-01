@@ -42,7 +42,7 @@ To add support for a new bank:
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Run tests: `./gradlew test`
-5. Check code style: `./gradlew ktlintCheck`
+5. Check code style: `./gradlew lint`
 6. Commit using conventional commits:
    - `feat:` New feature
    - `fix:` Bug fix
@@ -85,7 +85,7 @@ cd pennywiseai-tracker
 ./gradlew test
 
 # Check code style
-./gradlew ktlintCheck
+./gradlew lint
 ```
 
 ### Project Structure

@@ -62,6 +62,14 @@ object BankParserFactory {
     }
     
     /**
+     * Returns the bank parser for the given bank name.
+     * Returns null if no specific parser is found.
+     */
+    fun getParserByName(bankName: String): BankParser? {
+        return parsers.firstOrNull { it.getBankName() == bankName }
+    }
+    
+    /**
      * Returns all available bank parsers.
      */
     fun getAllParsers(): List<BankParser> = parsers

@@ -44,8 +44,14 @@ class TransactionRepository @Inject constructor(
     fun getTransactionsByCategory(category: String): Flow<List<TransactionEntity>> = 
         transactionDao.getTransactionsByCategory(category)
     
-    fun searchTransactions(query: String): Flow<List<TransactionEntity>> = 
+    fun searchTransactions(query: String): Flow<List<TransactionEntity>> =
         transactionDao.searchTransactions(query)
+
+    fun getAllCurrencies(): Flow<List<String>> =
+        transactionDao.getAllCurrencies()
+
+    fun getCurrenciesForPeriod(startDate: LocalDateTime, endDate: LocalDateTime): Flow<List<String>> =
+        transactionDao.getCurrenciesForPeriod(startDate, endDate)
     
     fun getAllCategories(): Flow<List<String>> = 
         transactionDao.getAllCategories()

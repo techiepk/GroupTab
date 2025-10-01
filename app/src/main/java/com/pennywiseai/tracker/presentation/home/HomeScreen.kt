@@ -45,6 +45,8 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.work.WorkInfo
+import com.pennywiseai.tracker.ui.components.SmsParsingProgressDialog
 import kotlinx.coroutines.launch
 import com.pennywiseai.tracker.data.database.entity.SubscriptionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
@@ -82,6 +84,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
+    val smsScanWorkInfo by viewModel.smsScanWorkInfo.collectAsState()
     val activity = LocalActivity.current
     
     val snackbarHostState = remember { SnackbarHostState() }
@@ -300,45 +303,13 @@ fun HomeScreen(
             }
         }
         
-        // Scanning overlay
-        AnimatedVisibility(
-            visible = uiState.isScanning,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center)
-        ) {
-            Card(
-                modifier = Modifier
-                    .padding(Dimensions.Padding.content)
-                    .widthIn(max = 280.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        strokeWidth = 4.dp
-                    )
-                    Text(
-                        text = "Scanning SMS messages",
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Looking for transactions...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
+        // SMS Parsing Progress Dialog
+        SmsParsingProgressDialog(
+            isVisible = uiState.isScanning,
+            workInfo = smsScanWorkInfo,
+            onDismiss = { viewModel.cancelSmsScan() },
+            onCancel = { viewModel.cancelSmsScan() }
+        )
         
         // Breakdown Dialog
         if (uiState.showBreakdownDialog) {
@@ -445,7 +416,7 @@ private fun MonthSummaryCard(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብর"
     )
@@ -924,7 +895,7 @@ private fun EnhancedCurrencySelector(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብር"
     )
@@ -1052,7 +1023,7 @@ private fun CurrencyEmptyState(
     val currencySymbols = mapOf(
         "INR" to "₹",
         "USD" to "$",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "NPR" to "₨",
         "ETB" to "ብር"
     )

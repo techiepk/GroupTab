@@ -17,7 +17,9 @@ data class ParsedTransaction(
     val bankName: String,
     val transactionHash: String? = null,
     val isFromCard: Boolean = false,
-    val currency: String = "INR"
+    val currency: String = "INR",
+    val fromAccount: String? = null,
+    val toAccount: String? = null
 ) {
     fun generateTransactionId(): String {
         val normalizedAmount = amount.setScale(2, java.math.RoundingMode.HALF_UP)

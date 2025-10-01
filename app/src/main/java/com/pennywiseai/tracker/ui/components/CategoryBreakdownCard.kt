@@ -20,6 +20,7 @@ import com.pennywiseai.tracker.utils.CurrencyFormatter
 @Composable
 fun CategoryBreakdownCard(
     categories: List<CategoryData>,
+    currency: String,
     modifier: Modifier = Modifier,
     onCategoryClick: (CategoryData) -> Unit = {}
 ) {
@@ -45,6 +46,7 @@ fun CategoryBreakdownCard(
                 CategoryBar(
                     category = category,
                     maxAmount = maxAmount,
+                    currency = currency,
                     onClick = { onCategoryClick(category) }
                 )
             }
@@ -56,6 +58,7 @@ fun CategoryBreakdownCard(
 private fun CategoryBar(
     category: CategoryData,
     maxAmount: java.math.BigDecimal,
+    currency: String,
     onClick: () -> Unit = {}
 ) {
     val percentage = if (maxAmount > java.math.BigDecimal.ZERO) {
@@ -83,7 +86,7 @@ private fun CategoryBar(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = CurrencyFormatter.formatCurrency(category.amount),
+                text = CurrencyFormatter.formatCurrency(category.amount, currency),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium
             )

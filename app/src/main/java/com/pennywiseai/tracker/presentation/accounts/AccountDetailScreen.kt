@@ -64,19 +64,11 @@ fun AccountDetailScreen(
                     balance = uiState.currentBalance?.balance ?: BigDecimal.ZERO,
                     creditLimit = uiState.currentBalance?.creditLimit,
                     bankName = uiState.bankName,
-                    accountLast4 = uiState.accountLast4
+                    accountLast4 = uiState.accountLast4,
+                    primaryCurrency = uiState.primaryCurrency
                 )
             }
-            
-            // Balance Chart (Expandable) - Always shows last 3 months
-            if (uiState.balanceChartData.isNotEmpty()) {
-                item {
-                    ExpandableBalanceChart(
-                        balanceHistory = uiState.balanceChartData
-                    )
-                }
-            }
-            
+
             // Date Range Filter
             item {
                 DateRangeFilter(
@@ -84,14 +76,27 @@ fun AccountDetailScreen(
                     onRangeSelected = viewModel::selectDateRange
                 )
             }
-            
+
+            // Balance Chart (Expandable) - Updates based on selected timeframe
+            if (uiState.balanceChartData.isNotEmpty()) {
+                item {
+                    ExpandableBalanceChart(
+                        primaryCurrency = uiState.primaryCurrency,
+                        balanceHistory = uiState.balanceChartData,
+                        selectedTimeframe = selectedDateRange.label
+                    )
+                }
+            }
+
             // Summary Statistics
             item {
                 SummaryStatistics(
                     totalIncome = uiState.totalIncome,
                     totalExpenses = uiState.totalExpenses,
                     netBalance = uiState.netBalance,
-                    period = selectedDateRange.label
+                    period = selectedDateRange.label,
+                    primaryCurrency = uiState.primaryCurrency,
+                    hasMultipleCurrencies = uiState.hasMultipleCurrencies
                 )
             }
             
@@ -114,6 +119,7 @@ fun AccountDetailScreen(
                 ) { transaction ->
                     TransactionItem(
                         transaction = transaction,
+                        primaryCurrency = uiState.primaryCurrency,
                         onClick = {
                             navController.navigate(
                                 com.pennywiseai.tracker.navigation.TransactionDetail(transaction.id)
@@ -142,7 +148,9 @@ fun AccountDetailScreen(
 
 @Composable
 private fun ExpandableBalanceChart(
-    balanceHistory: List<BalancePoint>
+    primaryCurrency: String,
+    balanceHistory: List<BalancePoint>,
+    selectedTimeframe: String
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     
@@ -179,7 +187,7 @@ private fun ExpandableBalanceChart(
                         )
                     }
                     Text(
-                        text = "Last 3 Months",
+                        text = selectedTimeframe,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 28.dp)
@@ -204,6 +212,7 @@ private fun ExpandableBalanceChart(
                 Column {
                     Spacer(modifier = Modifier.height(Spacing.md))
                     BalanceChart(
+                        primaryCurrency = primaryCurrency,
                         balanceHistory = balanceHistory,
                         height = 180
                     )
@@ -218,7 +227,8 @@ private fun CurrentBalanceCard(
     balance: BigDecimal,
     creditLimit: BigDecimal? = null,
     bankName: String,
-    accountLast4: String
+    accountLast4: String,
+    primaryCurrency: String
 ) {
     val isCreditCard = creditLimit != null
     
@@ -240,7 +250,7 @@ private fun CurrentBalanceCard(
                 )
                 Spacer(modifier = Modifier.height(Spacing.xs))
                 Text(
-                    text = CurrencyFormatter.formatCurrency(creditLimit),
+                    text = CurrencyFormatter.formatCurrency(creditLimit, primaryCurrency),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -249,7 +259,7 @@ private fun CurrentBalanceCard(
                 if (balance > BigDecimal.ZERO) {
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = "Outstanding: ${CurrencyFormatter.formatCurrency(balance)}",
+                        text = "Outstanding: ${CurrencyFormatter.formatCurrency(balance, primaryCurrency)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -263,7 +273,7 @@ private fun CurrentBalanceCard(
                 )
                 Spacer(modifier = Modifier.height(Spacing.xs))
                 Text(
-                    text = CurrencyFormatter.formatCurrency(balance),
+                    text = CurrencyFormatter.formatCurrency(balance, primaryCurrency),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -296,7 +306,9 @@ private fun SummaryStatistics(
     totalIncome: BigDecimal,
     totalExpenses: BigDecimal,
     netBalance: BigDecimal,
-    period: String
+    period: String,
+    primaryCurrency: String,
+    hasMultipleCurrencies: Boolean = false
 ) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
@@ -319,28 +331,44 @@ private fun SummaryStatistics(
             ) {
                 StatisticItem(
                     label = "Income",
-                    value = CurrencyFormatter.formatCurrency(totalIncome),
+                    value = formatWithEstimatedDisplay(totalIncome, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
                     color = if (!isSystemInDarkTheme()) income_light else income_dark
                 )
                 StatisticItem(
                     label = "Expenses",
-                    value = CurrencyFormatter.formatCurrency(totalExpenses),
+                    value = formatWithEstimatedDisplay(totalExpenses, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.AutoMirrored.Filled.TrendingDown,
                     color = if (!isSystemInDarkTheme()) expense_light else expense_dark
                 )
                 StatisticItem(
                     label = "Net",
-                    value = CurrencyFormatter.formatCurrency(netBalance),
+                    value = formatWithEstimatedDisplay(netBalance, primaryCurrency, hasMultipleCurrencies),
                     icon = Icons.Default.AccountBalanceWallet,
                     color = if (netBalance >= BigDecimal.ZERO) {
                         if (!isSystemInDarkTheme()) income_light else income_dark
                     } else {
-                        if (!isSystemInDarkTheme()) expense_light else expense_dark
+                        if (!isSystemInDarkTheme()) expense_light else income_dark
                     }
                 )
             }
         }
+    }
+}
+
+/**
+ * Formats currency with estimated display for multi-currency accounts
+ */
+private fun formatWithEstimatedDisplay(
+    amount: BigDecimal,
+    currency: String,
+    hasMultipleCurrencies: Boolean
+): String {
+    val formattedAmount = CurrencyFormatter.formatCurrency(amount, currency)
+    return if (hasMultipleCurrencies) {
+        "est. $formattedAmount"
+    } else {
+        formattedAmount
     }
 }
 
@@ -403,6 +431,7 @@ private fun DateRangeFilter(
 @Composable
 private fun TransactionItem(
     transaction: TransactionEntity,
+    primaryCurrency: String,
     onClick: () -> Unit
 ) {
     val amountColor = when (transaction.transactionType) {
@@ -464,7 +493,7 @@ private fun TransactionItem(
                         // Show balance after if available
                         transaction.balanceAfter?.let { balance ->
                             Text(
-                                text = "• Bal: ${CurrencyFormatter.formatCurrency(balance)}",
+                                text = "• Bal: ${CurrencyFormatter.formatCurrency(balance, primaryCurrency)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -477,7 +506,7 @@ private fun TransactionItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = CurrencyFormatter.formatCurrency(transaction.amount),
+                    text = CurrencyFormatter.formatCurrency(transaction.amount, transaction.currency),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = amountColor

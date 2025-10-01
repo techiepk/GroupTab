@@ -136,7 +136,7 @@ fun MainScreen(
             }
             
             composable(
-                route = "transactions?category={category}&merchant={merchant}&period={period}&focusSearch={focusSearch}",
+                route = "transactions?category={category}&merchant={merchant}&period={period}&currency={currency}&focusSearch={focusSearch}",
                 arguments = listOf(
                     navArgument("category") { 
                         type = NavType.StringType
@@ -148,7 +148,12 @@ fun MainScreen(
                         nullable = true
                         defaultValue = null
                     },
-                    navArgument("period") { 
+                    navArgument("period") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("currency") {
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
@@ -162,12 +167,14 @@ fun MainScreen(
                 val category = backStackEntry.arguments?.getString("category")
                 val merchant = backStackEntry.arguments?.getString("merchant")
                 val period = backStackEntry.arguments?.getString("period")
+                val currency = backStackEntry.arguments?.getString("currency")
                 val focusSearch = backStackEntry.arguments?.getBoolean("focusSearch") ?: false
                 
                 TransactionsScreen(
                     initialCategory = category,
                     initialMerchant = merchant,
                     initialPeriod = period,
+                    initialCurrency = currency,
                     focusSearch = focusSearch,
                     onNavigateBack = {
                         navController.popBackStack()
@@ -204,20 +211,23 @@ fun MainScreen(
             composable("analytics") {
                 com.pennywiseai.tracker.ui.screens.analytics.AnalyticsScreen(
                     onNavigateToChat = { navController.navigate("chat") },
-                    onNavigateToTransactions = { category, merchant, period ->
+                    onNavigateToTransactions = { category, merchant, period, currency ->
                         val route = buildString {
                             append("transactions")
                             val params = mutableListOf<String>()
-                            category?.let { 
+                            category?.let {
                                 val encoded = java.net.URLEncoder.encode(it, "UTF-8")
-                                params.add("category=$encoded") 
+                                params.add("category=$encoded")
                             }
-                            merchant?.let { 
+                            merchant?.let {
                                 val encoded = java.net.URLEncoder.encode(it, "UTF-8")
-                                params.add("merchant=$encoded") 
+                                params.add("merchant=$encoded")
                             }
-                            period?.let { 
-                                params.add("period=$it") 
+                            period?.let {
+                                params.add("period=$it")
+                            }
+                            currency?.let {
+                                params.add("currency=$it")
                             }
                             if (params.isNotEmpty()) {
                                 append("?")

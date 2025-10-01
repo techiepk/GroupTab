@@ -1,5 +1,6 @@
 package com.pennywiseai.tracker.utils
 
+import com.pennywiseai.parser.core.bank.BankParserFactory
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Currency
@@ -20,14 +21,18 @@ object CurrencyFormatter {
         "USD" to "$",
         "EUR" to "€",
         "GBP" to "£",
-        "AED" to "د.إ",
+        "AED" to "AED",
         "SGD" to "S$",
         "CAD" to "C$",
         "AUD" to "A$",
         "JPY" to "¥",
         "CNY" to "¥",
         "NPR" to "₨",
-        "ETB" to "ብር"
+        "ETB" to "ብር",
+        "THB" to "฿",
+        "MYR" to "RM",
+        "KWD" to "KD",
+        "KRW" to "₩"
     )
 
     /**
@@ -38,14 +43,18 @@ object CurrencyFormatter {
         "USD" to Locale.US,
         "EUR" to Locale.GERMANY,
         "GBP" to Locale.UK,
-        "AED" to Locale.Builder().setLanguage("ar").setRegion("AE").build(),
+        "AED" to Locale.Builder().setLanguage("en").setRegion("AE").build(),
         "SGD" to Locale.Builder().setLanguage("en").setRegion("SG").build(),
         "CAD" to Locale.CANADA,
         "AUD" to Locale.Builder().setLanguage("en").setRegion("AU").build(),
         "JPY" to Locale.JAPAN,
         "CNY" to Locale.CHINA,
         "NPR" to Locale.Builder().setLanguage("ne").setRegion("NP").build(),
-        "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build()
+        "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build(),
+        "THB" to Locale.Builder().setLanguage("th").setRegion("TH").build(),
+        "MYR" to Locale.Builder().setLanguage("ms").setRegion("MY").build(),
+        "KWD" to Locale.Builder().setLanguage("ar").setRegion("KW").build(),
+        "KRW" to Locale.KOREA
     )
 
     /**
@@ -112,5 +121,17 @@ object CurrencyFormatter {
      */
     fun getCurrencySymbol(currencyCode: String): String {
         return CURRENCY_SYMBOLS[currencyCode] ?: currencyCode
+    }
+
+    /**
+     * Gets the base currency for a bank using the BankParserFactory
+     * Returns INR as default for unknown banks
+     */
+    fun getBankBaseCurrency(bankName: String?): String {
+        if (bankName == null) return "INR"
+
+        // Try to find a parser that can handle this bank name
+        val parser = BankParserFactory.getParserByName(bankName)
+        return parser?.getCurrency() ?: "INR"
     }
 }

@@ -54,6 +54,7 @@ fun TransactionsScreen(
     initialCategory: String? = null,
     initialMerchant: String? = null,
     initialPeriod: String? = null,
+    initialCurrency: String? = null,
     focusSearch: Boolean = false,
     viewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
@@ -70,6 +71,7 @@ fun TransactionsScreen(
     val categoriesMap by viewModel.categories.collectAsState()
     val filteredTotals by viewModel.filteredTotals.collectAsState()
     val currencyGroupedTotals by viewModel.currencyGroupedTotals.collectAsState()
+    val availableCurrencies by viewModel.availableCurrencies.collectAsState()
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val smsScanMonths by viewModel.smsScanMonths.collectAsState()
@@ -95,13 +97,26 @@ fun TransactionsScreen(
         LazyListState()
     }
     
-    // Apply initial filters only once (not when returning from navigation)
+    // Apply initial filters only once when screen is first created
     LaunchedEffect(Unit) {
         viewModel.applyInitialFilters(
             initialCategory,
             initialMerchant,
-            initialPeriod
+            initialPeriod,
+            initialCurrency
         )
+    }
+
+    // Apply navigation filters when navigation parameters change (for deep links)
+    LaunchedEffect(initialCategory, initialMerchant, initialPeriod, initialCurrency) {
+        if (initialCategory != null || initialMerchant != null || initialPeriod != null || initialCurrency != null) {
+            viewModel.applyNavigationFilters(
+                initialCategory,
+                initialMerchant,
+                initialPeriod,
+                initialCurrency
+            )
+        }
     }
     
     // Handle delete undo snackbar
@@ -373,7 +388,7 @@ fun TransactionsScreen(
             expenses = filteredTotals.expenses,
             netBalance = filteredTotals.netBalance,
             currency = selectedCurrency,
-            availableCurrencies = currencyGroupedTotals.availableCurrencies,
+            availableCurrencies = availableCurrencies,
             onCurrencySelected = { viewModel.selectCurrency(it) },
             isLoading = uiState.isLoading,
             modifier = Modifier

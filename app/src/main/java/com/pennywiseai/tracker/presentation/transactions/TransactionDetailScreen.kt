@@ -33,9 +33,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pennywiseai.tracker.data.database.entity.CategoryEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
+import java.math.BigDecimal
 import com.pennywiseai.tracker.ui.components.BrandIcon
 import com.pennywiseai.tracker.ui.components.CategoryChip
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
@@ -65,6 +67,8 @@ fun TransactionDetailScreen(
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
     val isDeleting by viewModel.isDeleting.collectAsStateWithLifecycle()
     val deleteSuccess by viewModel.deleteSuccess.collectAsStateWithLifecycle()
+    val accountPrimaryCurrency by viewModel.primaryCurrency.collectAsStateWithLifecycle()
+    val convertedAmount by viewModel.convertedAmount.collectAsStateWithLifecycle()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -198,6 +202,8 @@ fun TransactionDetailScreen(
                 updateExistingTransactions = updateExistingTransactions,
                 existingTransactionCount = existingTransactionCount,
                 viewModel = viewModel,
+                accountPrimaryCurrency = accountPrimaryCurrency,
+                convertedAmount = convertedAmount,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -246,6 +252,8 @@ private fun TransactionDetailContent(
     updateExistingTransactions: Boolean,
     existingTransactionCount: Int,
     viewModel: TransactionDetailViewModel,
+    accountPrimaryCurrency: String,
+    convertedAmount: BigDecimal?,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -264,7 +272,7 @@ private fun TransactionDetailContent(
                 viewModel = viewModel
             )
         } else {
-            TransactionHeader(transaction)
+            TransactionHeader(transaction, accountPrimaryCurrency, convertedAmount)
         }
         
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -291,8 +299,9 @@ private fun TransactionDetailContent(
         Spacer(modifier = Modifier.height(Spacing.md))
         
         // Additional Details - Always read-only
-        if (transaction.balanceAfter != null || transaction.accountNumber != null) {
-            AdditionalDetailsCard(transaction)
+        if (transaction.balanceAfter != null || transaction.accountNumber != null ||
+            transaction.fromAccount != null || transaction.toAccount != null) {
+            AdditionalDetailsCard(viewModel,transaction)
         }
         
         // Add extra bottom padding when in edit mode to ensure description field is visible above keyboard
@@ -303,7 +312,11 @@ private fun TransactionDetailContent(
 }
 
 @Composable
-private fun TransactionHeader(transaction: TransactionEntity) {
+private fun TransactionHeader(
+    transaction: TransactionEntity,
+    primaryCurrency: String,
+    convertedAmount: BigDecimal?
+) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -351,7 +364,18 @@ private fun TransactionHeader(transaction: TransactionEntity) {
                 fontWeight = FontWeight.Bold,
                 color = amountColor
             )
-            
+
+            // Show converted amount if different from transaction currency
+            if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
+                Spacer(modifier = Modifier.height(Spacing.xs))
+                Text(
+                    text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, primaryCurrency)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+
             // Date and Time
             Text(
                 text = transaction.dateTime.format(
@@ -491,7 +515,7 @@ private fun ExtractedInfoCard(transaction: TransactionEntity) {
 }
 
 @Composable
-private fun AdditionalDetailsCard(transaction: TransactionEntity) {
+private fun AdditionalDetailsCard(viewModel: TransactionDetailViewModel, transaction: TransactionEntity) {
     PennyWiseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -519,23 +543,50 @@ private fun AdditionalDetailsCard(transaction: TransactionEntity) {
             
             Spacer(modifier = Modifier.height(Spacing.md))
             
-            // Account Number (masked)
+            // Account Number (masked) - only show for non-transfer transactions
             transaction.accountNumber?.let {
-                val masked = if (it.length > 4) {
-                    "*".repeat(it.length - 4) + it.takeLast(4)
-                } else it
-                InfoRow(
-                    label = "Account",
-                    value = masked,
-                    icon = Icons.Default.CreditCard
-                )
+                // Don't show generic account field when we have specific transfer accounts
+                if (transaction.fromAccount == null && transaction.toAccount == null) {
+                    val masked = if (it.length > 4) {
+                        "*".repeat(it.length - 4) + it.takeLast(4)
+                    } else it
+                    InfoRow(
+                        label = "Account",
+                        value = masked,
+                        icon = Icons.Default.CreditCard
+                    )
+                }
             }
             
+            // From Account (for transfers)
+            transaction.fromAccount?.let { from ->
+                val masked = if (from.length > 4) {
+                    "*".repeat(from.length - 4) + from.takeLast(4)
+                } else from
+                InfoRow(
+                    label = "From Account",
+                    value = masked,
+                    icon = Icons.Default.ArrowUpward
+                )
+            }
+
+            // To Account (for transfers)
+            transaction.toAccount?.let { to ->
+                val masked = if (to.length > 4) {
+                    "*".repeat(to.length - 4) + to.takeLast(4)
+                } else to
+                InfoRow(
+                    label = "To Account",
+                    value = masked,
+                    icon = Icons.Default.ArrowDownward
+                )
+            }
+
             // Balance After
             transaction.balanceAfter?.let {
                 InfoRow(
                     label = "Balance After",
-                    value = CurrencyFormatter.formatCurrency(it),
+                    value = CurrencyFormatter.formatCurrency(it,viewModel.primaryCurrency.value),
                     icon = Icons.Default.AccountBalanceWallet
                 )
             }
@@ -613,7 +664,10 @@ private fun EditableTransactionHeader(
                 value = transaction.amount.toPlainString(),
                 onValueChange = { viewModel.updateAmount(it) },
                 label = { Text("Amount") },
-                prefix = { Text("₹") },
+                prefix = {
+                    val currencySymbol = CurrencyFormatter.getCurrencySymbol(viewModel.primaryCurrency.toString())
+                    Text(currencySymbol)
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()

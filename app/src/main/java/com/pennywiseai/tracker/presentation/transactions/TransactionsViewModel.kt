@@ -57,6 +57,32 @@ class TransactionsViewModel @Inject constructor(
     private val _currencyGroupedTotals = MutableStateFlow(CurrencyGroupedTotals())
     val currencyGroupedTotals: StateFlow<CurrencyGroupedTotals> = _currencyGroupedTotals.asStateFlow()
 
+    // Available currencies for the selected time period
+    val availableCurrencies: StateFlow<List<String>> = selectedPeriod.flatMapLatest { period ->
+        if (period == TimePeriod.ALL) {
+            transactionRepository.getAllCurrencies()
+        } else {
+            val (startDate, endDate) = getDateRangeForPeriod(period)
+            val startDateTime = startDate.atStartOfDay()
+            val endDateTime = endDate.atTime(23, 59, 59)
+            transactionRepository.getCurrenciesForPeriod(startDateTime, endDateTime)
+        }
+    }
+        .map { currencies ->
+            currencies.sortedWith { a, b ->
+                when {
+                    a == "INR" -> -1 // INR first
+                    b == "INR" -> 1
+                    else -> a.compareTo(b) // Alphabetical for others
+                }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     // Computed property for current selected currency totals
     val filteredTotals: StateFlow<FilteredTotals> = combine(
         _currencyGroupedTotals,
@@ -120,34 +146,50 @@ class TransactionsViewModel @Inject constructor(
     }
     
     init {
-        // Combine all filters: search query, period, category, transaction type, and sort
-        combine(
-            searchQuery.debounce(300), // Debounce search for performance
-            selectedPeriod,
-            categoryFilter,
-            transactionTypeFilter,
-            sortOption
-        ) { query, period, category, typeFilter, sort ->
-            FilterParams(query, period, category, typeFilter) to sort
-        }.flatMapLatest { (params, sort) ->
-            getFilteredTransactions(params.query, params.period, params.category, params.typeFilter)
-                .map { transactions -> sortTransactions(transactions, sort) }
-        }.onEach { transactions ->
-            _uiState.value = _uiState.value.copy(
-                transactions = transactions,
-                groupedTransactions = groupTransactionsByDate(transactions),
-                isLoading = false
-            )
-            // Calculate totals for filtered transactions
-            _currencyGroupedTotals.value = calculateCurrencyGroupedTotals(transactions)
+        // Manually combine all flows using transformLatest
+        merge(
+            searchQuery.debounce(300).map { "search" },
+            selectedPeriod.map { "period" },
+            categoryFilter.map { "category" },
+            transactionTypeFilter.map { "typeFilter" },
+            selectedCurrency.map { "currency" },
+            sortOption.map { "sort" }
+        )
+            .transformLatest { trigger ->
+                // Get current values from all StateFlows
+                val query = searchQuery.value
+                val period = selectedPeriod.value
+                val category = categoryFilter.value
+                val typeFilter = transactionTypeFilter.value
+                val currency = selectedCurrency.value
+                val sort = sortOption.value
 
-            // Auto-select primary currency if not already selected or if current currency no longer exists
-            val currentSelectedCurrency = _selectedCurrency.value
-            val groupedTotals = _currencyGroupedTotals.value
-            if (!groupedTotals.availableCurrencies.contains(currentSelectedCurrency) && groupedTotals.hasAnyCurrency()) {
-                _selectedCurrency.value = groupedTotals.getPrimaryCurrency()
+                // Get filtered transactions
+                getFilteredTransactions(query, period, category, typeFilter)
+                    .collect { transactions ->
+                        // Filter by currency
+                        val currencyFilteredTransactions = transactions.filter {
+                            it.currency.equals(currency, ignoreCase = true)
+                        }
+                        emit(sortTransactions(currencyFilteredTransactions, sort))
+                    }
             }
-        }.launchIn(viewModelScope)
+            .onEach { transactions ->
+                _uiState.value = _uiState.value.copy(
+                    transactions = transactions,
+                    groupedTransactions = groupTransactionsByDate(transactions),
+                    isLoading = false
+                )
+                // Calculate totals for filtered transactions
+                _currencyGroupedTotals.value = calculateCurrencyGroupedTotals(transactions)
+
+                // Auto-select primary currency if not already selected or if current currency no longer exists
+                val currentCurrency = selectedCurrency.value
+                if (!_currencyGroupedTotals.value.availableCurrencies.contains(currentCurrency) && _currencyGroupedTotals.value.hasAnyCurrency()) {
+                    _selectedCurrency.value = _currencyGroupedTotals.value.getPrimaryCurrency()
+                }
+            }
+            .launchIn(viewModelScope)
     }
     
     fun updateSearchQuery(query: String) {
@@ -204,27 +246,45 @@ class TransactionsViewModel @Inject constructor(
     fun clearDeletedTransaction() {
         _deletedTransaction.value = null
     }
+
+    fun resetFilters() {
+        hasAppliedInitialFilters = false
+        clearCategoryFilter()
+        updateSearchQuery("")
+        selectPeriod(TimePeriod.THIS_MONTH)
+        setTransactionTypeFilter(TransactionTypeFilter.ALL)
+        setSortOption(SortOption.DATE_NEWEST)
+        // Don't reset currency as it might be user preference
+    }
     
     fun applyInitialFilters(
         category: String?,
-        merchant: String?, 
-        period: String?
+        merchant: String?,
+        period: String?,
+        currency: String?
     ) {
         if (!hasAppliedInitialFilters) {
-            category?.let { 
+            // Only apply filters once, when first navigating to the screen
+            clearCategoryFilter()
+            updateSearchQuery("")
+            selectPeriod(TimePeriod.THIS_MONTH)
+            setTransactionTypeFilter(TransactionTypeFilter.ALL)
+            setSortOption(SortOption.DATE_NEWEST)
+
+            category?.let {
                 val decoded = if (it.contains("+") || it.contains("%")) {
                     java.net.URLDecoder.decode(it, "UTF-8")
                 } else it
                 setCategoryFilter(decoded)
             }
-            
-            merchant?.let { 
+
+            merchant?.let {
                 val decoded = if (it.contains("+") || it.contains("%")) {
                     java.net.URLDecoder.decode(it, "UTF-8")
                 } else it
                 updateSearchQuery(decoded)
             }
-            
+
             period?.let { periodName ->
                 val timePeriod = when (periodName) {
                     "THIS_MONTH" -> TimePeriod.THIS_MONTH
@@ -235,9 +295,54 @@ class TransactionsViewModel @Inject constructor(
                 }
                 timePeriod?.let { selectPeriod(it) }
             }
-            
+
+            // Only set currency if it's provided (from navigation)
+            currency?.let { selectCurrency(it) }
+
             hasAppliedInitialFilters = true
         }
+    }
+
+    fun applyNavigationFilters(
+        category: String?,
+        merchant: String?,
+        period: String?,
+        currency: String?
+    ) {
+        // This function can be called multiple times for navigation updates
+        clearCategoryFilter()
+        updateSearchQuery("")
+        selectPeriod(TimePeriod.THIS_MONTH)
+        setTransactionTypeFilter(TransactionTypeFilter.ALL)
+        setSortOption(SortOption.DATE_NEWEST)
+
+        category?.let {
+            val decoded = if (it.contains("+") || it.contains("%")) {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } else it
+            setCategoryFilter(decoded)
+        }
+
+        merchant?.let {
+            val decoded = if (it.contains("+") || it.contains("%")) {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } else it
+            updateSearchQuery(decoded)
+        }
+
+        period?.let { periodName ->
+            val timePeriod = when (periodName) {
+                "THIS_MONTH" -> TimePeriod.THIS_MONTH
+                "LAST_MONTH" -> TimePeriod.LAST_MONTH
+                "CURRENT_FY" -> TimePeriod.CURRENT_FY
+                "ALL" -> TimePeriod.ALL
+                else -> null
+            }
+            timePeriod?.let { selectPeriod(it) }
+        }
+
+        // Only set currency if it's provided (from navigation)
+        currency?.let { selectCurrency(it) }
     }
     
     private fun getFilteredTransactions(
@@ -388,7 +493,9 @@ class TransactionsViewModel @Inject constructor(
             )
         }
 
-        val availableCurrencies = totalsByCurrency.keys.toList().sortedWith { a, b ->
+        // Note: availableCurrencies are now provided by the separate availableCurrencies StateFlow
+        // We'll keep the old behavior for compatibility but the UI should use availableCurrencies property
+        val filteredAvailableCurrencies = totalsByCurrency.keys.toList().sortedWith { a, b ->
             when {
                 a == "INR" -> -1 // INR first
                 b == "INR" -> 1
@@ -398,7 +505,7 @@ class TransactionsViewModel @Inject constructor(
 
         return CurrencyGroupedTotals(
             totalsByCurrency = totalsByCurrency,
-            availableCurrencies = availableCurrencies,
+            availableCurrencies = filteredAvailableCurrencies,
             transactionCount = transactions.size
         )
     }
