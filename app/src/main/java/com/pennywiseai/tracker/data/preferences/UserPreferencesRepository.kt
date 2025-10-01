@@ -31,6 +31,7 @@ class UserPreferencesRepository @Inject constructor(
         val HAS_SHOWN_SCAN_TUTORIAL = booleanPreferencesKey("has_shown_scan_tutorial")
         val ACTIVE_DOWNLOAD_ID = longPreferencesKey("active_download_id")
         val SMS_SCAN_MONTHS = intPreferencesKey("sms_scan_months")
+        val SMS_SCAN_ALL_TIME = booleanPreferencesKey("sms_scan_all_time")
         val LAST_SCAN_TIMESTAMP = longPreferencesKey("last_scan_timestamp")
         val LAST_SCAN_PERIOD = intPreferencesKey("last_scan_period")
         val BASE_CURRENCY = stringPreferencesKey("base_currency")
@@ -50,6 +51,7 @@ class UserPreferencesRepository @Inject constructor(
                 isDeveloperModeEnabled = preferences[PreferencesKeys.DEVELOPER_MODE_ENABLED] ?: false,
                 hasShownScanTutorial = preferences[PreferencesKeys.HAS_SHOWN_SCAN_TUTORIAL] ?: false,
                 smsScanMonths = preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3, // Default to 3 months
+                smsScanAllTime = preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false, // Default to false
                 baseCurrency = preferences[PreferencesKeys.BASE_CURRENCY] ?: "INR" // Default to INR
             )
         }
@@ -137,10 +139,27 @@ class UserPreferencesRepository @Inject constructor(
             preferences[PreferencesKeys.SMS_SCAN_MONTHS] = months
         }
     }
-    
+
     suspend fun getSmsScanMonths(): Int {
         return context.dataStore.data
             .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_MONTHS] ?: 3 }
+            .first()
+    }
+
+    val smsScanAllTime: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false
+        }
+
+    suspend fun updateSmsScanAllTime(allTime: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] = allTime
+        }
+    }
+
+    suspend fun getSmsScanAllTime(): Boolean {
+        return context.dataStore.data
+            .map { preferences -> preferences[PreferencesKeys.SMS_SCAN_ALL_TIME] ?: false }
             .first()
     }
     
@@ -246,5 +265,6 @@ data class UserPreferences(
     val isDeveloperModeEnabled: Boolean = false,
     val hasShownScanTutorial: Boolean = false,
     val smsScanMonths: Int = 3, // Default to 3 months
+    val smsScanAllTime: Boolean = false, // Default to false
     val baseCurrency: String = "INR" // Default to INR
 )

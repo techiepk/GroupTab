@@ -198,7 +198,7 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
     
     // WorkManager
-    val workVersion = "2.10.3"
+    val workVersion = "2.10.5"
     implementation("androidx.work:work-runtime-ktx:$workVersion")
     
     // Hilt WorkManager integration
@@ -231,4 +231,5 @@ dependencies {
     
     // OpenCSV for CSV export
     implementation("com.opencsv:opencsv:5.12.0")
+    testImplementation(kotlin("test"))
 }

@@ -10,6 +10,7 @@ import com.pennywiseai.tracker.data.database.entity.TransactionEntity
 import com.pennywiseai.tracker.data.repository.AccountBalanceRepository
 import com.pennywiseai.tracker.data.repository.TransactionRepository
 import com.pennywiseai.tracker.ui.components.BalancePoint
+import com.pennywiseai.tracker.utils.CurrencyFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -69,7 +70,7 @@ class AccountDetailViewModel @Inject constructor(
                     }
                 }
 
-                val primaryCurrency = getPrimaryCurrencyForAccount(filteredTransactions)
+                val primaryCurrency = getPrimaryCurrencyForAccount(bankName)
                 val hasMultipleCurrencies = filteredTransactions
                     .map { it.currency }
                     .distinct()
@@ -201,14 +202,8 @@ class AccountDetailViewModel @Inject constructor(
         return startDate to endDate
     }
 
-    private fun getPrimaryCurrencyForAccount(transactions: List<TransactionEntity>): String {
-        val availableCurrencies = transactions.map { it.currency }.distinct()
-        return when {
-            availableCurrencies.contains("AED") -> "AED"  // FAB bank uses AED
-            availableCurrencies.contains("INR") -> "INR"
-            availableCurrencies.isNotEmpty() -> availableCurrencies.first()
-            else -> "INR" // Default fallback
-        }
+    private fun getPrimaryCurrencyForAccount(bankName: String): String {
+        return CurrencyFormatter.getBankBaseCurrency(bankName)
     }
 }
 
