@@ -132,9 +132,6 @@ object CurrencyFormatter {
 
         // Try to find a parser that can handle this bank name
         val parser = BankParserFactory.getParserByName(bankName)
-        return parser?.getCurrency() ? : "INR"
-
-        // Default to INR for unknown banks
-        return "INR"
+        return parser?.getCurrency() ?: "INR"
     }
 }
