@@ -32,6 +32,7 @@ class CategoryMappingTest {
         assertEquals("Shopping", getCategory("Sukhumvit City Mall"))
         assertEquals("Shopping", getCategory("The Emsphere"))
         assertEquals("Shopping", getCategory("Central World"))
+        assertEquals("Shopping", getCategory("The Empire Tower"))
 
         assertEquals("Entertainment", getCategory("Major Cineplex"))
         assertEquals("Entertainment", getCategory("Ticketmelon"))
@@ -51,6 +52,7 @@ class CategoryMappingTest {
         assertEquals("Personal Care", getCategory("Sultans of Shave"))
         assertEquals("Personal Care", getCategory("Mandarin Oriental Spa"))
         assertEquals("Personal Care", getCategory("Truefitt and Hill"))
+        assertEquals("Personal Care", getCategory("Phetsathorn Co.,Ltd."))
 
         assertEquals("Tax", getCategory("Abu Dhabi Judicial Dep"))
         assertEquals("Tax", getCategory("Sharjah Finance Depart"))
@@ -60,13 +62,16 @@ class CategoryMappingTest {
         assertEquals("Banking", getCategory("My Fatoorah"))
 
         // Test some should remain as Others (too generic)
-        assertEquals("Others", getCategory("The Empire Tower"))
-        assertEquals("Others", getCategory("Phetsathorn Co.,Ltd."))
         assertEquals("Others", getCategory("Twin Made"))
+        findDuplicateKeywords()
     }
 }
 
 // Helper function to test categorization
 private fun getCategory(merchantName: String): String {
     return com.pennywiseai.tracker.ui.icons.CategoryMapping.getCategory(merchantName)
+}
+
+private fun findDuplicateKeywords(): Set<String> {
+    return com.pennywiseai.tracker.ui.icons.CategoryMapping.findDuplicateKeywords()
 }

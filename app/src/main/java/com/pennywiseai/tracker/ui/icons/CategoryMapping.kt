@@ -183,7 +183,6 @@ object CategoryMapping {
         "smoked meat world",
         "nandos",
         "nando's",
-        "the meydan",
         "kyochon",
         "tarbush",
         "laderach",
@@ -255,7 +254,38 @@ object CategoryMapping {
         // Google-prefixed eateries
         "google nomadtable",
         "google tantan asian",
-        "google viki asian dra"
+        "google viki asian dra",
+        "alsafadi",
+        "alsafadi restaurant",
+        "awfully chocolate",
+        "boon coffee",
+        "cafe bateel",
+        "cafebateel",
+        "cafobateel",
+        "coffee club",
+        "commonground",
+        "cps coffee",
+        "french spirit coffee",
+        "hashmi bhatti",
+        "hili coffee house",
+        "i coffee",
+        "kcal",
+        "line man",
+        "mado",
+        "masala xpress",
+        "mcdonald's",
+        "muin sukhumvit 63",
+        "nua tair",
+        "origin+bloom",
+        "pescado seafood grill",
+        "piri piri flaming gril",
+        "pincode",
+        "roasters coffee house",
+        "salkara",
+        "the coffee lab",
+        "top cafeteria",
+        "bosporus sharjah"
+
     )
 
     private val GROCERY = setOf(
@@ -328,7 +358,13 @@ object CategoryMapping {
         "donki mall thonglor",
         // New adds for the 133 unparsed (grouped)
         "guardian",
-        "guardian paragon"
+        "guardian paragon",
+        "craft minimart",
+        "foodland",
+        "luluhypermarket",
+        "majid al futtaim hypmk",
+        "majid al futtaim hypm"
+
     )
 
     private val TRANSPORT = setOf(
@@ -370,7 +406,14 @@ object CategoryMapping {
         "sats t1",
         "sats t1i4",
         "vnpay",
-        "vnpaytram"
+        "vnpaytram",
+        "chalerm maha nakhon ex",
+        "expressway",
+        "point sbia",
+        "ptt",
+        "pttst.c",
+        "smart auto"
+
     )
 
     private val SHOPPING = setOf(
@@ -445,7 +488,6 @@ object CategoryMapping {
         "under armour",
         "lululemon",
         "the north face",
-        "royce",
         "godiva pavilion",
         "skechers",
         "urban revivo",
@@ -486,7 +528,21 @@ object CategoryMapping {
         "central world",
         "emquartier",
         "iconsiam",
-    )
+        "central worl",
+        "angelic aroma",
+        "blu intelligent solut",
+        "lril",
+        "siam paragon dept",
+        "siam paragon sup",
+        "smartordering",
+        "smartordering technolo",
+        "space hub general ware",
+        "virgin megastore",
+        "paysolut",
+        "empire tower",
+        "the empire tower",
+
+        )
 
     private val UTILITIES = setOf(
         "electricity",
@@ -518,7 +574,9 @@ object CategoryMapping {
         "noqsouth energy dwc",
 
         // New adds for the 133 unparsed (grouped)
-        "tamdeed projects"
+        "tamdeed projects",
+        "smart dubai government"
+
     )
 
     private val ENTERTAINMENT = setOf(
@@ -536,7 +594,9 @@ object CategoryMapping {
         "major 1126",
         "ticketmelon",
         "www.2c2p ticketmelon",
-        "www.2cticketmelon"
+        "www.2cticketmelon",
+        "sfcinemacity",
+        "platinumlist.net"
     )
 
     private val HEALTHCARE = setOf(
@@ -555,9 +615,11 @@ object CategoryMapping {
         "deira life pharm",
         "medex",
         "bumrungrad", // (for getfresh-bumrungrad receipt context)
+        "watsons",
+        "boots",
+        "lac nutrition for life",
+        "mediclinic al sufouh"
 
-        // New adds for the 133 unparsed (grouped)
-        "guardian"
     )
 
     private val INVESTMENT = setOf(
@@ -608,7 +670,14 @@ object CategoryMapping {
         "sultans of shave",
         "mandarin oriental spa",
         "black amber sathorn",
-        "o.c.c.black amber sathorn"
+        "o.c.c.black amber sathorn",
+        "easy way laundry",
+        "splice barbershop",
+        "mandarin oriental spa",
+        "o.c.c.black amber sath",
+        "o.c.c.public co.,ltd",
+        "phetsathorn"
+
     )
 
     private val EDUCATION = setOf(
@@ -653,7 +722,9 @@ object CategoryMapping {
 
         // Must-add from earlier (confirmed)
         "abu dhabi judicial dep",
-        "sharjah finance depart"
+        "sharjah finance depart",
+        "smartdxbgov-ded"
+
     )
 
     private val BANK_CHARGE = setOf(
@@ -671,10 +742,7 @@ object CategoryMapping {
     private val TRAVEL = setOf(
         // --- OTAs / Meta / Booking platforms ---
         "make my trip",
-        "makemytrip",
         "yatra",
-        "goibibo",
-        "cleartrip",
         "ixigo",
         "booking.com",
         "expedia",
@@ -835,7 +903,13 @@ object CategoryMapping {
         "w singapore",
         "gardens by the bay",
         "gardens by the bay-ret",
-        "gardens by the bay-tic"
+        "gardens by the bay-tic",
+        "king power mahanakhon",
+        "al reyadah hospitality",
+        "four points by sheraton",
+        "king group hospitality",
+        "magnolias serviced"
+
     )
 
     // --- single ordered rule list (priority preserved) ---
@@ -865,6 +939,16 @@ object CategoryMapping {
         Rule("Insurance", INSURANCE),
         Rule("Travel", TRAVEL),
     )
+
+    //find duplicates in each rule and print it from RULES
+    public fun findDuplicateKeywords(): Set<String> {
+        val duplicates = RULES.flatMap { it.includes + it.excludes }.groupingBy { it }.eachCount()
+            .filter { it.value > 1 }.keys
+        if (duplicates.isNotEmpty()) {
+            println("Duplicate keywords found across categories: $duplicates")
+        }
+        return duplicates
+    }
 
     // Define all categories with their visual properties
     val categories = mapOf(
