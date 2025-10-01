@@ -86,12 +86,17 @@ fun HomeScreen(
     val deletedTransaction by viewModel.deletedTransaction.collectAsState()
     val smsScanWorkInfo by viewModel.smsScanWorkInfo.collectAsState()
     val activity = LocalActivity.current
-    
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    
+
+    // Currency dropdown state
+      
     // Check for app updates and reviews when the screen is first displayed
     LaunchedEffect(Unit) {
+        // Refresh account balances to ensure proper currency conversion
+        viewModel.refreshAccountBalances()
+
         activity?.let {
             val componentActivity = it as ComponentActivity
             
@@ -173,6 +178,7 @@ fun HomeScreen(
                         bankAccounts = uiState.accountBalances,
                         totalBalance = uiState.totalBalance,
                         totalAvailableCredit = uiState.totalAvailableCredit,
+                        selectedCurrency = uiState.selectedCurrency,
                         onAccountClick = { bankName, accountLast4 ->
                             navController.navigate(
                                 com.pennywiseai.tracker.navigation.AccountDetail(
@@ -751,17 +757,7 @@ private fun TransactionSummaryCards(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        // Show empty state if no transactions in selected currency
-        if (uiState.currentMonthTotal == BigDecimal.ZERO &&
-            uiState.currentMonthIncome == BigDecimal.ZERO &&
-            uiState.currentMonthExpenses == BigDecimal.ZERO &&
-            uiState.availableCurrencies.size > 1) {
-            CurrencyEmptyState(
-                selectedCurrency = uiState.selectedCurrency,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
+  
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth(),
@@ -900,113 +896,67 @@ private fun EnhancedCurrencySelector(
         "ETB" to "ብር"
     )
 
-    PennyWiseCard(
+    // Compact segmented button style
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        containerColor = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
         )
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Dimensions.Padding.content)
+                .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Header with icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = Spacing.sm)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CurrencyExchange,
-                    contentDescription = "Currency",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(Spacing.xs))
-                Text(
-                    text = "Currency View",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "${availableCurrencies.size} available",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
+            availableCurrencies.forEach { currency ->
+                val isSelected = selectedCurrency == currency
+                val symbol = currencySymbols[currency] ?: currency
 
-            // Currency chips with FlowRow for better wrapping
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                availableCurrencies.forEach { currency ->
-                    val isSelected = selectedCurrency == currency
-                    val symbol = currencySymbols[currency] ?: currency
-
-                    Surface(
-                        onClick = { onCurrencySelected(currency) },
-                        modifier = Modifier.animateContentSize(),
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        border = BorderStroke(
-                            width = 1.dp,
+                Surface(
+                    onClick = { onCurrencySelected(currency) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .animateContentSize(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color.Transparent
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Spacing.sm, horizontal = Spacing.xs),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = symbol,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.onPrimary
                             } else {
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(
-                                horizontal = if (isSelected) 16.dp else 12.dp,
-                                vertical = 8.dp
-                            )
-                        ) {
-                            // Currency symbol with enhanced styling
+                        if (symbol != currency) {
+                            Spacer(modifier = Modifier.width(2.dp))
                             Text(
-                                text = symbol,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                text = currency,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                                 } else {
-                                    MaterialTheme.colorScheme.onSurface
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 }
                             )
-
-                            if (symbol != currency) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = currency,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (isSelected) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                    }
-                                )
-                            }
-
-                            // Selected indicator
-                            if (isSelected) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Selected",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -1015,49 +965,3 @@ private fun EnhancedCurrencySelector(
     }
 }
 
-@Composable
-private fun CurrencyEmptyState(
-    selectedCurrency: String,
-    modifier: Modifier = Modifier
-) {
-    val currencySymbols = mapOf(
-        "INR" to "₹",
-        "USD" to "$",
-        "AED" to "AED",
-        "NPR" to "₨",
-        "ETB" to "ብር"
-    )
-    val currencySymbol = currencySymbols[selectedCurrency] ?: selectedCurrency
-
-    PennyWiseCard(
-        modifier = modifier,
-        containerColor = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Dimensions.Padding.content),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "💰",
-                style = MaterialTheme.typography.headlineLarge
-            )
-            Spacer(modifier = Modifier.height(Spacing.sm))
-            Text(
-                text = "No $selectedCurrency transactions yet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(Spacing.xs))
-            Text(
-                text = "Start spending or earning in $currencySymbol to see insights here",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}

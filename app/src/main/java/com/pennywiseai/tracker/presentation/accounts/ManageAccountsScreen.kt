@@ -452,7 +452,7 @@ private fun CreditCardItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = CurrencyFormatter.formatCurrency(card.balance),
+                        text = CurrencyFormatter.formatCurrency(card.balance, card.currency),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = if (card.balance > BigDecimal.ZERO) {
@@ -474,7 +474,7 @@ private fun CreditCardItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = CurrencyFormatter.formatCurrency(available),
+                        text = CurrencyFormatter.formatCurrency(available, card.currency),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
@@ -496,7 +496,7 @@ private fun CreditCardItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = CurrencyFormatter.formatCurrency(card.creditLimit ?: BigDecimal.ZERO),
+                            text = CurrencyFormatter.formatCurrency(card.creditLimit ?: BigDecimal.ZERO, card.currency),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -634,7 +634,7 @@ private fun AccountItem(
                 
                 // Balance
                 Text(
-                    text = CurrencyFormatter.formatCurrency(account.balance),
+                    text = CurrencyFormatter.formatCurrency(account.balance, account.currency),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -797,7 +797,11 @@ private fun UpdateBalanceDialog(
                 label = { Text("New Balance") },
                 placeholder = { Text("0.00") },
                 leadingIcon = {
-                    Icon(Icons.Default.CurrencyRupee, contentDescription = null)
+                    Text(
+                        text = CurrencyFormatter.getCurrencySymbol(CurrencyFormatter.getBankBaseCurrency(bankName)),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
@@ -934,7 +938,7 @@ private fun UpdateCreditCardDialog(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = CurrencyFormatter.formatCurrency(available),
+                                    text = CurrencyFormatter.formatCurrency(available, CurrencyFormatter.getBankBaseCurrency(bankName)),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1031,7 +1035,7 @@ private fun OrphanedCardItem(
                     // Show last known balance if available
                     if (card.lastBalance != null) {
                         Text(
-                            text = "Last Balance: ${CurrencyFormatter.formatCurrency(card.lastBalance)}",
+                            text = "Last Balance: ${CurrencyFormatter.formatCurrency(card.lastBalance, card.currency)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -1170,7 +1174,7 @@ private fun LinkCardDialog(
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = CurrencyFormatter.formatCurrency(account.balance),
+                                        text = CurrencyFormatter.formatCurrency(account.balance, account.currency),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

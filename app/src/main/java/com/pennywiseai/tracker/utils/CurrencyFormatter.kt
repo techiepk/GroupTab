@@ -53,7 +53,7 @@ object CurrencyFormatter {
         "ETB" to Locale.Builder().setLanguage("am").setRegion("ET").build(),
         "THB" to Locale.Builder().setLanguage("th").setRegion("TH").build(),
         "MYR" to Locale.Builder().setLanguage("ms").setRegion("MY").build(),
-        "KWD" to Locale.Builder().setLanguage("ar").setRegion("KW").build(),
+        "KWD" to Locale.Builder().setLanguage("en").setRegion("KW").build(),
         "KRW" to Locale.KOREA
     )
 
