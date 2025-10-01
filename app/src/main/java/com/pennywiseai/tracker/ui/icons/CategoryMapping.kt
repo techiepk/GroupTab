@@ -163,8 +163,60 @@ object CategoryMapping {
         "subway",
         "wagamama",
         "caffe nero",
-        "fresh and tasty", "alkanz lakeshore", "cafe bateel", "bateel", "hutong",
-        "asiakitchen", "asia kitchen", "tbk", "smoked meat world", "nandos", "nando's", "the meydan"
+        "fresh and tasty",
+        "alkanz lakeshore",
+        "cafe bateel",
+        "bateel",
+        "hutong",
+        "asiakitchen",
+        "asia kitchen",
+        "tbk",
+        "smoked meat world",
+        "nandos",
+        "nando's",
+        "the meydan",
+        "kyochon",
+        "nando's",
+        "nandos",
+        "tarbush",
+        "laderach",
+        "chagee",
+        "chica bonita",
+        "saffron & spices",
+        "al amar",
+        "amici",
+        "baan india",
+        "ginger farm kitchen",
+        "bianca",
+        "biancaitalian",
+        "plantiful",
+        "pacamara",
+        "pacamara-qsncc",
+        "pacamara-one bangkok",
+        "dean and deluca",
+        "ohkajhu",
+        "getfresh",
+        "getfresh-exchange tower",
+        "getfresh-samyan mitrtown",
+        "getfresh-empire tower",
+        "bowlito",
+        "james boulangerie",
+        "chester's",
+        "bonchon",
+        "the bibimbab",
+        "guljak topokki",
+        "dough bros",
+        "oakberry acai",
+        "wwa",
+        "w w a",
+        "shaloba",
+        "jharokha",
+        "ksher  akaraskyroofto",
+        "amici",
+        "royce",
+        "godiva",
+        "benlai one bangkok" // confectionery/cafe style
+
 
     )
 
@@ -215,7 +267,28 @@ object CategoryMapping {
         "all day advantage mini",
         "noon minutes",
         "crrefour",
-        "maf mkt"
+        "maf mkt",
+        "jaya grocer",
+        "jaya grocer-intermark",
+        "villa market",
+        "villa market-gaysorn",
+        "villa market-lang suan",
+        "gourmet market",
+        "gourmet market emporium",
+        "tops",
+        "tops-central world",
+        "mini big c",
+        "mini big c-soi prachum",
+        "7-11",
+        "7-11 sukhumvit22",
+        "7-11 one bangkok",
+        "7-11 icon siam",
+        "7-11 park venture",
+        "7-11 maneeya chitlom",
+        "donki",
+        "donki mall",
+        "donki mall thonglor"
+
 
     )
 
@@ -226,6 +299,12 @@ object CategoryMapping {
         "careem ride", "careem hala ride", "yango",
         //Thailand
         "www.grab.com",
+
+        //Malaysia
+        "grab rides",
+        "pyxbolt services",
+        "bolt services",
+
         //Dubai gas stations
         "emarat", "adnoc", "enoc", "epc", "dolphin energy",
 
@@ -236,7 +315,12 @@ object CategoryMapping {
         "presidential transport",
         "q mobility",
         "valtrans",
-        "eppco", "eppco site", "eppco-site", "tasjeel", "integrated transport"
+        "eppco", "eppco site", "eppco-site", "tasjeel", "integrated transport",
+        "grab rides", "grab-ec", "grabtaxi", "bolt", "mrt-bem", "airports of thailand",
+        "sri rat expressway", "chalerm maha nakhon expressway", "expressway",
+        "opntrueiservicetopup", "opn true iservice topup",
+        "shell", "shell 0071f", "petaling jaya grab", "www.grab.com" // (you already have this)
+
 
     )
 
@@ -277,8 +361,59 @@ object CategoryMapping {
         "sharaf dg",
         "american eagle",
         "dufry",
-        "a j a international", "aja international", "noon e-commerce", "noon",
-        "m h al shaya", "beside trading", "intelligent oud", "qissat aloud perfumes"
+        "a j a international",
+        "aja international",
+        "noon e-commerce",
+        "noon",
+        "m h al shaya",
+        "beside trading",
+        "intelligent oud",
+        "qissat aloud perfumes",
+        "uniqlo",
+        "h&m",
+        "sephora",
+        "louis vuitton",
+        "gucci",
+        "chanel",
+        "prada",
+        "tiffany & co",
+        "burberry",
+        "hermes",
+        "cartier",
+        "dior",
+        "fendi",
+        "versace",
+        "michael kors",
+        "coach",
+        "tory burch",
+        "ralph lauren",
+        "armani",
+        "zara",
+        "adidas",
+        "nike",
+        "puma",
+        "reebok",
+        "under armour",
+        "lululemon",
+        "the north face",
+        "uniqlo",
+        "uniqlo trx",
+        "royce",
+        "godiva pavilion",
+        "skechers",
+        "urban revivo",
+        "owndays",
+        "it city",
+        "crc sports",
+        "sony (central world)",
+        "apple central world",
+        "lazada limited",
+        "www.2c2p.comlazada",
+        "2c2p lazada",
+        "www.2c2p.com lazada",
+        "sephora (thailand)",
+        "eveandboy",
+        "eveandboy/gaysorn"
 
     )
 
@@ -319,7 +454,10 @@ object CategoryMapping {
         "gaana", "jiosaavn", "apple music", "wynk",
 
         // --- Newly Added Merchants ---
-        "global village"
+        "global village",
+        "major cineplex", "www.majorcineplex.com", "2c2pmajor cineplex", "2c2p major cineplex",
+        "ticketmelon", "www.2c2p ticketmelon", "www.2cticketmelon"
+
     )
 
     private val HEALTHCARE = setOf(
@@ -332,7 +470,9 @@ object CategoryMapping {
         "dr nutrition",
         "boots",
         "supercare",
-        "life pharmacy", "life phy"
+        "life pharmacy", "life phy",
+        "medex", "medex medex", "bumrungrad" // (for getfresh-bumrungrad receipt context)
+
 
     )
 
@@ -372,7 +512,9 @@ object CategoryMapping {
         "final touch cleaning",
         "drip n dry",
         "careem homeservices",
-        "skin iii"
+        "skin iii",
+        "truefitt and hill"
+
     )
 
     private val EDUCATION = setOf(
@@ -578,7 +720,10 @@ object CategoryMapping {
         "vfs wtc",
         "address downtown",
         "the address downtown",
-        "the meydan"
+        "the meydan",
+        "crowne plaza", "crowne plaza klcc", "four points by sheraton",
+        "sindhorn kempinski", "st.regis bangkok", "the st.regis bangkok", "dusit thani bangkok"
+
 
     )
 
