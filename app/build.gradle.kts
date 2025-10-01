@@ -231,4 +231,5 @@ dependencies {
     
     // OpenCSV for CSV export
     implementation("com.opencsv:opencsv:5.12.0")
+    testImplementation(kotlin("test"))
 }

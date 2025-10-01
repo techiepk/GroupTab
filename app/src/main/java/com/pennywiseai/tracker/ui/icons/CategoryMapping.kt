@@ -64,8 +64,18 @@ object CategoryMapping {
     ): Boolean {
         val m = merchantRaw.lowercase(Locale.ROOT)
         if (noneOf.any { m.contains(it) }) return false
-        return anyOf.any { m.contains(it) }
-        // If you later want stricter matching, swap to Regex word boundaries here.
+
+        // Check for exact matches or word boundaries
+        return anyOf.any { keyword ->
+            // For single word keywords, check word boundaries
+            if (!keyword.contains(" ")) {
+                val regex = "\\b${keyword.replace(".", "\\.")}\\b".toRegex()
+                regex.containsMatchIn(m)
+            } else {
+                // For multi-word keywords, use contains as before
+                m.contains(keyword)
+            }
+        }
     }
 
     // --- keyword sets (single source of truth) ---
@@ -94,7 +104,6 @@ object CategoryMapping {
         "roast",
         "al saray",
         "oh my juice",
-
 
         //Careem delivery
         "careem food",
@@ -176,8 +185,6 @@ object CategoryMapping {
         "nando's",
         "the meydan",
         "kyochon",
-        "nando's",
-        "nandos",
         "tarbush",
         "laderach",
         "chagee",
@@ -211,13 +218,44 @@ object CategoryMapping {
         "w w a",
         "shaloba",
         "jharokha",
-        "ksher  akaraskyroofto",
-        "amici",
+        "ksher akaraskyroofto",
         "royce",
         "godiva",
-        "benlai one bangkok" // confectionery/cafe style
+        "benlai one bangkok", // confectionery/cafe style
 
+        // Must-add from earlier (confirmed)
+        "piri piri flaming grill",
+        "naixue",
+        "bn-icon siam",
 
+        // New adds for the 133 unparsed (grouped)
+        "pf changs",
+        "p f changs",
+        "al shayapf changs",
+        "docg",
+        "dark-emquartier",
+        "chuan kitchen",
+        "heytea",
+        "jasons deli",
+        "paris baguette",
+        "pezzo",
+        "origin+bloom",
+        "origin and bloom",
+        "punjab grill",
+        "shaans north indian",
+        "shaan north indian",
+        "sanchos paragon",
+        "sanchos",
+        "mitsukoshi depachika",
+        "oriental gourmet",
+        "the oriental gourmet",
+        "bosporus",
+        "leto",
+
+        // Google-prefixed eateries
+        "google nomadtable",
+        "google tantan asian",
+        "google viki asian dra"
     )
 
     private val GROCERY = setOf(
@@ -287,9 +325,10 @@ object CategoryMapping {
         "7-11 maneeya chitlom",
         "donki",
         "donki mall",
-        "donki mall thonglor"
-
-
+        "donki mall thonglor",
+        // New adds for the 133 unparsed (grouped)
+        "guardian",
+        "guardian paragon"
     )
 
     private val TRANSPORT = setOf(
@@ -316,12 +355,22 @@ object CategoryMapping {
         "q mobility",
         "valtrans",
         "eppco", "eppco site", "eppco-site", "tasjeel", "integrated transport",
-        "grab rides", "grab-ec", "grabtaxi", "bolt", "mrt-bem", "airports of thailand",
+        "grab-ec", "grabtaxi", "bolt", "mrt-bem", "airports of thailand",
         "sri rat expressway", "chalerm maha nakhon expressway", "expressway",
         "opntrueiservicetopup", "opn true iservice topup",
-        "shell", "shell 0071f", "petaling jaya grab", "www.grab.com" // (you already have this)
+        "shell", "shell 0071f", "petaling jaya grab",
 
-
+        // New adds for the 133 unparsed (grouped)
+        "opvn bike tour",
+        "acv noi bai",
+        "noi bai",
+        "grab a-",
+        "grab 5-",
+        "sats",
+        "sats t1",
+        "sats t1i4",
+        "vnpay",
+        "vnpaytram"
     )
 
     private val SHOPPING = setOf(
@@ -370,6 +419,7 @@ object CategoryMapping {
         "intelligent oud",
         "qissat aloud perfumes",
         "uniqlo",
+        "uniqlo trx",
         "h&m",
         "sephora",
         "louis vuitton",
@@ -388,7 +438,6 @@ object CategoryMapping {
         "tory burch",
         "ralph lauren",
         "armani",
-        "zara",
         "adidas",
         "nike",
         "puma",
@@ -396,14 +445,13 @@ object CategoryMapping {
         "under armour",
         "lululemon",
         "the north face",
-        "uniqlo",
-        "uniqlo trx",
         "royce",
         "godiva pavilion",
         "skechers",
         "urban revivo",
         "owndays",
         "it city",
+        "it city centralworld",
         "crc sports",
         "sony (central world)",
         "apple central world",
@@ -413,8 +461,31 @@ object CategoryMapping {
         "www.2c2p.com lazada",
         "sephora (thailand)",
         "eveandboy",
-        "eveandboy/gaysorn"
+        "eveandboy/gaysorn",
 
+        // New adds for the 133 unparsed (grouped)
+        "istudio",
+        "istudio-siam paragon",
+        "wh smith singapore",
+        "lyn",
+        "fiverr",
+        "select media",
+        "adobe",
+        "adobe.com",
+        "lastpass",
+        "lastpass.com",
+        "openai chatgpt",
+        "openai",
+        "cursor",
+        "cursor usage",
+        "docg pte ltd",
+        "blu intelligent solutions",
+        "gajeto-23",
+        "sukhumvit city mall",
+        "the emsphere",
+        "central world",
+        "emquartier",
+        "iconsiam",
     )
 
     private val UTILITIES = setOf(
@@ -444,8 +515,10 @@ object CategoryMapping {
         "tasleem address harbour",
         "greenland environment",
         "noq south energy",
-        "noqsouth energy dwc"
+        "noqsouth energy dwc",
 
+        // New adds for the 133 unparsed (grouped)
+        "tamdeed projects"
     )
 
     private val ENTERTAINMENT = setOf(
@@ -455,9 +528,15 @@ object CategoryMapping {
 
         // --- Newly Added Merchants ---
         "global village",
-        "major cineplex", "www.majorcineplex.com", "2c2pmajor cineplex", "2c2p major cineplex",
-        "ticketmelon", "www.2c2p ticketmelon", "www.2cticketmelon"
-
+        "major cineplex",
+        "www.majorcineplex.com",
+        "2c2pmajor cineplex",
+        "2c2p major cineplex",
+        "major 1066",
+        "major 1126",
+        "ticketmelon",
+        "www.2c2p ticketmelon",
+        "www.2cticketmelon"
     )
 
     private val HEALTHCARE = setOf(
@@ -470,10 +549,15 @@ object CategoryMapping {
         "dr nutrition",
         "boots",
         "supercare",
-        "life pharmacy", "life phy",
-        "medex", "medex medex", "bumrungrad" // (for getfresh-bumrungrad receipt context)
+        "life pharmacy",
+        "life phy",
+        "life pharm",
+        "deira life pharm",
+        "medex",
+        "bumrungrad", // (for getfresh-bumrungrad receipt context)
 
-
+        // New adds for the 133 unparsed (grouped)
+        "guardian"
     )
 
     private val INVESTMENT = setOf(
@@ -492,8 +576,9 @@ object CategoryMapping {
         "bank cheque operation",
         "bank cash operation",
         "my fatoorah",
-        "cash withdrawal"
-
+        "cash withdrawal",
+        "transfer to",
+        "transfer from",
     )
 
     private val PERSONAL_CARE = setOf(
@@ -513,8 +598,13 @@ object CategoryMapping {
         "drip n dry",
         "careem homeservices",
         "skin iii",
-        "truefitt and hill"
+        "truefitt and hill",
 
+        // New adds for the 133 unparsed (grouped)
+        "sultans of shave",
+        "mandarin oriental spa",
+        "black amber sathorn",
+        "o.c.c.black amber sathorn"
     )
 
     private val EDUCATION = setOf(
@@ -555,7 +645,11 @@ object CategoryMapping {
         "sharjah finance dept",
         "tassheel",
         "dubai courts",
-        "ministry of interior"
+        "ministry of interior",
+
+        // Must-add from earlier (confirmed)
+        "abu dhabi judicial dep",
+        "sharjah finance depart"
     )
 
     private val BANK_CHARGE = setOf(
@@ -563,7 +657,6 @@ object CategoryMapping {
         "minimum balance", "sms charge", "atm recovery", "service charge",
         "annual fee", "processing fee", "convenience fee", "late payment",
         "cheque returned"
-
     )
 
     private val CC_PAYMENT = setOf(
@@ -632,7 +725,6 @@ object CategoryMapping {
 
         //Abu Dhabi Brands
         "emirates palace",
-
 
         // --- Global premium chains ---
         "radisson",
@@ -715,18 +807,32 @@ object CategoryMapping {
         // --- Newly Added Merchants ---
         "vfs global",
         "dubai world trade centre",
+        "dubai world trade cent",
         "vfs uk",
         "vfs world trade centre",
         "vfs wtc",
         "address downtown",
         "the address downtown",
         "the meydan",
-        "crowne plaza", "crowne plaza klcc", "four points by sheraton",
-        "sindhorn kempinski", "st.regis bangkok", "the st.regis bangkok", "dusit thani bangkok"
+        "crowne plaza",
+        "crowne plaza klcc",
+        "four points by sheraton",
+        "sindhorn kempinski",
+        "st.regis bangkok",
+        "the st.regis bangkok",
+        "dusit thani bangkok",
 
-
+        // New adds for the 133 unparsed (grouped)
+        "staybridge",
+        "park silom",
+        "the parq",
+        "marina bay sands",
+        "mbs front office",
+        "w singapore",
+        "gardens by the bay",
+        "gardens by the bay-ret",
+        "gardens by the bay-tic"
     )
-
 
     // --- single ordered rule list (priority preserved) ---
     private data class Rule(
