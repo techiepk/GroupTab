@@ -15,6 +15,9 @@ class CategoryMappingTest {
         assertEquals("Food & Dining", getCategory("Bombay Bungalow"))
         assertEquals("Food & Dining", getCategory("Heytea"))
         assertEquals("Food & Dining", getCategory("Google Nomadtable"))
+        assertEquals("Food & Dining", getCategory("GHL*JHAROKA BY INDUS BANGKOK  11 TH"))
+        assertEquals("Food & Dining", getCategory("GHLJHAROKA BY INDUS BANGKOK  11 TH"))
+        assertEquals("Food & Dining", getCategory("Ksher  *AKARASKYROOFTOBangkok TH"))
 
 
         assertEquals("Groceries", getCategory("7-11"))
@@ -44,10 +47,14 @@ class CategoryMappingTest {
         assertEquals("Travel", getCategory("Marina Bay Sands"))
         assertEquals("Travel", getCategory("Hilton Garden Inn"))
         assertEquals("Travel", getCategory("WESTIN KL-FRONT OFFICE KUALA LUMPUR MY MY"))
+        assertEquals("Travel", getCategory("WWW.MAGNOLIASSERVICEDRBANGKOK TH"))
+        assertEquals("Travel", getCategory("FOUR POINTS BY SHERATOBANGKOK 11 TH"))
+
 
         assertEquals("Healthcare", getCategory("Life Pharm"))
         assertEquals("Healthcare", getCategory("Bumrungrad"))
         assertEquals("Healthcare", getCategory("Medex"))
+        assertEquals("Healthcare", getCategory("BOOTS_4287 C.WORLD 3 FBANGKOK TH"))
 
         assertEquals("Personal Care", getCategory("Sultans of Shave"))
         assertEquals("Personal Care", getCategory("Mandarin Oriental Spa"))
@@ -58,6 +65,7 @@ class CategoryMappingTest {
         assertEquals("Tax", getCategory("Sharjah Finance Depart"))
 
         assertEquals("Bills & Utilities", getCategory("Tamdeed Projects"))
+        assertEquals("Bills & Utilities", getCategory("WWW.PAYSOLUT*WWW.PAYSOBANGKOK  TH"))
 
         assertEquals("Banking", getCategory("My Fatoorah"))
 

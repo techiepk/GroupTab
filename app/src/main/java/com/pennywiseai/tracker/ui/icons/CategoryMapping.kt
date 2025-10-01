@@ -216,8 +216,10 @@ object CategoryMapping {
         "wwa",
         "w w a",
         "shaloba",
-        "jharokha",
+        "jharoka",
+        "ghljharoka",
         "ksher akaraskyroofto",
+        "akaraskyrooftobangkok",
         "royce",
         "godiva",
         "benlai one bangkok", // confectionery/cafe style
@@ -285,7 +287,6 @@ object CategoryMapping {
         "the coffee lab",
         "top cafeteria",
         "bosporus sharjah"
-
     )
 
     private val GROCERY = setOf(
@@ -538,7 +539,6 @@ object CategoryMapping {
         "smartordering technolo",
         "space hub general ware",
         "virgin megastore",
-        "paysolut",
         "empire tower",
         "the empire tower",
 
@@ -575,7 +575,9 @@ object CategoryMapping {
 
         // New adds for the 133 unparsed (grouped)
         "tamdeed projects",
-        "smart dubai government"
+        "smart dubai government",
+        "paysolut",
+
 
     )
 
@@ -616,10 +618,10 @@ object CategoryMapping {
         "medex",
         "bumrungrad", // (for getfresh-bumrungrad receipt context)
         "watsons",
-        "boots",
         "lac nutrition for life",
-        "mediclinic al sufouh"
-
+        "mediclinic al sufouh",
+        "boots_",
+        "boots_4287 c.world 3 fbangkok th"
     )
 
     private val INVESTMENT = setOf(
@@ -824,6 +826,7 @@ object CategoryMapping {
         "tribe living",
         "s/o uptown",
         "moxy",
+        "four points by sherato",
 
         // --- Mid-range / business / budget brands ---
         "doubletree",
@@ -908,8 +911,8 @@ object CategoryMapping {
         "al reyadah hospitality",
         "four points by sheraton",
         "king group hospitality",
-        "magnolias serviced"
-
+        "magnolias serviced",
+        "magnoliasservicedrbangkok"
     )
 
     // --- single ordered rule list (priority preserved) ---
