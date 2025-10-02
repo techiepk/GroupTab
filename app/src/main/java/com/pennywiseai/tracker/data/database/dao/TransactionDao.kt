@@ -123,10 +123,10 @@ interface TransactionDao {
     ): List<TransactionEntity>
     
     @Query("""
-        SELECT * FROM transactions 
-        WHERE is_deleted = 0 
-        AND bank_name = :bankName 
-        AND account_number = :accountLast4
+        SELECT * FROM transactions
+        WHERE is_deleted = 0
+        AND bank_name = :bankName
+        AND (account_number = :accountLast4 OR account_number IS NULL)
         ORDER BY date_time DESC
     """)
     fun getTransactionsByAccount(
