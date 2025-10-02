@@ -114,3 +114,6 @@
 -dontwarn com.google.protobuf.ProtoField
 -dontwarn com.google.protobuf.ProtoPresenceBits
 -dontwarn com.google.protobuf.ProtoPresenceCheckedField
+
+# SLF4J (used by OpenCSV)
+-dontwarn org.slf4j.impl.StaticLoggerBinder
