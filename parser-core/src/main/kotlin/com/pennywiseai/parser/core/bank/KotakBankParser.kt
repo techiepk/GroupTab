@@ -24,9 +24,16 @@ class KotakBankParser : BankParser() {
     
     override fun extractMerchant(message: String, sender: String): String? {
         // Pattern 1: "Sent Rs.X from Kotak Bank AC XXXX to merchant@bank on"
-        // Extract merchant from UPI ID like "upiswiggy@icici" or "amazonpayrecharges@apl"
+        // Pattern 2: "Received Rs.X in your Kotak Bank AC XXXX from merchant@bank on"
+
+        // Try "to" pattern for sent transactions
         val toPattern = Regex("to\\s+([^\\s]+@[^\\s]+)\\s+on", RegexOption.IGNORE_CASE)
-        toPattern.find(message)?.let { match ->
+        val fromPattern = Regex("from\\s+([^\\s]+@[^\\s]+)\\s+on", RegexOption.IGNORE_CASE)
+
+        // Check both patterns
+        val upiMatch = toPattern.find(message) ?: fromPattern.find(message)
+
+        upiMatch?.let { match ->
             val upiId = match.groupValues[1].trim()
             
             // Extract merchant name from UPI ID
@@ -52,16 +59,24 @@ class KotakBankParser : BankParser() {
                                 cleanMerchantName(name)
                             }
                         }
-                        // Pure phone numbers - try to extract from bank code
-                        name.length == 10 && name.all { it.isDigit() } -> {
-                            extractMerchantFromBankCode(bankCode) ?: "Phone Transfer"
+                        // Pure phone numbers - always return the phone number
+                        name.length > 0 && name.all { it.isDigit() } -> {
+                            // For person-to-person transfers, always show the phone number
+                            // not the bank/app name (users want to see WHO they sent to, not HOW)
+                            name
                         }
                         else -> null
                     }
                 }
             }
             
-            if (merchantName != null && isValidMerchantName(merchantName)) {
+            if (merchantName != null) {
+                // For other merchants, check validation
+                if (isValidMerchantName(merchantName)) {
+                    return merchantName
+                }
+                // If validation fails but we have a merchant name, still return it
+                // This handles edge cases where the extracted name doesn't pass standard validation
                 return merchantName
             }
         }
