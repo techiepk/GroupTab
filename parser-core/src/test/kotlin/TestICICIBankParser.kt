@@ -6,8 +6,91 @@ fun main() {
     val parser = ICICIBankParser()
 
     println("=" * 80)
-    println("ICICI Bank Parser Test - Future Debit Notification Fix")
+    println("ICICI Bank Parser Test - Multi-Currency & Future Debit Fix")
     println("=" * 80)
+    println()
+
+    // Test Multi-Currency Support
+    println("=== MULTI-CURRENCY TESTS ===")
+    println()
+
+    println("Test 1: USD Transaction (JetBrains)")
+    println("-" * 60)
+    val usdMessage = "USD 11.80 spent using ICICI Bank Card XX7004 on 03-Sep-25 on 1xJetBrains AI . Avl Limit: INR 17,95,899.53. If not you, call 1800 2662/SMS BLOCK 7004 to 9215676766."
+    val sender = "JM-ICICIT-S"
+
+    println("Message: ${usdMessage.take(80)}...")
+    println("Sender: $sender")
+    println()
+
+    val usdResult = parser.parse(usdMessage, sender, System.currentTimeMillis())
+
+    if (usdResult != null) {
+        if (usdResult.amount == BigDecimal("11.80") && usdResult.currency == "USD") {
+            println("✓ PASSED: Correctly parsed USD transaction")
+            println("  Amount: ${usdResult.amount} ${usdResult.currency}")
+            println("  Type: ${usdResult.type}")
+            println("  Merchant: ${usdResult.merchant}")
+            println("  Available Limit: ${usdResult.creditLimit}")
+        } else {
+            println("✗ FAILED: Incorrect parsing")
+            println("  Expected: 11.80 USD")
+            println("  Got: ${usdResult.amount} ${usdResult.currency}")
+        }
+    } else {
+        println("✗ FAILED: Parser returned null")
+    }
+
+    println()
+    println("Test 2: EUR Transaction")
+    println("-" * 60)
+    val eurMessage = "EUR 50.00 spent using ICICI Bank Card XX1234 on 05-Sep-25 on Amazon DE. Avl Limit: INR 2,00,000.00. SMS BLOCK 1234 to 9215676766"
+
+    println("Message: ${eurMessage.take(80)}...")
+    println()
+
+    val eurResult = parser.parse(eurMessage, sender, System.currentTimeMillis())
+
+    if (eurResult != null) {
+        if (eurResult.amount == BigDecimal("50.00") && eurResult.currency == "EUR") {
+            println("✓ PASSED: Correctly parsed EUR transaction")
+            println("  Amount: ${eurResult.amount} ${eurResult.currency}")
+            println("  Type: ${eurResult.type}")
+            println("  Merchant: ${eurResult.merchant}")
+        } else {
+            println("✗ FAILED: Incorrect parsing")
+            println("  Expected: 50.00 EUR")
+            println("  Got: ${eurResult.amount} ${eurResult.currency}")
+        }
+    } else {
+        println("✗ FAILED: Parser returned null")
+    }
+
+    println()
+    println("Test 3: Regular INR Transaction (Should still work)")
+    println("-" * 60)
+    val inrMessage = "INR 500.00 spent using ICICI Bank Card XX5678 on 06-Sep-25 on Swiggy. Avl Limit: INR 1,50,000.00."
+
+    println("Message: ${inrMessage.take(80)}...")
+    println()
+
+    val inrResult = parser.parse(inrMessage, sender, System.currentTimeMillis())
+
+    if (inrResult != null) {
+        if (inrResult.amount == BigDecimal("500.00") && inrResult.currency == "INR") {
+            println("✓ PASSED: INR transactions still work")
+            println("  Amount: ${inrResult.amount} ${inrResult.currency}")
+            println("  Type: ${inrResult.type}")
+            println("  Merchant: ${inrResult.merchant}")
+        } else {
+            println("✗ FAILED: INR parsing broken")
+            println("  Got: ${inrResult.amount} ${inrResult.currency}")
+        }
+    } else {
+        println("✗ FAILED: Parser returned null")
+    }
+
+    println()
     println()
 
     // Test the specific case from user feedback

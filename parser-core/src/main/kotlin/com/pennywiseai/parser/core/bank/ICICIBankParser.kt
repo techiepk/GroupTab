@@ -1,23 +1,94 @@
 package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.TransactionType
+import com.pennywiseai.parser.core.ParsedTransaction
 import java.math.BigDecimal
 
 /**
  * Parser for ICICI Bank SMS messages
- * 
+ *
  * Supported formats:
  * - Debit: "Your account has been successfully debited with Rs xxx.00"
  * - Credit: "Acct XXxxx is credited with Rs xxx.00"
  * - UPI: "ICICI Bank Acct XXxxx debited for Rs xxx.00"
  * - Cash Deposit: "Cash deposit transaction of Rs xxx in ICICI Bank Account 1234XXXX1234 has been completed"
  * - AutoPay transactions
- * 
+ * - Multi-currency: "USD 11.80 spent using ICICI Bank Card"
+ *
  * Common senders: XX-ICICIB-S, ICICIB, ICICIBANK
  */
 class ICICIBankParser : BankParser() {
-    
+
     override fun getBankName() = "ICICI Bank"
+
+    override fun parse(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        // Skip non-transaction messages
+        if (!isTransactionMessage(smsBody)) {
+            return null
+        }
+
+        val amount = extractAmount(smsBody)
+        if (amount == null) {
+            return null
+        }
+
+        val type = extractTransactionType(smsBody)
+        if (type == null) {
+            return null
+        }
+
+        // Extract currency dynamically for multi-currency support
+        val currency = extractCurrencyFromMessage(smsBody) ?: "INR"
+
+        // Extract available limit for credit card transactions
+        val availableLimit = if (type == TransactionType.CREDIT) {
+            val limit = extractAvailableLimit(smsBody)
+            limit
+        } else {
+            null
+        }
+
+        return ParsedTransaction(
+            amount = amount,
+            type = type,
+            merchant = extractMerchant(smsBody, sender),
+            reference = extractReference(smsBody),
+            accountLast4 = extractAccountLast4(smsBody),
+            balance = extractBalance(smsBody),
+            creditLimit = availableLimit,
+            smsBody = smsBody,
+            sender = sender,
+            timestamp = timestamp,
+            bankName = getBankName(),
+            isFromCard = detectIsCard(smsBody),
+            currency = currency
+        )
+    }
+
+    /**
+     * Extract currency from ICICI transaction messages
+     * Handles formats like "USD 11.80 spent" or "EUR 50.00 spent"
+     */
+    private fun extractCurrencyFromMessage(message: String): String? {
+        // Pattern for "USD 11.80 spent" format
+        val currencySpentPattern = Regex(
+            """([A-Z]{3})\s+[0-9,]+(?:\.\d{2})?\s+spent""",
+            RegexOption.IGNORE_CASE
+        )
+        currencySpentPattern.find(message)?.let { match ->
+            val currency = match.groupValues[1].uppercase()
+            // Validate it's a valid currency code (3 letters, not month abbreviations)
+            if (currency.length == 3 &&
+                !currency.matches(Regex("^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)$"))) {
+                return currency
+            }
+        }
+
+        // Pattern for other formats if needed in future
+        // Could add more patterns here
+
+        return null
+    }
     
     override fun canHandle(sender: String): Boolean {
         val normalizedSender = sender.uppercase()
@@ -37,12 +108,26 @@ class ICICIBankParser : BankParser() {
     }
     
     override fun extractAmount(message: String): BigDecimal? {
-        // Pattern 1: "Rs xxx.xx spent" or "INR xxx.xx spent" (for card transactions)
-        val spentPattern = Regex(
+        // Pattern 1: Multi-currency support - "USD 11.80 spent" or "EUR 50.00 spent"
+        val multiCurrencySpentPattern = Regex(
+            """[A-Z]{3}\s+([0-9,]+(?:\.\d{2})?)\s+spent""",
+            RegexOption.IGNORE_CASE
+        )
+        multiCurrencySpentPattern.find(message)?.let { match ->
+            val amount = match.groupValues[1].replace(",", "")
+            return try {
+                BigDecimal(amount)
+            } catch (e: NumberFormatException) {
+                null
+            }
+        }
+
+        // Pattern 2: "Rs xxx.xx spent" or "INR xxx.xx spent" (for INR card transactions)
+        val inrSpentPattern = Regex(
             """(?:Rs\.?|INR)\s+([0-9,]+(?:\.\d{2})?)\s+spent""",
             RegexOption.IGNORE_CASE
         )
-        spentPattern.find(message)?.let { match ->
+        inrSpentPattern.find(message)?.let { match ->
             val amount = match.groupValues[1].replace(",", "")
             return try {
                 BigDecimal(amount)
