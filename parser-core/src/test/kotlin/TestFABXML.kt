@@ -1,21 +1,10 @@
 package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.TransactionType
+import com.pennywiseai.parser.core.test.SMSData
+import com.pennywiseai.parser.core.test.XMLTestUtils
 import java.math.BigDecimal
-import javax.xml.parsers.DocumentBuilderFactory
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.w3c.dom.Node
-import org.w3c.dom.NodeList
-import java.io.InputStream
 
-data class SMSData(
-    val sender: String,
-    val body: String,
-    val timestamp: Long,
-    val readableDate: String,
-    val description: String
-)
 
 fun main() {
     val parser = FABParser()
@@ -46,7 +35,7 @@ fun testCanHandle(parser: FABParser) {
 }
 
 fun testFABParserWithXMLData(parser: FABParser) {
-    val smsMessages = loadSMSDataFromXML()
+    val smsMessages = XMLTestUtils.loadSMSDataFromResource("fab_sms_test_data_anonymized.xml")
 
     if (smsMessages.isEmpty()) {
         println("❌ No SMS messages found in XML file")
@@ -173,96 +162,3 @@ fun printSummary(total: Int, passed: Int, failed: Int, failureDetails: List<Stri
     }
 }
 
-fun loadSMSDataFromXML(): List<SMSData> {
-    val smsList = mutableListOf<SMSData>()
-
-    try {
-        val inputStream: InputStream = object {}.javaClass.classLoader.getResourceAsStream("fab_sms_test_data_anonymized.xml")
-            ?: throw RuntimeException("XML file not found: fab_sms_test_data_anonymized.xml")
-
-        val dbFactory = DocumentBuilderFactory.newInstance()
-        val dBuilder = dbFactory.newDocumentBuilder()
-        val doc: Document = dBuilder.parse(inputStream)
-        doc.documentElement.normalize()
-
-        // Parse regular SMS messages
-        val smsNodes: NodeList = doc.getElementsByTagName("sms")
-        for (i in 0 until smsNodes.length) {
-            val smsNode = smsNodes.item(i)
-            if (smsNode.nodeType == Node.ELEMENT_NODE) {
-                val smsElement = smsNode as Element
-                smsList.add(parseSMSElement(smsElement))
-            }
-        }
-
-        // Parse MMS messages
-        val mmsNodes: NodeList = doc.getElementsByTagName("mms")
-        for (i in 0 until mmsNodes.length) {
-            val mmsNode = mmsNodes.item(i)
-            if (mmsNode.nodeType == Node.ELEMENT_NODE) {
-                val mmsElement = mmsNode as Element
-                smsList.add(parseMMSElement(mmsElement))
-            }
-        }
-
-    } catch (e: Exception) {
-        throw RuntimeException("Failed to load SMS data from XML file", e)
-    }
-
-    return smsList
-}
-
-fun parseSMSElement(smsElement: Element): SMSData {
-    val address = smsElement.getAttribute("address")
-    val body = smsElement.getAttribute("body")
-        .replace("&#10;", "\n")
-        .replace("&amp;", "&")
-    val date = smsElement.getAttribute("date").toLongOrNull() ?: System.currentTimeMillis()
-    val readableDate = smsElement.getAttribute("readable_date")
-
-    return SMSData(
-        sender = address,
-        body = body,
-        timestamp = date,
-        readableDate = readableDate,
-        description = generateDescription(body, readableDate)
-    )
-}
-
-fun parseMMSElement(mmsElement: Element): SMSData {
-    val address = mmsElement.getAttribute("address")
-    val date = mmsElement.getAttribute("date").toLongOrNull() ?: System.currentTimeMillis()
-    val readableDate = mmsElement.getAttribute("readable_date")
-
-    var body = ""
-    val parts = mmsElement.getElementsByTagName("part")
-    for (i in 0 until parts.length) {
-        val part = parts.item(i) as Element
-        if (part.getAttribute("ct") == "text/plain") {
-            body = part.getAttribute("text")
-                .replace("&#10;", "\n")
-                .replace("&amp;", "&")
-            break
-        }
-    }
-
-    return SMSData(
-        sender = address,
-        body = body,
-        timestamp = date,
-        readableDate = readableDate,
-        description = "MMS: ${generateDescription(body, readableDate)}"
-    )
-}
-
-fun generateDescription(body: String, readableDate: String): String {
-    return when {
-        body.contains("Debit Card Purchase") -> "Debit Card Purchase"
-        body.contains("ATM Cash withdrawal") -> "ATM Cash Withdrawal"
-        body.contains("Outward Remittance") -> "Outward Remittance"
-        body.contains("funds transfer") -> "Funds Transfer"
-        body.contains("OTP") -> "OTP Message"
-        body.contains("Samsung Pay") -> "Samsung Pay Notification"
-        else -> "General SMS - $readableDate"
-    }
-}
