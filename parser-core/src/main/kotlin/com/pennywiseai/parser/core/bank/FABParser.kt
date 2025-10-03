@@ -7,8 +7,9 @@ import java.math.BigDecimal
 /**
  * Parser for First Abu Dhabi Bank (FAB) - UAE's largest bank
  * Handles AED currency transactions and global currencies for international transactions
+ * This class is designed to be inheritable by other UAE bank parsers like ADCB
  */
-class FABParser : BankParser() {
+open class FABParser : BankParser() {
 
     override fun getBankName() = "First Abu Dhabi Bank"
 
