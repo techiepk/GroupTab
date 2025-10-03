@@ -14,6 +14,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -22,6 +25,7 @@ import javax.inject.Inject
 interface ExchangeRateProvider {
     suspend fun fetchExchangeRate(fromCurrency: String, toCurrency: String): BigDecimal?
     suspend fun fetchAllExchangeRates(baseCurrency: String): Map<String, BigDecimal>?
+    suspend fun fetchAllExchangeRatesWithMetadata(baseCurrency: String): ExchangeRateResponseWithMetadata?
     fun getProviderName(): String
     suspend fun getSupportedCurrencies(): List<String>
 }
@@ -58,6 +62,11 @@ class FreeExchangeRateProvider @Inject constructor() : ExchangeRateProvider {
     }
 
     override suspend fun fetchAllExchangeRates(baseCurrency: String): Map<String, BigDecimal>? {
+        val response = fetchAllExchangeRatesWithMetadata(baseCurrency)
+        return response?.rates
+    }
+
+    override suspend fun fetchAllExchangeRatesWithMetadata(baseCurrency: String): ExchangeRateResponseWithMetadata? {
         return try {
             withContext(Dispatchers.IO) {
                 val response = client.get("https://open.er-api.com/v6/latest/${baseCurrency.uppercase()}") {
@@ -67,9 +76,15 @@ class FreeExchangeRateProvider @Inject constructor() : ExchangeRateProvider {
                 val exchangeRateResponse: ExchangeRateApiResponse = response.body()
 
                 if (exchangeRateResponse.result == "success") {
-                    exchangeRateResponse.rates.mapValues { (_, rate) ->
-                        BigDecimal(rate).setScale(6, RoundingMode.HALF_UP)
-                    }
+                    ExchangeRateResponseWithMetadata(
+                        rates = exchangeRateResponse.rates.mapValues { (_, rate) ->
+                            BigDecimal(rate).setScale(6, RoundingMode.HALF_UP)
+                        },
+                        nextUpdateTimeUnix = exchangeRateResponse.time_next_update_unix,
+                        lastUpdateTimeUnix = exchangeRateResponse.time_last_update_unix,
+                        provider = exchangeRateResponse.provider,
+                        baseCurrency = exchangeRateResponse.base_code
+                    )
                 } else {
                     null
                 }
@@ -116,6 +131,17 @@ data class ExchangeRateApiResponse(
     val time_eol_unix: Long,
     val base_code: String,
     val rates: Map<String, Double>
+)
+
+/**
+ * Extended response data class that includes the full API response with timestamps
+ */
+data class ExchangeRateResponseWithMetadata(
+    val rates: Map<String, BigDecimal>,
+    val nextUpdateTimeUnix: Long,
+    val lastUpdateTimeUnix: Long,
+    val provider: String,
+    val baseCurrency: String
 )
 
 /**

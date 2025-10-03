@@ -37,6 +37,10 @@ fun BalanceHistoryDialog(
     onDeleteBalance: (Long) -> Unit,
     onUpdateBalance: (Long, BigDecimal) -> Unit
 ) {
+    // Get the primary currency for this account
+    val accountPrimaryCurrency = remember(bankName) {
+        CurrencyFormatter.getBankBaseCurrency(bankName)
+    }
     var editingId by remember { mutableStateOf<Long?>(null) }
     var editingValue by remember { mutableStateOf("") }
     var showDeleteConfirmation by remember { mutableStateOf<Long?>(null) }
@@ -113,6 +117,7 @@ fun BalanceHistoryDialog(
                                 isExpanded = isExpanded,
                                 editingId = editingId,
                                 editingValue = editingValue,
+                                accountPrimaryCurrency = accountPrimaryCurrency,
                                 onEditClick = {
                                     editingId = balance.id
                                     editingValue = balance.balance.toPlainString()
@@ -194,6 +199,7 @@ private fun BalanceHistoryItem(
     isExpanded: Boolean,
     editingId: Long?,
     editingValue: String,
+    accountPrimaryCurrency: String,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onEditValueChange: (String) -> Unit,
@@ -360,10 +366,10 @@ private fun BalanceHistoryItem(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("New Balance") },
                         leadingIcon = {
-                            Icon(
-                                Icons.Default.CurrencyRupee,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                            Text(
+                                text = CurrencyFormatter.getCurrencySymbol(accountPrimaryCurrency),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     )
@@ -405,7 +411,7 @@ private fun BalanceHistoryItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = CurrencyFormatter.formatCurrency(balance.balance),
+                        text = CurrencyFormatter.formatCurrency(balance.balance, accountPrimaryCurrency),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = if (isLatest) {

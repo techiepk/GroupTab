@@ -23,6 +23,9 @@ interface ExchangeRateDao {
     @Query("SELECT * FROM exchange_rates WHERE from_currency = :fromCurrency AND expires_at > :currentTime")
     suspend fun getExchangeRatesForCurrency(fromCurrency: String, currentTime: LocalDateTime = LocalDateTime.now()): List<ExchangeRateEntity>
 
+    @Query("SELECT * FROM exchange_rates WHERE from_currency = :fromCurrency AND expires_at_unix > :currentTimeUnix")
+    suspend fun getExchangeRatesForCurrencyUnix(fromCurrency: String, currentTimeUnix: Long): List<ExchangeRateEntity>
+
     @Query("SELECT * FROM exchange_rates WHERE updated_at < :expiryTime")
     suspend fun getExpiredRates(expiryTime: LocalDateTime): List<ExchangeRateEntity>
 
@@ -46,4 +49,7 @@ interface ExchangeRateDao {
         fromCurrency2: String, toCurrency2: String,
         currentTime: LocalDateTime = LocalDateTime.now()
     ): List<ExchangeRateEntity>
+
+    @Query("SELECT MAX(expires_at_unix) FROM exchange_rates WHERE from_currency = :fromCurrency")
+    suspend fun getMaxExpiryTimeUnix(fromCurrency: String): Long?
 }

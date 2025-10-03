@@ -128,34 +128,13 @@ class TransactionDetailViewModel @Inject constructor(
     }
 
     private suspend fun determinePrimaryCurrency(transaction: TransactionEntity) {
-        // Get all transactions for this account to determine primary currency
         val bankName = transaction.bankName
-        val accountLast4 = transaction.accountNumber?.takeLast(4) ?: ""
-
-        if (!bankName.isNullOrEmpty() && accountLast4.isNotEmpty()) {
-            val accountTransactions = transactionRepository.getTransactionsByAccount(bankName, accountLast4)
-                .firstOrNull() ?: emptyList()
-
-            val primaryCurrency = when {
-                // Prioritize AED for FAB bank
-                bankName.equals("FAB", ignoreCase = true) &&
-                accountTransactions.any { it.currency.equals("AED", ignoreCase = true) } -> "AED"
-                // Otherwise use the most common currency in the account
-                accountTransactions.isNotEmpty() -> {
-                    val currencyCounts = accountTransactions
-                        .map { it.currency }
-                        .groupingBy { it }
-                        .eachCount()
-                    currencyCounts.maxByOrNull { it.value }?.key ?: "INR"
-                }
-                // Fallback to transaction currency or INR
-                else -> transaction.currency.takeIf { it.isNotEmpty() } ?: "INR"
-            }
-            _primaryCurrency.value = primaryCurrency
+        val primaryCurrency = if (!bankName.isNullOrEmpty()) {
+            com.pennywiseai.tracker.utils.CurrencyFormatter.getBankBaseCurrency(bankName)
         } else {
-            // Fallback to transaction currency or INR
-            _primaryCurrency.value = transaction.currency.takeIf { it.isNotEmpty() } ?: "INR"
+            transaction.currency.takeIf { it.isNotEmpty() } ?: "INR"
         }
+        _primaryCurrency.value = primaryCurrency
     }
 
     private suspend fun calculateConvertedAmount(transaction: TransactionEntity) {

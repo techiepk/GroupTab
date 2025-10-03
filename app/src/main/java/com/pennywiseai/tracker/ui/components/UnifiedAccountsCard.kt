@@ -28,6 +28,7 @@ fun UnifiedAccountsCard(
     bankAccounts: List<AccountBalanceEntity>,
     totalBalance: BigDecimal,
     totalAvailableCredit: BigDecimal,
+    selectedCurrency: String = "INR",
     onAccountClick: (bankName: String, accountLast4: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -67,7 +68,7 @@ fun UnifiedAccountsCard(
                     )
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
-                        text = CurrencyFormatter.formatCurrency(totalBalance),
+                        text = CurrencyFormatter.formatCurrency(totalBalance, selectedCurrency),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

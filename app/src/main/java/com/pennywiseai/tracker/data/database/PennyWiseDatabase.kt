@@ -44,7 +44,7 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
  */
 @Database(
     entities = [TransactionEntity::class, SubscriptionEntity::class, ChatMessage::class, MerchantMappingEntity::class, CategoryEntity::class, AccountBalanceEntity::class, UnrecognizedSmsEntity::class, CardEntity::class, RuleEntity::class, RuleApplicationEntity::class, ExchangeRateEntity::class],
-    version = 26,
+    version = 27,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -68,7 +68,8 @@ import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
         // Note: v20 to v21 uses manual migration to handle nullable field change
         AutoMigration(from = 23, to = 24),
         AutoMigration(from = 24, to = 25),
-        AutoMigration(from = 25, to = 26)
+        AutoMigration(from = 25, to = 26),
+        AutoMigration(from = 26, to = 27)
     ]
 )
 @TypeConverters(Converters::class)

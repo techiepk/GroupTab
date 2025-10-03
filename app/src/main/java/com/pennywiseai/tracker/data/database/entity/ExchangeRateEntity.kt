@@ -13,7 +13,8 @@ import java.time.LocalDateTime
         Index(value = ["from_currency", "to_currency"], unique = true),
         Index(value = ["from_currency"]),
         Index(value = ["to_currency"]),
-        Index(value = ["updated_at"])
+        Index(value = ["updated_at"]),
+        Index(value = ["expires_at_unix"])
     ]
 )
 data class ExchangeRateEntity(
@@ -36,6 +37,12 @@ data class ExchangeRateEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: LocalDateTime,
 
+    @ColumnInfo(name = "updated_at_unix", defaultValue = "0")
+    val updatedAtUnix: Long = 0,
+
     @ColumnInfo(name = "expires_at")
-    val expiresAt: LocalDateTime
+    val expiresAt: LocalDateTime,
+
+    @ColumnInfo(name = "expires_at_unix", defaultValue = "0")
+    val expiresAtUnix: Long = 0
 )

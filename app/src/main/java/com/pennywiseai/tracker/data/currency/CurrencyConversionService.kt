@@ -3,10 +3,16 @@ package com.pennywiseai.tracker.data.currency
 import com.pennywiseai.tracker.data.database.dao.ExchangeRateDao
 import com.pennywiseai.tracker.data.database.entity.ExchangeRateEntity
 import com.pennywiseai.tracker.data.preferences.UserPreferencesRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,6 +23,7 @@ class CurrencyConversionService @Inject constructor(
     private val exchangeRateProvider: ExchangeRateProvider,
     private val userPreferencesRepository: UserPreferencesRepository
 ) {
+    private val backgroundScope = CoroutineScope(Dispatchers.IO)
 
     // Cache rates for performance
     private val rateCache = mutableMapOf<String, BigDecimal>()
@@ -53,21 +60,41 @@ class CurrencyConversionService @Inject constructor(
     ): BigDecimal? {
         val cacheKey = "${fromCurrency.uppercase()}_${toCurrency.uppercase()}"
 
-        // Check cache first
+        // Check cache first (unless forced refresh)
         if (!forceRefresh && isCacheValid()) {
             rateCache[cacheKey]?.let { return it }
         }
 
-        // Check database
+        // Check database for fresh rates
         val currentTime = LocalDateTime.now()
         val dbRate = exchangeRateDao.getExchangeRate(fromCurrency, toCurrency, currentTime)
 
         if (dbRate != null && !forceRefresh) {
+            // Rate is still valid (expires_at > currentTime), use it
             updateCache(cacheKey, dbRate.rate)
             return dbRate.rate
         }
 
-        // Fetch from API if not found or forced refresh
+        // Check if we have any expired rate that we might be able to use if rates aren't stale overall
+        if (!forceRefresh) {
+            val expiredRate = exchangeRateDao.getExchangeRate(
+                fromCurrency,
+                toCurrency,
+                currentTime.minusHours(24) // Look back up to 24 hours for expired rates
+            )
+
+            if (expiredRate != null && !areOverallRatesStale()) {
+                // Use expired rate if overall rates aren't stale, but fetch fresh ones soon
+                updateCache(cacheKey, expiredRate.rate)
+                // Trigger background refresh for next time
+                backgroundScope.launch {
+                    refreshExchangeRates(listOf(fromCurrency, toCurrency, "USD"))
+                }
+                return expiredRate.rate
+            }
+        }
+
+        // Fetch from API if not found, forced refresh, or rates are stale
         return fetchAndCacheRate(fromCurrency, toCurrency)
     }
 
@@ -109,10 +136,27 @@ class CurrencyConversionService @Inject constructor(
         // Use USD as the base currency for the API since it's most commonly supported
         val apiBaseCurrency = "USD"
 
-        // Fetch all exchange rates for the base currency at once
-        val allRates = exchangeRateProvider.fetchAllExchangeRates(apiBaseCurrency)
+        // Check if we need to refresh by looking at the newest rate in our database
+        if (!shouldRefreshRates(apiBaseCurrency)) {
+            println("Currency rates are fresh, skipping refresh")
+            return // Rates are still fresh, no need to refresh
+        }
+        println("Currency rates are stale, refreshing from API")
 
-        if (allRates != null) {
+        // Fetch all exchange rates for the base currency at once with metadata
+        val response = exchangeRateProvider.fetchAllExchangeRatesWithMetadata(apiBaseCurrency)
+
+        if (response != null) {
+            val allRates = response.rates
+            val nextUpdateTime = LocalDateTime.ofInstant(
+                Instant.ofEpochSecond(response.nextUpdateTimeUnix),
+                ZoneId.systemDefault()
+            )
+            val lastUpdateTime = LocalDateTime.ofInstant(
+                Instant.ofEpochSecond(response.lastUpdateTimeUnix),
+                ZoneId.systemDefault()
+            )
+
             // Cache all relevant rates from the API response
             currencies.forEach { fromCurrency ->
                 currencies.forEach { toCurrency ->
@@ -120,13 +164,15 @@ class CurrencyConversionService @Inject constructor(
                         val rate = if (fromCurrency == apiBaseCurrency) {
                             allRates[toCurrency]
                         } else if (toCurrency == apiBaseCurrency) {
-                            BigDecimal.ONE.divide(allRates[fromCurrency]!!, 6, RoundingMode.HALF_UP)
+                            allRates[fromCurrency]?.let { fromRate ->
+                                BigDecimal.ONE.divide(fromRate, MathContext(10))
+                            }
                         } else {
                             // Cross-currency conversion: fromCurrency -> USD -> toCurrency
                             val fromToUsd = allRates[fromCurrency]
                             val usdToTo = allRates[toCurrency]
                             if (fromToUsd != null && usdToTo != null) {
-                                usdToTo.divide(fromToUsd, 6, RoundingMode.HALF_UP)
+                                usdToTo.divide(fromToUsd, MathContext(10))
                             } else {
                                 null
                             }
@@ -137,9 +183,11 @@ class CurrencyConversionService @Inject constructor(
                                 fromCurrency = fromCurrency,
                                 toCurrency = toCurrency,
                                 rate = rate,
-                                provider = exchangeRateProvider.getProviderName(),
-                                updatedAt = LocalDateTime.now(),
-                                expiresAt = LocalDateTime.now().plusHours(24) // Rates expire after 24 hours
+                                provider = response.provider,
+                                updatedAt = lastUpdateTime,
+                                updatedAtUnix = response.lastUpdateTimeUnix,
+                                expiresAt = nextUpdateTime, // Use the API's next update time
+                                expiresAtUnix = response.nextUpdateTimeUnix
                             )
                             exchangeRateDao.insertExchangeRate(entity)
                         }
@@ -161,21 +209,57 @@ class CurrencyConversionService @Inject constructor(
      */
     private suspend fun fetchAndCacheRate(fromCurrency: String, toCurrency: String): BigDecimal? {
         try {
-            val rate = exchangeRateProvider.fetchExchangeRate(fromCurrency, toCurrency)
-            if (rate != null) {
-                val entity = ExchangeRateEntity(
-                    fromCurrency = fromCurrency,
-                    toCurrency = toCurrency,
-                    rate = rate,
-                    provider = exchangeRateProvider.getProviderName(),
-                    updatedAt = LocalDateTime.now(),
-                    expiresAt = LocalDateTime.now().plusHours(6) // Rates expire after 6 hours
+            // Use the metadata method to get proper expiry times even for individual rates
+            // We'll use USD as base since that's what the API uses and then convert
+            val baseCurrency = "USD"
+            val response = exchangeRateProvider.fetchAllExchangeRatesWithMetadata(baseCurrency)
+
+            if (response != null) {
+                val allRates = response.rates
+                val nextUpdateTime = LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(response.nextUpdateTimeUnix),
+                    ZoneId.systemDefault()
+                )
+                val lastUpdateTime = LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(response.lastUpdateTimeUnix),
+                    ZoneId.systemDefault()
                 )
 
-                exchangeRateDao.insertExchangeRate(entity)
-                val cacheKey = "${fromCurrency.uppercase()}_${toCurrency.uppercase()}"
-                updateCache(cacheKey, rate)
-                return rate
+                // Calculate the rate we need
+                val rate = if (fromCurrency == baseCurrency) {
+                    allRates[toCurrency]
+                } else if (toCurrency == baseCurrency) {
+                    allRates[fromCurrency]?.let { fromRate ->
+                        BigDecimal.ONE.divide(fromRate, MathContext(10))
+                    }
+                } else {
+                    // Cross-currency: fromCurrency -> USD -> toCurrency
+                    val fromToUsd = allRates[fromCurrency]
+                    val usdToTo = allRates[toCurrency]
+                    if (fromToUsd != null && usdToTo != null) {
+                        usdToTo.divide(fromToUsd, MathContext(10))
+                    } else {
+                        null
+                    }
+                }
+
+                if (rate != null) {
+                    val entity = ExchangeRateEntity(
+                        fromCurrency = fromCurrency,
+                        toCurrency = toCurrency,
+                        rate = rate,
+                        provider = response.provider,
+                        updatedAt = lastUpdateTime,
+                        updatedAtUnix = response.lastUpdateTimeUnix,
+                        expiresAt = nextUpdateTime, // Use the API's actual next update time
+                        expiresAtUnix = response.nextUpdateTimeUnix
+                    )
+
+                    exchangeRateDao.insertExchangeRate(entity)
+                    val cacheKey = "${fromCurrency.uppercase()}_${toCurrency.uppercase()}"
+                    updateCache(cacheKey, rate)
+                    return rate
+                }
             }
         } catch (e: Exception) {
             // Log error but don't crash
@@ -183,6 +267,45 @@ class CurrencyConversionService @Inject constructor(
         }
 
         return null
+    }
+
+    /**
+     * Check if we should refresh rates for the given base currency
+     * Returns true if rates are stale or we don't have any rates
+     */
+    private suspend fun shouldRefreshRates(baseCurrency: String): Boolean {
+        val currentTimeUnix = System.currentTimeMillis() / 1000
+
+        // Use the efficient Unix timestamp query to get the latest expiry time
+        val maxExpiryTimeUnix = exchangeRateDao.getMaxExpiryTimeUnix(baseCurrency)
+
+        // If we don't have any rates, or they're from old records (timestamp 0), or they've expired, refresh
+        return maxExpiryTimeUnix == null || maxExpiryTimeUnix == 0L || maxExpiryTimeUnix < currentTimeUnix
+    }
+
+    /**
+     * Check if overall rates are stale across all currencies
+     */
+    private suspend fun areOverallRatesStale(): Boolean {
+        return shouldRefreshRates("USD") // USD is our main base currency, so check its rates
+    }
+
+    /**
+     * Get information about rate freshness for debugging
+     */
+    suspend fun getRateFreshnessInfo(): RateFreshnessInfo {
+        val currentTime = LocalDateTime.now()
+        val usdRates = exchangeRateDao.getExchangeRatesForCurrency("USD", currentTime)
+        val latestRate = exchangeRateDao.getLatestRate()
+
+        return RateFreshnessInfo(
+            hasValidUsdRates = usdRates.isNotEmpty(),
+            validUsdRatesCount = usdRates.size,
+            latestUpdateTime = latestRate?.updatedAt,
+            latestExpiryTime = usdRates.maxOfOrNull { it.expiresAt },
+            isStale = areOverallRatesStale(),
+            currentTime = currentTime
+        )
     }
 
     /**
@@ -240,5 +363,14 @@ class CurrencyConversionService @Inject constructor(
         val id: String,
         val amount: BigDecimal,
         val currency: String
+    )
+
+    data class RateFreshnessInfo(
+        val hasValidUsdRates: Boolean,
+        val validUsdRatesCount: Int,
+        val latestUpdateTime: LocalDateTime?,
+        val latestExpiryTime: LocalDateTime?,
+        val isStale: Boolean,
+        val currentTime: LocalDateTime
     )
 }
