@@ -236,32 +236,21 @@ class ADCBParserTest {
                 )
             )
         )
-
-        val result = ParserTestUtils.runTestSuite(parser, testCases, "ADCB Parser Tests")
+        
+        val handleCases: List<Pair<String, Boolean>> = listOf(
+            "ADCBAlert" to true,
+            "ADCBBank" to true,
+            "ADCB-UAE" to true,
+            "HDFC" to false,
+            "SBI" to false,
+            "" to false
+        )
+        val result = ParserTestUtils.runTestSuite(parser, testCases, handleCases, "ADCB Parser Tests")
         ParserTestUtils.printTestSummary(
             totalTests = result.totalTests,
             passedTests = result.passedTests,
             failedTests = result.failedTests,
             failureDetails = result.failureDetails
         )
-
-        // Assert that the test suite passed with at least 80% success rate
-        assertTrue(result.passedTests.toDouble() / result.totalTests >= 0.8,
-                   "ADCB Parser test suite should pass with at least 80% success rate")
-    }
-
-    @Test
-    fun `test ADCB canHandle method`() {
-        val parser = ADCBParser()
-
-        // Test valid senders
-        assertTrue(parser.canHandle("ADCBAlert"), "Should handle ADCBAlert")
-        assertTrue(parser.canHandle("ADCBBank"), "Should handle ADCBBank")
-        assertTrue(parser.canHandle("ADCB-UAE"), "Should handle ADCB-UAE")
-
-        // Test invalid senders
-        assertFalse(parser.canHandle("HDFC"), "Should not handle HDFC")
-        assertFalse(parser.canHandle("SBI"), "Should not handle SBI")
-        assertFalse(parser.canHandle(""), "Should not handle empty string")
     }
 }

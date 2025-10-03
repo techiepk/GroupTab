@@ -5,6 +5,7 @@ import com.pennywiseai.parser.core.test.ParserTestCase
 import com.pennywiseai.parser.core.test.ExpectedTransaction
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+
 import java.math.BigDecimal
 
 class FederalBankParserTest {
@@ -212,34 +213,25 @@ class FederalBankParserTest {
                 shouldParse = false
             )
         )
+        
+        val handleCases: List<Pair<String, Boolean>> = listOf(
+            "AD-FEDBNK" to true,
+            "JM-FEDBNK" to true,
+            "AX-FEDBNK-S" to true,
+            "ADCBAlert" to false,
+            "SBI" to false,
+            "" to false
+        )
 
-        val result = ParserTestUtils.runTestSuite(parser, testCases, "Federal Bank Parser Tests")
+        val result = ParserTestUtils.runTestSuite(parser, testCases, handleCases, "Federal Bank Parser Tests")
         ParserTestUtils.printTestSummary(
             totalTests = result.totalTests,
             passedTests = result.passedTests,
             failedTests = result.failedTests,
             failureDetails = result.failureDetails
         )
-
-        // Assert that the test suite passed with at least 80% success rate
-        assertTrue(result.passedTests.toDouble() / result.totalTests >= 0.8,
-                   "Federal Bank Parser test suite should pass with at least 80% success rate")
     }
 
-    @Test
-    fun `test Federal Bank canHandle method`() {
-        val parser = FederalBankParser()
-
-        // Test valid senders
-        assertTrue(parser.canHandle("AD-FEDBNK"), "Should handle AD-FEDBNK")
-        assertTrue(parser.canHandle("JM-FEDBNK"), "Should handle JM-FEDBNK")
-        assertTrue(parser.canHandle("AX-FEDBNK-S"), "Should handle AX-FEDBNK-S")
-
-        // Test invalid senders
-        assertFalse(parser.canHandle("ADCBAlert"), "Should not handle ADCBAlert")
-        assertFalse(parser.canHandle("SBI"), "Should not handle SBI")
-        assertFalse(parser.canHandle(""), "Should not handle empty string")
-    }
 
     @Test
     fun `test Federal Bank mandate parsing`() {

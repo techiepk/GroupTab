@@ -206,7 +206,8 @@ object ParserTestUtils {
     fun runTestSuite(
         parser: BankParser,
         testCases: List<ParserTestCase>,
-        suiteName: String = ""
+        handleCases: List<Pair<String, Boolean>> = emptyList(),
+        suiteName: String = "",
     ): TestSuiteResult {
         if (suiteName.isNotEmpty()) {
             printSectionHeader(suiteName)
@@ -222,6 +223,34 @@ object ParserTestUtils {
 
             if (!result.passed && result.error != null) {
                 failureDetails.add("${testCase.name}: ${result.error}")
+            }
+        }
+
+        handleCases.forEach { (sender, shouldHandle) ->
+            val canHandle = parser.canHandle(sender)
+            if (canHandle != shouldHandle) {
+                val errorMsg = if (shouldHandle) {
+                    "Parser should handle sender '$sender' but did not."
+                } else {
+                    "Parser should not handle sender '$sender' but did."
+                }
+                val result = TestResult(
+                    name = "Handle check for sender '$sender'",
+                    passed = false,
+                    error = errorMsg
+                )
+                results.add(result)
+                printTestResult(result)
+
+                failureDetails.add(result.error!!)
+            } else {
+                val result = TestResult(
+                    name = "Handle check for sender '$sender'",
+                    passed = true,
+                    details = if (canHandle) "Correctly handles sender '$sender'" else "Correctly does not handle sender '$sender'"
+                )
+                results.add(result)
+                printTestResult(result, showDetails = false)
             }
         }
 
