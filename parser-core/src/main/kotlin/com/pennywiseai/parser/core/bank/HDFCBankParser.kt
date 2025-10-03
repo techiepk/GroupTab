@@ -2,6 +2,7 @@ package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.CompiledPatterns
 import com.pennywiseai.parser.core.TransactionType
+import com.pennywiseai.parser.core.MandateInfo
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -532,11 +533,14 @@ class HDFCBankParser : BankParser() {
      * E-Mandate subscription information.
      */
     data class EMandateInfo(
-        val amount: BigDecimal,
-        val nextDeductionDate: String?,
-        val merchant: String,
-        val umn: String?
-    )
+        override val amount: BigDecimal,
+        override val nextDeductionDate: String?,
+        override val merchant: String,
+        override val umn: String?
+    ) : MandateInfo {
+        // HDFC uses dd/MM/yy format
+        override val dateFormat = "dd/MM/yy"
+    }
     
     /**
      * Balance update information.

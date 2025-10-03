@@ -2,6 +2,7 @@ package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.TransactionType
 import com.pennywiseai.parser.core.ParsedTransaction
+import com.pennywiseai.parser.core.MandateInfo
 import java.math.BigDecimal
 
 /**
@@ -559,9 +560,12 @@ class SBIBankParser : BankParser() {
      * Compatible with HDFC's EMandateInfo structure.
      */
     data class UPIMandateInfo(
-        val amount: BigDecimal,
-        val nextDeductionDate: String?,
-        val merchant: String,
-        val umn: String?
-    )
+        override val amount: BigDecimal,
+        override val nextDeductionDate: String?,
+        override val merchant: String,
+        override val umn: String?
+    ) : MandateInfo {
+        // SBI uses dd/MM/yy format
+        override val dateFormat = "dd/MM/yy"
+    }
 }

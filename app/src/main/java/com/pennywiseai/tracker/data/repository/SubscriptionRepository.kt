@@ -6,6 +6,8 @@ import com.pennywiseai.tracker.data.database.entity.SubscriptionState
 import com.pennywiseai.parser.core.bank.HDFCBankParser
 import com.pennywiseai.parser.core.bank.IndianBankParser
 import com.pennywiseai.parser.core.bank.SBIBankParser
+import com.pennywiseai.parser.core.bank.FederalBankParser
+import com.pennywiseai.parser.core.MandateInfo
 import com.pennywiseai.tracker.ui.icons.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -59,90 +61,13 @@ class SubscriptionRepository @Inject constructor(
         subscriptionDao.deleteSubscriptionById(id)
     
     /**
-     * Creates or updates a subscription from E-Mandate info
+     * Creates or updates a subscription from HDFC E-Mandate info
      */
     suspend fun createOrUpdateFromEMandate(
         eMandateInfo: HDFCBankParser.EMandateInfo,
-        bankName: String,
+        bankName: String = "HDFC Bank",
         smsBody: String? = null
-    ): Long {
-        val nextPaymentDate = eMandateInfo.nextDeductionDate?.let { dateStr ->
-            try {
-                // Parse DD/MM/YY format
-                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd/MM/yy"))
-            } catch (e: Exception) {
-                // Fallback to 30 days from now if parsing fails
-                LocalDate.now().plusDays(30)
-            }
-        } ?: LocalDate.now().plusDays(30)
-        
-        // For HDFC, UMN is the primary identifier when available
-        val existing = if (bankName == "HDFC Bank" && eMandateInfo.umn != null) {
-            subscriptionDao.getSubscriptionByUmn(eMandateInfo.umn!!)
-        } else {
-            // For other banks or when no UMN, use merchant and amount matching
-            subscriptionDao.getSubscriptionByMerchantAndAmount(
-                eMandateInfo.merchant,
-                eMandateInfo.amount
-            )
-        }
-        
-        Log.d(TAG, "E-Mandate lookup - Merchant: ${eMandateInfo.merchant}, Amount: ${eMandateInfo.amount}, " +
-                  "Next Date: $nextPaymentDate, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}, " +
-                  "StoredDate=${it.nextPaymentDate}" } ?: "NOT FOUND"}")
-        
-        val subscription = if (existing != null) {
-            // Check if this is a hidden subscription that should be reactivated
-            // Only reactivate if the new payment date is LATER than the stored date
-            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
-                                  nextPaymentDate.isAfter(existing.nextPaymentDate) &&
-                                  nextPaymentDate.isAfter(LocalDate.now())
-            
-            Log.d(TAG, "Subscription state check - Hidden: ${existing.state == SubscriptionState.HIDDEN}, " +
-                      "New date after stored: ${nextPaymentDate.isAfter(existing.nextPaymentDate)}, " +
-                      "New date is future: ${nextPaymentDate.isAfter(LocalDate.now())}, " +
-                      "Should reactivate: $shouldReactivate")
-            
-            // If hidden and payment date hasn't changed, don't update
-            if (existing.state == SubscriptionState.HIDDEN && !shouldReactivate) {
-                // Return the existing ID without any updates
-                Log.d(TAG, "Subscription ${existing.id} is HIDDEN and won't be reactivated " +
-                          "(payment date not newer). Skipping update.")
-                return existing.id
-            }
-            
-            // Update existing subscription (reactivate if needed)
-            if (shouldReactivate) {
-                Log.i(TAG, "REACTIVATING subscription ${existing.id} - ${existing.merchantName} " +
-                          "(old date: ${existing.nextPaymentDate}, new date: $nextPaymentDate)")
-            }
-            existing.copy(
-                amount = eMandateInfo.amount,
-                nextPaymentDate = nextPaymentDate,
-                merchantName = eMandateInfo.merchant,
-                umn = eMandateInfo.umn ?: existing.umn, // Update UMN if provided
-                state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
-                smsBody = smsBody ?: existing.smsBody, // Update SMS body if provided
-                updatedAt = java.time.LocalDateTime.now()
-            )
-        } else {
-            // Create new subscription
-            Log.d(TAG, "Creating NEW subscription - Merchant: ${eMandateInfo.merchant}, " +
-                      "Amount: ${eMandateInfo.amount}, Date: $nextPaymentDate")
-            SubscriptionEntity(
-                merchantName = eMandateInfo.merchant,
-                amount = eMandateInfo.amount,
-                nextPaymentDate = nextPaymentDate,
-                state = SubscriptionState.ACTIVE,
-                bankName = bankName,
-                umn = eMandateInfo.umn,
-                category = determineCategory(eMandateInfo.merchant),
-                smsBody = smsBody
-            )
-        }
-        
-        return subscriptionDao.insertSubscription(subscription)
-    }
+    ): Long = createOrUpdateFromMandate(eMandateInfo, bankName, smsBody)
     
     /**
      * Checks if a transaction matches any active subscription
@@ -186,42 +111,76 @@ class SubscriptionRepository @Inject constructor(
      * Creates or updates a subscription from Indian Bank Mandate info
      */
     suspend fun createOrUpdateFromIndianBankMandate(
-        mandateInfo: IndianBankParser.MandateInfo,
+        mandateInfo: IndianBankParser.IndianMandateInfo,
+        bankName: String = "Indian Bank",
+        smsBody: String? = null
+    ): Long = createOrUpdateFromMandate(mandateInfo, bankName, smsBody)
+    
+    /**
+     * Creates or updates a subscription from SBI UPI-Mandate info
+     */
+    suspend fun createOrUpdateFromSBIMandate(
+        upiMandateInfo: SBIBankParser.UPIMandateInfo,
+        bankName: String = "SBI",
+        smsBody: String? = null
+    ): Long = createOrUpdateFromMandate(upiMandateInfo, bankName, smsBody)
+
+    /**
+     * Creates or updates a subscription from Federal Bank E-Mandate info
+     */
+    suspend fun createOrUpdateFromFederalBankMandate(
+        mandateInfo: FederalBankParser.EMandateInfo,
+        bankName: String = "Federal Bank",
+        smsBody: String? = null
+    ): Long = createOrUpdateFromMandate(mandateInfo, bankName, smsBody)
+
+    /**
+     * Creates or updates a subscription from any MandateInfo implementation.
+     * This is the unified method that can handle mandates from any bank.
+     */
+    suspend fun createOrUpdateFromMandate(
+        mandateInfo: MandateInfo,
         bankName: String,
         smsBody: String? = null
     ): Long {
         val nextPaymentDate = mandateInfo.nextDeductionDate?.let { dateStr ->
             try {
-                // Parse dd-MMM-yy format
-                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("d-MMM-yy"))
+                // Use the date format specified by the mandate implementation
+                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern(mandateInfo.dateFormat))
             } catch (e: Exception) {
                 // Fallback to 30 days from now if parsing fails
                 LocalDate.now().plusDays(30)
             }
         } ?: LocalDate.now().plusDays(30)
-        
-        // First try to find by merchant and amount (ignoring date)
-        val existing = subscriptionDao.getSubscriptionByMerchantAndAmount(
-            mandateInfo.merchant,
-            mandateInfo.amount
-        )
-        
-        Log.d(TAG, "Indian Bank Mandate lookup - Merchant: ${mandateInfo.merchant}, Amount: ${mandateInfo.amount}, " +
+
+        // For banks that provide UMN (HDFC, SBI, Federal), use it as primary identifier
+        val existing = if (mandateInfo.umn != null) {
+            subscriptionDao.getSubscriptionByUmn(mandateInfo.umn!!)
+        } else {
+            // For other banks or when no UMN, use merchant and amount matching
+            subscriptionDao.getSubscriptionByMerchantAndAmount(
+                mandateInfo.merchant,
+                mandateInfo.amount
+            )
+        }
+
+        Log.d(TAG, "Unified Mandate lookup - Bank: $bankName, Merchant: ${mandateInfo.merchant}, " +
+                  "Amount: ${mandateInfo.amount}, UMN: ${mandateInfo.umn}, " +
                   "Next Date: $nextPaymentDate, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}, " +
                   "StoredDate=${it.nextPaymentDate}" } ?: "NOT FOUND"}")
-        
+
         val subscription = if (existing != null) {
             // Check if this is a hidden subscription that should be reactivated
             // Only reactivate if the new payment date is LATER than the stored date
-            val shouldReactivate = existing.state == SubscriptionState.HIDDEN && 
+            val shouldReactivate = existing.state == SubscriptionState.HIDDEN &&
                                   nextPaymentDate.isAfter(existing.nextPaymentDate) &&
                                   nextPaymentDate.isAfter(LocalDate.now())
-            
+
             Log.d(TAG, "Subscription state check - Hidden: ${existing.state == SubscriptionState.HIDDEN}, " +
                       "New date after stored: ${nextPaymentDate.isAfter(existing.nextPaymentDate)}, " +
                       "New date is future: ${nextPaymentDate.isAfter(LocalDate.now())}, " +
                       "Should reactivate: $shouldReactivate")
-            
+
             // If hidden and payment date hasn't changed, don't update
             if (existing.state == SubscriptionState.HIDDEN && !shouldReactivate) {
                 // Return the existing ID without any updates
@@ -229,7 +188,7 @@ class SubscriptionRepository @Inject constructor(
                           "(payment date not newer). Skipping update.")
                 return existing.id
             }
-            
+
             // Update existing subscription (reactivate if needed)
             if (shouldReactivate) {
                 Log.i(TAG, "REACTIVATING subscription ${existing.id} - ${existing.merchantName} " +
@@ -239,13 +198,14 @@ class SubscriptionRepository @Inject constructor(
                 amount = mandateInfo.amount,
                 nextPaymentDate = nextPaymentDate,
                 merchantName = mandateInfo.merchant,
+                umn = mandateInfo.umn ?: existing.umn, // Update UMN if provided
                 state = if (shouldReactivate) SubscriptionState.ACTIVE else existing.state,
-                smsBody = smsBody ?: existing.smsBody,
+                smsBody = smsBody ?: existing.smsBody, // Update SMS body if provided
                 updatedAt = java.time.LocalDateTime.now()
             )
         } else {
             // Create new subscription
-            Log.d(TAG, "Creating NEW subscription - Merchant: ${mandateInfo.merchant}, " +
+            Log.d(TAG, "Creating NEW subscription - Bank: $bankName, Merchant: ${mandateInfo.merchant}, " +
                       "Amount: ${mandateInfo.amount}, Date: $nextPaymentDate")
             SubscriptionEntity(
                 merchantName = mandateInfo.merchant,
@@ -253,82 +213,15 @@ class SubscriptionRepository @Inject constructor(
                 nextPaymentDate = nextPaymentDate,
                 state = SubscriptionState.ACTIVE,
                 bankName = bankName,
+                umn = mandateInfo.umn,
                 category = determineCategory(mandateInfo.merchant),
                 smsBody = smsBody
             )
         }
-        
+
         return subscriptionDao.insertSubscription(subscription)
     }
-    
-    /**
-     * Creates or updates a subscription from SBI UPI-Mandate info
-     */
-    suspend fun createOrUpdateFromSBIMandate(
-        upiMandateInfo: SBIBankParser.UPIMandateInfo,
-        bankName: String,
-        smsBody: String? = null
-    ): Long {
-        val nextPaymentDate = upiMandateInfo.nextDeductionDate?.let { dateStr ->
-            try {
-                // Parse DD/MM/YY format if provided
-                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd/MM/yy"))
-            } catch (e: Exception) {
-                // Fallback to 30 days from now if parsing fails
-                LocalDate.now().plusDays(30)
-            }
-        } ?: LocalDate.now().plusDays(30) // SBI doesn't provide date, default to 30 days
-        
-        // For SBI, UMN is the primary identifier when available
-        val existing = if (upiMandateInfo.umn != null) {
-            subscriptionDao.getSubscriptionByUmn(upiMandateInfo.umn!!)
-        } else {
-            // When no UMN, use merchant and amount matching
-            subscriptionDao.getSubscriptionByMerchantAndAmount(
-                upiMandateInfo.merchant,
-                upiMandateInfo.amount
-            )
-        }
-        
-        Log.d(TAG, "SBI UPI-Mandate lookup - Merchant: ${upiMandateInfo.merchant}, Amount: ${upiMandateInfo.amount}, " +
-                  "UMN: ${upiMandateInfo.umn}, Existing: ${existing?.let { "ID=${it.id}, State=${it.state}" } ?: "NOT FOUND"}")
-        
-        val subscription = if (existing != null) {
-            // Check if this is a hidden subscription that should be reactivated
-            val newState = if (existing.state == SubscriptionState.HIDDEN) {
-                SubscriptionState.ACTIVE
-            } else {
-                existing.state
-            }
-            
-            existing.copy(
-                amount = upiMandateInfo.amount,
-                nextPaymentDate = nextPaymentDate,
-                umn = upiMandateInfo.umn ?: existing.umn,
-                state = newState,
-                smsBody = smsBody ?: existing.smsBody,
-                updatedAt = java.time.LocalDateTime.now()
-            ).also {
-                subscriptionDao.updateSubscription(it)
-                Log.d(TAG, "Updated existing SBI subscription ID=${it.id}")
-            }
-        } else {
-            // Create new subscription
-            SubscriptionEntity(
-                merchantName = upiMandateInfo.merchant,
-                amount = upiMandateInfo.amount,
-                nextPaymentDate = nextPaymentDate,
-                state = SubscriptionState.ACTIVE,
-                bankName = bankName,
-                umn = upiMandateInfo.umn,
-                category = determineCategory(upiMandateInfo.merchant),
-                smsBody = smsBody
-            )
-        }
-        
-        return subscriptionDao.insertSubscription(subscription)
-    }
-    
+
     private fun determineCategory(merchantName: String): String {
         // Use unified category mapping
         return CategoryMapping.getCategory(merchantName)
