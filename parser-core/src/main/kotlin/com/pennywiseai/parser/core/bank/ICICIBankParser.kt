@@ -287,25 +287,31 @@ class ICICIBankParser : BankParser() {
     
     override fun isTransactionMessage(message: String): Boolean {
         val lowerMessage = message.lowercase()
-        
+
         // Skip SMS BLOCK instructions (not a transaction)
         if (lowerMessage.contains("sms block") && lowerMessage.contains("to 9215676766")) {
             // This is just instruction text at the end of transaction messages
             // Don't skip the entire message, just ignore this part
         }
-        
+
         // Skip cash deposit confirmation messages (these are duplicates)
         // We only want to process the actual credit notification
-        if (lowerMessage.contains("cash deposit transaction") && 
+        if (lowerMessage.contains("cash deposit transaction") &&
             lowerMessage.contains("has been completed")) {
             return false // Skip this confirmation message
         }
-        
+
         // Skip payment due reminders
         if (lowerMessage.contains("is due by")) {
             return false // Skip payment due reminders
         }
-        
+
+        // Skip future debit notifications - these are not actual transactions yet
+        // Examples: "will be debited on", "will be debited with", "account will be debited"
+        if (lowerMessage.contains("will be debited")) {
+            return false // This is a future debit notification, not an actual transaction
+        }
+
         // Check for ICICI-specific transaction keywords
         val iciciKeywords = listOf(
             "debited with",
@@ -317,12 +323,13 @@ class ICICIBankParser : BankParser() {
             "inr", // For "INR xxx spent" pattern
             "spent using" // For card transactions
         )
-        
+
         // If any ICICI-specific pattern is found, it's likely a transaction
+        // BUT make sure it's not a future transaction (already filtered above)
         if (iciciKeywords.any { lowerMessage.contains(it) }) {
             return true
         }
-        
+
         // Fall back to base class for standard checks
         return super.isTransactionMessage(message)
     }
