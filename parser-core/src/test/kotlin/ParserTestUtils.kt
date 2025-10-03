@@ -1,7 +1,9 @@
 package com.pennywiseai.parser.core.test
 
 import com.pennywiseai.parser.core.ParsedTransaction
+import com.pennywiseai.parser.core.TransactionType
 import com.pennywiseai.parser.core.bank.BankParser
+import com.pennywiseai.parser.core.bank.BankParserFactory
 import org.junit.jupiter.api.Assertions.assertTrue
 import java.math.BigDecimal
 
@@ -13,11 +15,15 @@ import java.math.BigDecimal
 data class ExpectedTransaction(
     val amount: BigDecimal,
     val currency: String,
-    val type: com.pennywiseai.parser.core.TransactionType,
+    val type: TransactionType,
     val merchant: String? = null,
     val reference: String? = null,
     val accountLast4: String? = null,
-    val balance: BigDecimal? = null
+    val balance: BigDecimal? = null,
+    val creditLimit: BigDecimal? = null,
+    val isFromCard: Boolean? = null,
+    val fromAccount: String? = null,
+    val toAccount: String? = null
 )
 
 data class ParserTestCase(
@@ -34,6 +40,9 @@ data class SimpleTestCase(
     val sender: String,
     val currency: String,
     val message: String,
+    val expected: ExpectedTransaction? = null,
+    val shouldParse: Boolean = true,
+    val shouldHandle: Boolean? = null,
     val description: String = ""
 )
 
@@ -71,13 +80,24 @@ object ParserTestUtils {
             )
 
             else -> {
-                val errors = validateResult(result!!, testCase.expected!!)
-                TestResult(
-                    name = testCase.name,
-                    passed = errors.isEmpty(),
-                    error = if (errors.isNotEmpty()) errors.joinToString(", ") else null,
-                    details = if (errors.isEmpty()) "Successfully parsed: ${result.amount} ${result.currency}" else null
-                )
+                val parsed = result!!
+                val expected = testCase.expected
+
+                if (expected == null) {
+                    TestResult(
+                        name = testCase.name,
+                        passed = true,
+                        details = "Parsed ${parsed.amount} ${parsed.currency} (${parsed.type})"
+                    )
+                } else {
+                    val errors = validateResult(parsed, expected)
+                    TestResult(
+                        name = testCase.name,
+                        passed = errors.isEmpty(),
+                        error = if (errors.isNotEmpty()) errors.joinToString(", ") else null,
+                        details = if (errors.isEmpty()) "Successfully parsed: ${parsed.amount} ${parsed.currency}" else null
+                    )
+                }
             }
         }
     }
@@ -117,6 +137,22 @@ object ParserTestUtils {
 
         if (expected.balance != null && result.balance != expected.balance) {
             errors.add("Balance mismatch: expected ${expected.balance}, got ${result.balance}")
+        }
+
+        if (expected.creditLimit != null && result.creditLimit != expected.creditLimit) {
+            errors.add("Credit limit mismatch: expected ${expected.creditLimit}, got ${result.creditLimit}")
+        }
+
+        if (expected.isFromCard != null && result.isFromCard != expected.isFromCard) {
+            errors.add("isFromCard mismatch: expected ${expected.isFromCard}, got ${result.isFromCard}")
+        }
+
+        if (expected.fromAccount != null && result.fromAccount != expected.fromAccount) {
+            errors.add("From account mismatch: expected '${expected.fromAccount}', got '${result.fromAccount}'")
+        }
+
+        if (expected.toAccount != null && result.toAccount != expected.toAccount) {
+            errors.add("To account mismatch: expected '${expected.toAccount}', got '${result.toAccount}'")
         }
 
         return errors
@@ -192,10 +228,10 @@ object ParserTestUtils {
         }
 
         val successRate = passedTests.toDouble() / totalTests
-        if (successRate >=1) {
+        if (successRate >= 1) {
             println("\n✅ Overall test passed with success rate: ${"%.2f".format(successRate * 100)}%")
         } else {
-            println("\n❌ Overall test failed: Success rate ${"%.2f".format(successRate * 100)}% is below 80%")
+            println("\n❌ Overall test failed: Success rate ${"%.2f".format(successRate * 100)}% is below 100%")
             assertTrue(false)
         }
     }
@@ -251,6 +287,143 @@ object ParserTestUtils {
                 )
                 results.add(result)
                 printTestResult(result, showDetails = false)
+            }
+        }
+
+        val passedTests = results.count { it.passed }
+        val failedTests = results.size - passedTests
+
+        return TestSuiteResult(
+            totalTests = results.size,
+            passedTests = passedTests,
+            failedTests = failedTests,
+            results = results,
+            failureDetails = failureDetails
+        )
+    }
+
+    /**
+     * Run factory lookup tests using BankParserFactory.
+     */
+    fun runFactoryTestSuite(
+        testCases: List<SimpleTestCase>,
+        suiteName: String = ""
+    ): TestSuiteResult {
+        if (suiteName.isNotEmpty()) {
+            printSectionHeader(suiteName)
+        }
+
+        val results = mutableListOf<TestResult>()
+        val failureDetails = mutableListOf<String>()
+
+        testCases.forEachIndexed { index, testCase ->
+            val displayName = when {
+                testCase.description.isNotBlank() -> testCase.description
+                else -> "${index + 1}. ${testCase.bankName} (${testCase.sender})"
+            }
+
+            val parser = BankParserFactory.getParser(testCase.sender)
+            val result = if (parser == null) {
+                if (testCase.shouldParse) {
+                    TestResult(
+                        name = displayName,
+                        passed = false,
+                        error = "Factory returned null for sender '${testCase.sender}'"
+                    )
+                } else {
+                    TestResult(
+                        name = displayName,
+                        passed = true,
+                        details = "Correctly returned null parser for sender '${testCase.sender}'"
+                    )
+                }
+            } else {
+                val errors = mutableListOf<String>()
+
+                if (parser.getBankName() != testCase.bankName) {
+                    errors.add("Bank name mismatch: expected '${testCase.bankName}', got '${parser.getBankName()}'")
+                }
+
+                if (parser.getCurrency() != testCase.currency) {
+                    errors.add("Currency mismatch: expected '${testCase.currency}', got '${parser.getCurrency()}'")
+                }
+
+                if (testCase.shouldHandle != null) {
+                    val canHandle = parser.canHandle(testCase.sender)
+                    if (canHandle != testCase.shouldHandle) {
+                        errors.add(
+                            if (testCase.shouldHandle) {
+                                "Parser should handle sender '${testCase.sender}' but did not."
+                            } else {
+                                "Parser should not handle sender '${testCase.sender}' but did."
+                            }
+                        )
+                    }
+                }
+
+                val parseResult = when {
+                    testCase.expected != null || !testCase.shouldParse -> {
+                        val parserTestCase = ParserTestCase(
+                            name = displayName,
+                            message = testCase.message,
+                            sender = testCase.sender,
+                            expected = testCase.expected,
+                            shouldParse = testCase.shouldParse,
+                            description = testCase.description
+                        )
+                        runSingleTest(parser, parserTestCase)
+                    }
+
+                    else -> {
+                        val parsed = parser.parse(testCase.message, testCase.sender, System.currentTimeMillis())
+                        when {
+                            parsed == null && testCase.shouldParse -> TestResult(
+                                name = displayName,
+                                passed = false,
+                                error = "Parser returned null for sample message"
+                            )
+
+                            parsed != null && !testCase.shouldParse -> TestResult(
+                                name = displayName,
+                                passed = false,
+                                error = "Parser should have rejected message but parsed ${parsed.amount} ${parsed.currency}"
+                            )
+
+                            testCase.shouldParse -> TestResult(
+                                name = displayName,
+                                passed = true,
+                                details = "Parser parsed sample message"
+                            )
+
+                            else -> TestResult(
+                                name = displayName,
+                                passed = true,
+                                details = "Parser correctly rejected sample message"
+                            )
+                        }
+                    }
+                }
+
+                if (!parseResult.passed && parseResult.error != null) {
+                    errors.add(parseResult.error)
+                }
+
+                if (errors.isEmpty()) {
+                    parseResult.copy(details = parseResult.details ?: "Factory matched ${parser.getBankName()} (${parser.getCurrency()})")
+                } else {
+                    TestResult(
+                        name = displayName,
+                        passed = false,
+                        error = errors.joinToString("; ")
+                    )
+                }
+            }
+
+            results.add(result)
+            printTestResult(result)
+
+            if (!result.passed && result.error != null) {
+                failureDetails.add("$displayName: ${result.error}")
             }
         }
 

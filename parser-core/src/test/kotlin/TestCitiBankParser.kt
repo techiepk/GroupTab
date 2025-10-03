@@ -1,67 +1,80 @@
+import com.pennywiseai.parser.core.TransactionType
 import com.pennywiseai.parser.core.bank.CitiBankParser
+import com.pennywiseai.parser.core.test.ExpectedTransaction
+import com.pennywiseai.parser.core.test.ParserTestCase
+import com.pennywiseai.parser.core.test.ParserTestUtils
+import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
-fun main() {
-    val parser = CitiBankParser()
+class CitiBankParserTest {
 
-    println("=== Citi Bank Parser Tests ===")
-    println("Bank Name: ${parser.getBankName()}")
-    println("Currency: ${parser.getCurrency()}")
-    println()
+    @Test
+    fun `citi parser handles common alerts`() {
+        val parser = CitiBankParser()
 
-    // Test 1: Standard transaction
-    println("=== Test 1: Standard Transaction ===")
-    val message1 = """Citi Alert: A $3.01 transaction was made at BP#1234E  on card ending in 1234. View details at citi.com/citimobileapp"""
-    val sender1 = "692484"
+        ParserTestUtils.printTestHeader(
+            parserName = "Citi Bank",
+            bankName = parser.getBankName(),
+            currency = parser.getCurrency()
+        )
 
-    println("Can handle sender '${sender1}': ${parser.canHandle(sender1)}")
-    val result1 = parser.parse(message1, sender1, System.currentTimeMillis())
-    if (result1 != null) {
-        println("✓ Parsed successfully!")
-        println("  Amount: ${result1.amount}")
-        println("  Currency: ${result1.currency}")
-        println("  Type: ${result1.type}")
-        println("  Merchant: ${result1.merchant}")
-        println("  Account: ${result1.accountLast4}")
-        println("  Reference: ${result1.reference}")
-    } else {
-        println("✗ Failed to parse")
-    }
+        val testCases = listOf(
+            ParserTestCase(
+                name = "Standard transaction",
+                message = "Citi Alert: A $3.01 transaction was made at BP#1234E  on card ending in 1234. View details at citi.com/citimobileapp",
+                sender = "692484",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("3.01"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    merchant = "BP#1234E",
+                    accountLast4 = "1234"
+                )
+            ),
+            ParserTestCase(
+                name = "Card not present",
+                message = "Citi Alert: Card ending in 1234 was not present for a $506.39 transaction at WWW Google C. View at citi.com/citimobileapp",
+                sender = "CITI",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("506.39"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    merchant = "WWW Google C",
+                    accountLast4 = "1234"
+                )
+            ),
+            ParserTestCase(
+                name = "Alternative sender",
+                message = "Citi Alert: A $150.00 transaction was made at AMAZON.COM on card ending in 5678. View details at citi.com/citimobileapp",
+                sender = "US-CITI-A",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("150.00"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "5678"
+                )
+            )
+        )
 
-    // Test 2: Card not present transaction
-    println("\n=== Test 2: Card Not Present Transaction ===")
-    val message2 = """Citi Alert: Card ending in 1234 was not present for a $506.39 transaction at WWW Google C. View at citi.com/citimobileapp"""
-    val sender2 = "CITI"
+        val handleChecks = listOf(
+            "692484" to true,
+            "CITI" to true,
+            "US-CITI-A" to true,
+            "UNKNOWN" to false
+        )
 
-    println("Can handle sender '${sender2}': ${parser.canHandle(sender2)}")
-    val result2 = parser.parse(message2, sender2, System.currentTimeMillis())
-    if (result2 != null) {
-        println("✓ Parsed successfully!")
-        println("  Amount: ${result2.amount}")
-        println("  Currency: ${result2.currency}")
-        println("  Type: ${result2.type}")
-        println("  Merchant: ${result2.merchant}")
-        println("  Account: ${result2.accountLast4}")
-        println("  Reference: ${result2.reference}")
-    } else {
-        println("✗ Failed to parse")
-    }
+        val result = ParserTestUtils.runTestSuite(
+            parser = parser,
+            testCases = testCases,
+            handleCases = handleChecks,
+            suiteName = "Citi Bank Parser"
+        )
 
-    // Test 3: Alternative sender format
-    println("\n=== Test 3: Alternative Sender Format ===")
-    val message3 = """Citi Alert: A $150.00 transaction was made at AMAZON.COM on card ending in 5678. View details at citi.com/citimobileapp"""
-    val sender3 = "US-CITI-A"
-
-    println("Can handle sender '${sender3}': ${parser.canHandle(sender3)}")
-    val result3 = parser.parse(message3, sender3, System.currentTimeMillis())
-    if (result3 != null) {
-        println("✓ Parsed successfully!")
-        println("  Amount: ${result3.amount}")
-        println("  Currency: ${result3.currency}")
-        println("  Type: ${result3.type}")
-        println("  Merchant: ${result3.merchant}")
-        println("  Account: ${result3.accountLast4}")
-        println("  Reference: ${result3.reference}")
-    } else {
-        println("✗ Failed to parse")
+        ParserTestUtils.printTestSummary(
+            totalTests = result.totalTests,
+            passedTests = result.passedTests,
+            failedTests = result.failedTests,
+            failureDetails = result.failureDetails
+        )
     }
 }

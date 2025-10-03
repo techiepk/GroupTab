@@ -1,164 +1,131 @@
 package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.TransactionType
+import com.pennywiseai.parser.core.test.ParserTestUtils
 import com.pennywiseai.parser.core.test.SMSData
+import com.pennywiseai.parser.core.test.TestResult
 import com.pennywiseai.parser.core.test.XMLTestUtils
+import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
+class FABXmlTest {
 
-fun main() {
-    val parser = FABParser()
+    @Test
+    fun `fab parser validates XML driven scenarios`() {
+        val parser = FABParser()
 
-    println("=== Testing FAB canHandle ===")
-    testCanHandle(parser)
-    println()
+        ParserTestUtils.printTestHeader(
+            parserName = "FAB XML Validation",
+            bankName = parser.getBankName(),
+            currency = parser.getCurrency()
+        )
 
-    println("=== Testing FAB Parser with XML Data ===")
-    testFABParserWithXMLData(parser)
-}
+        val handleChecks = listOf(
+            "FAB" to true,
+            "FABBANK" to true,
+            "AD-FAB-A" to true,
+            "HDFC" to false,
+            "SBI" to false
+        )
 
-fun testCanHandle(parser: FABParser) {
-    val testCases = mapOf(
-        "FAB" to true,
-        "FABBANK" to true,
-        "ADFAB" to true,
-        "AD-FAB-A" to true,
-        "HDFC" to false,
-        "SBI" to false
-    )
+        ParserTestUtils.runTestSuite(
+            parser = parser,
+            testCases = emptyList(),
+            handleCases = handleChecks,
+            suiteName = "canHandle coverage"
+        )
 
-    testCases.forEach { (sender, expected) ->
-        val result = parser.canHandle(sender)
-        val status = if (result == expected) "✅" else "❌"
-        println("$status canHandle('$sender'): $result (expected: $expected)")
-    }
-}
+        ParserTestUtils.printSectionHeader("XML Driven Transaction Validation")
 
-fun testFABParserWithXMLData(parser: FABParser) {
-    val smsMessages = XMLTestUtils.loadSMSDataFromResource("fab_sms_test_data_anonymized.xml")
+        val smsMessages = XMLTestUtils.loadSMSDataFromResource("fab_sms_test_data_anonymized.xml")
+        if (smsMessages.isEmpty()) {
+            ParserTestUtils.printTestSummary(1, 0, 1, listOf("No SMS messages available"))
+            fail<Unit>("No SMS messages found in fab_sms_test_data_anonymized.xml")
+        }
 
-    if (smsMessages.isEmpty()) {
-        println("❌ No SMS messages found in XML file")
-        return
-    }
+        val xmlResults = mutableListOf<TestResult>()
 
-    println("Loaded ${smsMessages.size} SMS messages from XML file")
-    println()
+        smsMessages.forEachIndexed { index, smsData ->
+            val testName = "Message ${index + 1}: ${smsData.description}"
+            try {
+                val parsed = parser.parse(smsData.body, smsData.sender, smsData.timestamp)
+                val shouldParse = parser.shouldParseTransactionMessage(smsData.body)
 
-    var passedTests = 0
-    var failedTests = 0
-    val failureDetails = mutableListOf<String>()
+                val result = when {
+                    parsed != null -> {
+                        val validationErrors = validateResult(parsed, smsData)
+                        if (validationErrors.isEmpty()) {
+                            TestResult(
+                                name = testName,
+                                passed = true,
+                                details = "Parsed ${parsed.amount} ${parsed.currency} (${parsed.type})"
+                            )
+                        } else {
+                            TestResult(
+                                name = testName,
+                                passed = false,
+                                error = validationErrors.joinToString("; ")
+                            )
+                        }
+                    }
 
-    smsMessages.forEachIndexed { index, smsData ->
-        try {
-            val result = parser.parse(smsData.body, smsData.sender, smsData.timestamp)
+                    shouldParse -> TestResult(
+                        name = testName,
+                        passed = false,
+                        error = "Parser returned null but message should parse"
+                    )
 
-            if (result != null) {
-                println("✅ PARSED: Message ${index + 1} - ${smsData.description}")
-                println("   Amount: ${result.amount} ${result.currency}")
-                println("   Type: ${result.type}")
-                println("   Merchant: ${result.merchant}")
-                println("   Account: ${result.accountLast4}")
-                println()
-
-                val (isValid, errors) = validateResult(result, smsData.body)
-
-                if (isValid) {
-                    passedTests++
-                } else {
-                    failedTests++
-                    val errorDetails = """
-                        ❌ VALIDATION FAILED: Message ${index + 1}
-                          Message: ${smsData.body.take(100)}...
-                          Parsed: Amount=${result.amount}, Currency=${result.currency}, Type=${result.type}
-                          Errors: ${errors.joinToString(", ")}
-                    """.trimIndent()
-                    failureDetails.add(errorDetails)
-                    println(errorDetails)
-                    println()
+                    else -> TestResult(
+                        name = testName,
+                        passed = true,
+                        details = "Correctly rejected non-transaction message"
+                    )
                 }
-            } else {
-                val shouldBeParsed = parser.shouldParseTransactionMessage(smsData.body)
 
-                if (shouldBeParsed) {
-                    failedTests++
-                    val errorDetails = """
-                        ❌ FAILED TO PARSE: Message ${index + 1} - Should have been parsed
-                          Message: ${smsData.body.take(150)}...
-                    """.trimIndent()
-                    failureDetails.add(errorDetails)
-                    println(errorDetails)
-                    println()
-                } else {
-                    passedTests++
-                    println("✅ CORRECTLY REJECTED: Message ${index + 1} - Non-transaction message")
-                    println("   Message: ${smsData.body.take(100)}...")
-                    println()
-                }
+                ParserTestUtils.printTestResult(result)
+                xmlResults.add(result)
+            } catch (e: Exception) {
+                val errorResult = TestResult(
+                    name = testName,
+                    passed = false,
+                    error = "Exception: ${e.message}"
+                )
+                ParserTestUtils.printTestResult(errorResult)
+                xmlResults.add(errorResult)
             }
-        } catch (e: Exception) {
-            failedTests++
-            val errorDetails = """
-                ❌ EXCEPTION: Message ${index + 1} - ${e.message}
-                  Message: ${smsData.body.take(100)}...
-            """.trimIndent()
-            failureDetails.add(errorDetails)
-            println(errorDetails)
-            println()
         }
+
+        val passed = xmlResults.count { it.passed }
+        val failed = xmlResults.size - passed
+        val failureDetails = xmlResults.filterNot { it.passed }.mapNotNull { it.error }
+
+        ParserTestUtils.printTestSummary(
+            totalTests = xmlResults.size,
+            passedTests = passed,
+            failedTests = failed,
+            failureDetails = failureDetails
+        )
     }
 
-    printSummary(smsMessages.size, passedTests, failedTests, failureDetails)
-}
+    private fun validateResult(
+        result: com.pennywiseai.parser.core.ParsedTransaction,
+        smsData: SMSData
+    ): List<String> {
+        val errors = mutableListOf<String>()
 
-fun validateResult(result: com.pennywiseai.parser.core.ParsedTransaction, body: String): Pair<Boolean, List<String>> {
-    val errors = mutableListOf<String>()
-
-    if (result.amount <= BigDecimal.ZERO) {
-        errors.add("Amount should be positive: ${result.amount}")
-    }
-
-//    if (result.currency !in listOf("AED", "USD", "THB","MYR","SGD","KWD","EUR","INR")) {
-//        errors.add("Unexpected currency: ${result.currency}")
-//    }
-
-    if (result.type == TransactionType.INCOME && body.contains("Debit", ignoreCase = true)) {
-        errors.add("Debit transaction marked as INCOME")
-    }
-
-    if (result.type == TransactionType.EXPENSE && body.contains("credit", ignoreCase = true)) {
-        errors.add("Credit transaction marked as EXPENSE")
-    }
-
-    return Pair(errors.isEmpty(), errors)
-}
-
-fun printSummary(total: Int, passed: Int, failed: Int, failureDetails: List<String>) {
-    println("=".repeat(80))
-    println("FAB PARSER XML TEST SUMMARY")
-    println("=".repeat(80))
-    println("Total SMS messages tested: $total")
-    println("Successfully parsed/validated: $passed")
-    println("Failed to parse or validate: $failed")
-    println("Success rate: ${"%.2f".format(passed.toDouble() / total * 100)}%")
-
-    if (failed > 0) {
-        println("\n" + "=".repeat(80))
-        println("DETAILED FAILURE LOG")
-        println("=".repeat(80))
-        failureDetails.forEach { detail ->
-            println(detail)
-            println("-".repeat(80))
+        if (result.amount <= BigDecimal.ZERO) {
+            errors.add("Amount should be positive: ${result.amount}")
         }
-    }
 
-    val minimumSuccessRate = 0.7
-    val actualSuccessRate = passed.toDouble() / total
+        if (result.type == TransactionType.INCOME && smsData.body.contains("Debit", ignoreCase = true)) {
+            errors.add("Debit transaction marked as INCOME")
+        }
 
-    if (actualSuccessRate >= minimumSuccessRate) {
-        println("\n✅ Test passed with success rate: ${"%.2f".format(actualSuccessRate * 100)}%")
-    } else {
-        println("\n❌ Test failed: Success rate ${"%.2f".format(actualSuccessRate * 100)}% is below minimum ${"%.2f".format(minimumSuccessRate * 100)}%")
+        if (result.type == TransactionType.EXPENSE && smsData.body.contains("credit", ignoreCase = true)) {
+            errors.add("Credit transaction marked as EXPENSE")
+        }
+
+        return errors
     }
 }
-
