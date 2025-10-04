@@ -213,7 +213,9 @@ open class FABParser : BankParser() {
             singleLinePattern.find(message)?.let { match ->
                 val merchant = match.groupValues[1].trim()
                 if (merchant.isNotEmpty()) {
-                    return cleanMerchantName(merchant)
+                    // Remove asterisks from merchant name
+                    val cleanedMerchant = merchant.replace("*", "").trim()
+                    return cleanMerchantName(cleanedMerchant)
                 }
             }
 
@@ -250,7 +252,9 @@ open class FABParser : BankParser() {
                         !merchantLine.contains("Available Balance") &&
                         !merchantLine.matches(Regex("""\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}"""))
                     ) {
-                        return cleanMerchantName(merchantLine)
+                        // Remove asterisks from merchant name
+                        val cleanedMerchant = merchantLine.replace("*", "").trim()
+                        return cleanMerchantName(cleanedMerchant)
                     }
                 }
             }
@@ -261,7 +265,9 @@ open class FABParser : BankParser() {
             merchantPattern.find(message)?.let { match ->
                 val merchant = match.groupValues[1].trim()
                 if (merchant.isNotEmpty()) {
-                    return cleanMerchantName(merchant)
+                    // Remove asterisks from merchant name
+                    val cleanedMerchant = merchant.replace("*", "").trim()
+                    return cleanMerchantName(cleanedMerchant)
                 }
             }
         }
@@ -275,16 +281,30 @@ if (message.contains("payment instructions", ignoreCase = true) ||
         return formatTransferMerchant(extractTransferAccounts(message))
     }
 
-    // Pattern: "to account XXXX0002" - extract last 3 digits
-    val toPatterns = listOf(
-        Regex("""to\s+(?:IBAN/Account/Card\s+)?account\s+([X\d]{4,})""", RegexOption.IGNORE_CASE),
-        Regex("""to\s+(?:IBAN/Account/Card\s+)?([X\d]{4,})""", RegexOption.IGNORE_CASE)
-    )
+    // Pattern: Extract anything after "to" for payment instructions
+    val toPattern = Regex("""to\s+([^\s]+)""", RegexOption.IGNORE_CASE)
 
-    for (pattern in toPatterns) {
-        pattern.find(message)?.let { match ->
-            val recipient = match.groupValues[1]
-            return "Transfer to ${recipient.takeLast(3)}"
+    toPattern.find(message)?.let { match ->
+        val recipient = match.groupValues[1]
+
+        // If it contains asterisks (masked format), extract last visible digits
+        if (recipient.contains("*")) {
+            val visibleDigits = recipient.filter { it.isDigit() }
+            if (visibleDigits.isNotEmpty()) {
+                // Take last 4 digits if available, otherwise all
+                val displayDigits = if (visibleDigits.length >= 4) {
+                    visibleDigits.takeLast(4)
+                } else {
+                    visibleDigits
+                }
+                return "Transfer to $displayDigits"
+            }
+        }
+
+        // For unmasked accounts, take last 4 digits
+        val digits = recipient.filter { it.isDigit() || it == 'X' }
+        if (digits.isNotEmpty()) {
+            return "Transfer to ${digits.takeLast(4)}"
         }
     }
 }
