@@ -80,6 +80,7 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         const val PROGRESS_PROCESSED = "progress_processed"
         const val PROGRESS_PARSED = "progress_parsed"
         const val PROGRESS_SAVED = "progress_saved"
+        const val PROGRESS_BLOCKED = "progress_blocked"
         const val PROGRESS_TIME_ELAPSED = "progress_time_elapsed"
         const val PROGRESS_ESTIMATED_TIME_REMAINING = "progress_estimated_time_remaining"
         const val PROGRESS_CURRENT_BATCH = "progress_current_batch"
@@ -141,6 +142,7 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
         var processedMessages: Int = 0,
         var parsedTransactions: Int = 0,
         var savedTransactions: Int = 0,
+        var blockedTransactions: Int = 0,
         var subscriptionCount: Int = 0,
         var startTime: Long = System.currentTimeMillis(),
         var messagesPerSecond: Double = 0.0
@@ -1017,6 +1019,19 @@ private suspend fun saveParsedTransaction(
 
         // Apply rule engine to the transaction
         val activeRules = ruleRepository.getActiveRulesByType(entityWithMapping.transactionType)
+
+        // Check if this transaction should be blocked
+        val blockingRule = ruleEngine.shouldBlockTransaction(
+            entityWithMapping,
+            sms.body,
+            activeRules
+        )
+
+        if (blockingRule != null) {
+            Log.d(TAG, "Transaction blocked by rule: ${blockingRule.name}")
+            return false  // Don't save the transaction
+        }
+
         val (entityWithRules, ruleApplications) = ruleEngine.evaluateRules(
             entityWithMapping,
             sms.body,

@@ -42,21 +42,44 @@ fun CreateRuleScreen(
     }
 
     // Initialize action state from existing rule or use defaults
+    var actionType by remember {
+        mutableStateOf(existingRule?.actions?.firstOrNull()?.actionType ?: ActionType.SET)
+    }
     var actionField by remember {
         mutableStateOf(existingRule?.actions?.firstOrNull()?.field ?: TransactionField.CATEGORY)
     }
     var actionFieldDropdownExpanded by remember { mutableStateOf(false) }
+    var actionTypeDropdownExpanded by remember { mutableStateOf(false) }
     var actionValue by remember {
         mutableStateOf(existingRule?.actions?.firstOrNull()?.value ?: "")
     }
 
     // Common presets for quick setup
     val commonPresets = listOf(
+        "Block OTPs" to {
+            ruleName = "Block OTP Messages"
+            selectedField = TransactionField.SMS_TEXT
+            selectedOperator = ConditionOperator.CONTAINS
+            conditionValue = "OTP"
+            actionType = ActionType.BLOCK
+            actionField = TransactionField.CATEGORY
+            actionValue = ""
+        },
+        "Block Small Amounts" to {
+            ruleName = "Block Small Transactions"
+            selectedField = TransactionField.AMOUNT
+            selectedOperator = ConditionOperator.LESS_THAN
+            conditionValue = "10"
+            actionType = ActionType.BLOCK
+            actionField = TransactionField.CATEGORY
+            actionValue = ""
+        },
         "Small amounts → Food" to {
             ruleName = "Small Food Payments"
             selectedField = TransactionField.AMOUNT
             selectedOperator = ConditionOperator.LESS_THAN
             conditionValue = "200"
+            actionType = ActionType.SET
             actionField = TransactionField.CATEGORY
             actionValue = "Food & Dining"
         },
@@ -65,6 +88,7 @@ fun CreateRuleScreen(
             selectedField = TransactionField.MERCHANT
             selectedOperator = ConditionOperator.CONTAINS
             conditionValue = "AMZN"
+            actionType = ActionType.SET
             actionField = TransactionField.MERCHANT
             actionValue = "Amazon"
         },
@@ -73,16 +97,9 @@ fun CreateRuleScreen(
             selectedField = TransactionField.SMS_TEXT
             selectedOperator = ConditionOperator.CONTAINS
             conditionValue = "credited"
+            actionType = ActionType.SET
             actionField = TransactionField.TYPE
             actionValue = "income"
-        },
-        "Add Description" to {
-            ruleName = "Add Transaction Note"
-            selectedField = TransactionField.MERCHANT
-            selectedOperator = ConditionOperator.CONTAINS
-            conditionValue = ""
-            actionField = TransactionField.NARRATION
-            actionValue = ""
         }
     )
 
@@ -96,7 +113,11 @@ fun CreateRuleScreen(
         actions = {
             TextButton(
                 onClick = {
-                    if (ruleName.isNotBlank() && conditionValue.isNotBlank() && actionValue.isNotBlank()) {
+                    // For BLOCK action, we don't need an action value
+                    val isValid = ruleName.isNotBlank() && conditionValue.isNotBlank() &&
+                                  (actionType == ActionType.BLOCK || actionValue.isNotBlank())
+
+                    if (isValid) {
                         val rule = TransactionRule(
                             id = existingRule?.id ?: UUID.randomUUID().toString(),
                             name = ruleName,
@@ -112,8 +133,8 @@ fun CreateRuleScreen(
                             actions = listOf(
                                 RuleAction(
                                     field = actionField,
-                                    actionType = ActionType.SET,
-                                    value = actionValue
+                                    actionType = actionType,
+                                    value = if (actionType == ActionType.BLOCK) "" else actionValue
                                 )
                             ),
                             isActive = existingRule?.isActive ?: true,
@@ -125,7 +146,8 @@ fun CreateRuleScreen(
                         // Navigation is handled in PennyWiseNavHost after saving
                     }
                 },
-                enabled = ruleName.isNotBlank() && conditionValue.isNotBlank() && actionValue.isNotBlank()
+                enabled = ruleName.isNotBlank() && conditionValue.isNotBlank() &&
+                         (actionType == ActionType.BLOCK || actionValue.isNotBlank())
             ) {
                 Text("Save")
             }
@@ -360,8 +382,82 @@ fun CreateRuleScreen(
                         )
                     }
 
-                    // Action field selector
+                    // Action type selector
                     ExposedDropdownMenuBox(
+                        expanded = actionTypeDropdownExpanded,
+                        onExpandedChange = { actionTypeDropdownExpanded = !actionTypeDropdownExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = when(actionType) {
+                                ActionType.BLOCK -> "Block Transaction"
+                                ActionType.SET -> "Set Field"
+                                ActionType.APPEND -> "Append to Field"
+                                ActionType.PREPEND -> "Prepend to Field"
+                                ActionType.CLEAR -> "Clear Field"
+                                ActionType.ADD_TAG -> "Add Tag"
+                                ActionType.REMOVE_TAG -> "Remove Tag"
+                            },
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Action Type") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionTypeDropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = actionTypeDropdownExpanded,
+                            onDismissRequest = { actionTypeDropdownExpanded = false }
+                        ) {
+                            listOf(
+                                ActionType.BLOCK to "Block Transaction",
+                                ActionType.SET to "Set Field",
+                                ActionType.CLEAR to "Clear Field"
+                            ).forEach { (type, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        actionType = type
+                                        actionTypeDropdownExpanded = false
+                                        if (type == ActionType.BLOCK) {
+                                            actionValue = "" // Clear value for BLOCK action
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Show message for BLOCK action or field selector for others
+                    if (actionType == ActionType.BLOCK) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = Spacing.xs),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(Spacing.md),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                            ) {
+                                Icon(
+                                    Icons.Default.Block,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Transactions matching this rule will be blocked and not saved",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    } else {
+                        // Action field selector for non-BLOCK actions
+                        ExposedDropdownMenuBox(
                         expanded = actionFieldDropdownExpanded,
                         onExpandedChange = { actionFieldDropdownExpanded = !actionFieldDropdownExpanded }
                     ) {
@@ -516,11 +612,14 @@ fun CreateRuleScreen(
                             )
                         }
                     }
+                    } // End of if-else for BLOCK action
                 }
             }
 
             // Preview
-            if (ruleName.isNotBlank() && conditionValue.isNotBlank() && actionValue.isNotBlank()) {
+            val showPreview = ruleName.isNotBlank() && conditionValue.isNotBlank() &&
+                             (actionType == ActionType.BLOCK || actionValue.isNotBlank())
+            if (showPreview) {
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer

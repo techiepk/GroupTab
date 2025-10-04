@@ -91,6 +91,33 @@ class RuleEngine @Inject constructor() {
         return evaluateRules(transaction, smsText, applicableRules)
     }
 
+    /**
+     * Checks if a transaction should be blocked based on blocking rules.
+     * Returns the first blocking rule that matches, or null if no blocking rules match.
+     */
+    fun shouldBlockTransaction(
+        transaction: TransactionEntity,
+        smsText: String?,
+        rules: List<TransactionRule>
+    ): TransactionRule? {
+        // Filter for rules that have a BLOCK action
+        val blockingRules = rules
+            .filter { it.isActive }
+            .filter { rule ->
+                rule.actions.any { action -> action.actionType == ActionType.BLOCK }
+            }
+            .sortedBy { it.priority }
+
+        // Return the first rule that matches the conditions
+        for (rule in blockingRules) {
+            if (evaluateConditions(transaction, smsText, rule.conditions)) {
+                return rule
+            }
+        }
+
+        return null
+    }
+
     private fun evaluateConditions(
         transaction: TransactionEntity,
         smsText: String?,
@@ -170,6 +197,11 @@ class RuleEngine @Inject constructor() {
         val modifications = mutableListOf<FieldModification>()
 
         for (action in actions) {
+            // Skip BLOCK actions as they don't modify the transaction
+            if (action.actionType == ActionType.BLOCK) {
+                continue
+            }
+
             val oldValue = getFieldValue(modifiedTransaction, null, action.field)
             val (newTransaction, newValue) = applyAction(modifiedTransaction, action)
 

@@ -15,6 +15,7 @@ data class RuleAction(
             ActionType.CLEAR -> true
             ActionType.ADD_TAG -> value.isNotBlank()
             ActionType.REMOVE_TAG -> value.isNotBlank()
+            ActionType.BLOCK -> true  // BLOCK action doesn't need a value
         }
     }
 }
@@ -26,5 +27,6 @@ enum class ActionType {
     PREPEND,       // Prepend value to field
     CLEAR,         // Clear field
     ADD_TAG,       // Add a tag
-    REMOVE_TAG     // Remove a tag
+    REMOVE_TAG,    // Remove a tag
+    BLOCK          // Block the transaction from being saved
 }
