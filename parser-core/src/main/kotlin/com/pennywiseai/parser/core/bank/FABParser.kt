@@ -203,9 +203,21 @@ open class FABParser : BankParser() {
     }
 
     override fun extractMerchant(message: String, sender: String): String? {
-        // Pattern 1: Credit/Debit card - merchant on third line after amount
-        // "Card No XXXX\nTHB ###.##\nWWW.GRAB.COM BANGKOK TH"
+        // Pattern 1: Credit/Debit card - merchant extraction for both single-line and multi-line formats
         if (containsCardPurchase(message)) {
+            // First try single-line format: Card Purchase with inline merchant after amount
+            val singleLinePattern = Regex(
+                """(?:Credit|Debit)\s+Card\s+Purchase\s+Card\s+No\s+[X\d]+\s+[A-Z]{3}\s+[\d,.]+\s+([^0-9]+?)(?:\s+\d{2}/\d{2}/\d{2})""",
+                RegexOption.IGNORE_CASE
+            )
+            singleLinePattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+
+            // Then try multi-line format
             val lines = message.split("\n")
 
             // Find the line with currency amount (AED, THB, USD, etc.)
@@ -453,9 +465,6 @@ if (message.contains("payment instructions", ignoreCase = true) ||
             "stamped statement",
             "cannot process your",
             "amazing rate",
-            "conditions apply",
-            "bit.ly",
-            "instalments at 0% interest",
             "request has been logged",
             "reference number",
             "beneficiary creation/modification request",
