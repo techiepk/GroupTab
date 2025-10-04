@@ -1,6 +1,3 @@
-I need permission to write the release notes file. Here are the concise release notes I've prepared (387 characters):
-
-```
 What's New in v2.15.30
 
 • Improved Federal Bank transaction parsing - better merchant name detection
@@ -9,4 +6,4 @@ What's New in v2.15.30
 • Improved Settings and FAQ screen layouts
 • Various performance improvements and bug fixes
 
-Thank you for using PennyWise! Your feedback helps u
+Thank you for using PennyWise! Your feedback helps us
