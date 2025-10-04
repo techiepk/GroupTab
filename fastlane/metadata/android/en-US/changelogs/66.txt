@@ -5,3 +5,4 @@ What's New in v2.15.31
 • Performance improvements and bug fixes
 
 Thank you for using PennyWise! Your feedback helps us improve.
+
