@@ -125,3 +125,7 @@ When implementing any feature, please ensure it aligns with the architecture pat
 
 # Important
 Never use pii in comments, code anywhere
+
+# Test implementation standards for parsers
+- Parser tests must use the shared JUnit helpers under `ParserTestUtils`. For
+  full guidance (examples, migration checklist), read `docs/parser-test-standards.md`.

@@ -60,7 +60,7 @@ open class FABParser : BankParser() {
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName(),
-            isFromCard = detectIsCard(smsBody),
+            isFromCard = containsCardPurchase(smsBody),
             currency = currency,
             fromAccount = fromAccount,
             toAccount = toAccount
