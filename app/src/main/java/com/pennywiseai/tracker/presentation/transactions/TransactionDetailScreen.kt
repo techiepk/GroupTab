@@ -659,19 +659,30 @@ private fun EditableTransactionHeader(
                 isError = transaction.merchantName.isBlank()
             )
             
-            // Amount
-            OutlinedTextField(
-                value = transaction.amount.toPlainString(),
-                onValueChange = { viewModel.updateAmount(it) },
-                label = { Text("Amount") },
-                prefix = {
-                    val currencySymbol = CurrencyFormatter.getCurrencySymbol(viewModel.primaryCurrency.toString())
-                    Text(currencySymbol)
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Amount and Currency FlowRow
+            val primaryCurrency by viewModel.primaryCurrency.collectAsStateWithLifecycle()
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Currency Dropdown
+                CurrencyDropdown(
+                    selectedCurrency = transaction.currency.ifEmpty { primaryCurrency },
+                    onCurrencySelected = { viewModel.updateCurrency(it) },
+                    modifier = Modifier.widthIn(min = 120.dp, max = 160.dp)
+                )
+
+                // Amount Field
+                OutlinedTextField(
+                    value = transaction.amount.stripTrailingZeros().toPlainString(),
+                    onValueChange = { viewModel.updateAmount(it) },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.widthIn(min = 150.dp, max = 200.dp)
+                )
+            }
             
             // Transaction Type - Using FlowRow for responsive layout
             FlowRow(
@@ -1070,6 +1081,75 @@ private fun DateTimeField(
                 }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CurrencyDropdown(
+    selectedCurrency: String,
+    onCurrencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // Common currencies
+    val currencies = listOf(
+        "INR", "USD", "EUR", "GBP", "AED", "SGD",
+        "CAD", "AUD", "JPY", "CNY", "NPR", "ETB",
+        "THB", "MYR", "KWD", "KRW"
+    )
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedCurrency,
+            onValueChange = { },
+            label = { Text("Currency") },
+            leadingIcon = {
+                Text(
+                    CurrencyFormatter.getCurrencySymbol(selectedCurrency),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            readOnly = true,
+            singleLine = true
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            currencies.forEach { currency ->
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                CurrencyFormatter.getCurrencySymbol(currency),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.width(32.dp)
+                            )
+                            Text(currency)
+                        }
+                    },
+                    onClick = {
+                        onCurrencySelected(currency)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
+        }
     }
 }
 

@@ -241,7 +241,19 @@ class TransactionDetailViewModel @Inject constructor(
             current?.copy(accountNumber = if (accountNumber.isNullOrEmpty()) null else accountNumber)
         }
     }
-    
+
+    fun updateCurrency(currency: String) {
+        _editableTransaction.update { current ->
+            current?.copy(currency = currency)
+        }
+        // Recalculate converted amount when currency changes
+        _editableTransaction.value?.let { transaction ->
+            viewModelScope.launch {
+                calculateConvertedAmount(transaction)
+            }
+        }
+    }
+
     fun saveChanges() {
         val toSave = _editableTransaction.value ?: return
         
