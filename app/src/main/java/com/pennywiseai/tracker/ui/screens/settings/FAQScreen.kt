@@ -135,13 +135,17 @@ fun FAQScreen(
     
     var expandedCategories by remember { mutableStateOf(setOf<Int>()) }
     
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Dimensions.Padding.content),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(Dimensions.Padding.content),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
             // FAQ Categories
             faqCategories.forEachIndexed { categoryIndex, category ->
                 SectionHeader(title = category.title)
@@ -282,4 +286,4 @@ fun FAQScreen(
             
             Spacer(modifier = Modifier.height(Spacing.lg))
     }
-}
+}}

@@ -19,6 +19,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.clickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.tracker.ui.components.PennyWiseCard
+import com.pennywiseai.tracker.ui.components.PennyWiseScaffold
 import com.pennywiseai.tracker.ui.components.SectionHeader
 import com.pennywiseai.tracker.ui.theme.Dimensions
 import com.pennywiseai.tracker.ui.theme.Spacing
@@ -80,15 +82,19 @@ fun SettingsScreen(
         }
     )
     
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Dimensions.Padding.content),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        // Theme Settings Section
-        SectionHeader(title = "Appearance")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(Dimensions.Padding.content),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            // Theme Settings Section
+            SectionHeader(title = "Appearance")
         
         PennyWiseCard(
             modifier = Modifier.fillMaxWidth()
@@ -718,7 +724,7 @@ fun SettingsScreen(
             }
         }
     }
-    
+
     // SMS Scan Period Dialog
     if (showSmsScanDialog) {
         AlertDialog(
@@ -873,4 +879,5 @@ fun SettingsScreen(
             }
         )
     }
+        }
 }
