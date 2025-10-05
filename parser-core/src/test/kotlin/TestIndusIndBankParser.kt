@@ -98,6 +98,19 @@ class IndusIndBankParserTest {
                     isFromCard = false,
                     accountLast4 = null
                 )
+            ),
+            ParserTestCase(
+                name = "Debit card purchase masked account - only last4",
+                message = "INR 1,101.53 debited from your A/C 201***123456 towards Debit Card Purchase. Avl BAL INR 400.20 - Not you? Call 18602677777 to report issue - IndusInd Bank.",
+                sender = "AD-INDUSIND-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("1101.53"),
+                    currency = "INR",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "3456",
+                    balance = BigDecimal("400.20"),
+                    isFromCard = false
+                )
             )
         )
 

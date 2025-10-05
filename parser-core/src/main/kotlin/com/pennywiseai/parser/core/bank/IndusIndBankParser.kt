@@ -125,13 +125,8 @@ class IndusIndBankParser : BankParser() {
         )
         maskedPattern.find(message)?.let { match ->
             val trailing = match.groupValues[2]
-            // Prefer returning 5+ trailing digits when available to avoid collisions
-            return when {
-                trailing.length >= 6 -> trailing // keep 6+ for stronger uniqueness
-                trailing.length == 5 -> trailing
-                trailing.length >= 4 -> trailing.takeLast(4)
-                else -> trailing
-            }
+            // Always normalize to last 4 digits for account matching consistency
+            return if (trailing.length >= 4) trailing.takeLast(4) else trailing
         }
 
         // Pattern: "A/c *XX1234" -> capture trailing digits after masked Xs or *
@@ -140,7 +135,8 @@ class IndusIndBankParser : BankParser() {
             RegexOption.IGNORE_CASE
         )
         starMaskPattern.find(message)?.let { match ->
-            return match.groupValues[1]
+            val digits = match.groupValues[1]
+            return if (digits.length >= 4) digits.takeLast(4) else digits
         }
 
         // For ACH/NACH messages, treat as account transaction and defer to default account
