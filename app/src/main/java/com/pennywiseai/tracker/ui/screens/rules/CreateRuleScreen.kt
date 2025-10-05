@@ -252,7 +252,7 @@ fun CreateRuleScreen(
                             readOnly = true,
                             label = { Text("Field") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = fieldDropdownExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         )
                         ExposedDropdownMenu(
                             expanded = fieldDropdownExpanded,
@@ -401,7 +401,7 @@ fun CreateRuleScreen(
                             readOnly = true,
                             label = { Text("Action Type") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionTypeDropdownExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         )
                         ExposedDropdownMenu(
                             expanded = actionTypeDropdownExpanded,
@@ -473,7 +473,7 @@ fun CreateRuleScreen(
                             readOnly = true,
                             label = { Text("Action") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = actionFieldDropdownExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         )
                         ExposedDropdownMenu(
                             expanded = actionFieldDropdownExpanded,

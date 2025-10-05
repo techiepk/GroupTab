@@ -12,6 +12,7 @@ import javax.inject.Inject
 data class BatchApplyResult(
     val totalProcessed: Int,
     val totalUpdated: Int,
+    val totalDeleted: Int = 0,
     val errors: List<String> = emptyList()
 )
 
@@ -52,27 +53,47 @@ class ApplyRulesToPastTransactionsUseCase @Inject constructor(
         val allTransactions = transactionRepository.getAllTransactionsList()
 
         var totalUpdated = 0
+        var totalDeleted = 0
         val errors = mutableListOf<String>()
 
         allTransactions.forEachIndexed { index, transaction ->
             onProgress(index + 1, allTransactions.size)
 
             try {
+                // Skip already deleted transactions
+                if (transaction.isDeleted) {
+                    return@forEachIndexed
+                }
+
                 // Get SMS body if available
                 val smsBody = transaction.smsBody
 
-                // Apply rules to transaction
-                val (updatedTransaction, ruleApplications) = ruleEngine.evaluateRules(
+                // Check if any rule would block this transaction
+                val blockingRule = ruleEngine.shouldBlockTransaction(
                     transaction,
                     smsBody,
                     activeRules
                 )
 
-                // If transaction was modified, update it
-                if (ruleApplications.isNotEmpty()) {
-                    transactionRepository.updateTransaction(updatedTransaction)
-                    ruleRepository.saveRuleApplications(ruleApplications)
-                    totalUpdated++
+                if (blockingRule != null) {
+                    // Soft delete the transaction
+                    val deletedTransaction = transaction.copy(isDeleted = true)
+                    transactionRepository.updateTransaction(deletedTransaction)
+                    totalDeleted++
+                } else {
+                    // Apply rules to transaction
+                    val (updatedTransaction, ruleApplications) = ruleEngine.evaluateRules(
+                        transaction,
+                        smsBody,
+                        activeRules
+                    )
+
+                    // If transaction was modified, update it
+                    if (ruleApplications.isNotEmpty()) {
+                        transactionRepository.updateTransaction(updatedTransaction)
+                        ruleRepository.saveRuleApplications(ruleApplications)
+                        totalUpdated++
+                    }
                 }
             } catch (e: Exception) {
                 errors.add("Error processing transaction ${transaction.id}: ${e.message}")
@@ -82,6 +103,7 @@ class ApplyRulesToPastTransactionsUseCase @Inject constructor(
         return BatchApplyResult(
             totalProcessed = allTransactions.size,
             totalUpdated = totalUpdated,
+            totalDeleted = totalDeleted,
             errors = errors
         )
     }
@@ -92,27 +114,47 @@ class ApplyRulesToPastTransactionsUseCase @Inject constructor(
         onProgress: (processed: Int, total: Int) -> Unit
     ): BatchApplyResult {
         var totalUpdated = 0
+        var totalDeleted = 0
         val errors = mutableListOf<String>()
 
         transactions.forEachIndexed { index, transaction ->
             onProgress(index + 1, transactions.size)
 
             try {
+                // Skip already deleted transactions
+                if (transaction.isDeleted) {
+                    return@forEachIndexed
+                }
+
                 // Get SMS body if available
                 val smsBody = transaction.smsBody
 
-                // Apply single rule to transaction
-                val (updatedTransaction, ruleApplications) = ruleEngine.evaluateRules(
+                // Check if this transaction should be blocked
+                val shouldBlock = ruleEngine.shouldBlockTransaction(
                     transaction,
                     smsBody,
                     listOf(rule)
-                )
+                ) != null
 
-                // If transaction was modified, update it
-                if (ruleApplications.isNotEmpty()) {
-                    transactionRepository.updateTransaction(updatedTransaction)
-                    ruleRepository.saveRuleApplications(ruleApplications)
-                    totalUpdated++
+                if (shouldBlock) {
+                    // Soft delete the transaction
+                    val deletedTransaction = transaction.copy(isDeleted = true)
+                    transactionRepository.updateTransaction(deletedTransaction)
+                    totalDeleted++
+                } else {
+                    // Apply regular rule actions
+                    val (updatedTransaction, ruleApplications) = ruleEngine.evaluateRules(
+                        transaction,
+                        smsBody,
+                        listOf(rule)
+                    )
+
+                    // If transaction was modified, update it
+                    if (ruleApplications.isNotEmpty()) {
+                        transactionRepository.updateTransaction(updatedTransaction)
+                        ruleRepository.saveRuleApplications(ruleApplications)
+                        totalUpdated++
+                    }
                 }
             } catch (e: Exception) {
                 errors.add("Error processing transaction ${transaction.id}: ${e.message}")
@@ -122,6 +164,7 @@ class ApplyRulesToPastTransactionsUseCase @Inject constructor(
         return BatchApplyResult(
             totalProcessed = transactions.size,
             totalUpdated = totalUpdated,
+            totalDeleted = totalDeleted,
             errors = errors
         )
     }

@@ -1242,9 +1242,8 @@ private suspend fun processBalanceUpdate(
                 parsedTransaction.balance != null -> true  // Always save if SMS had explicit balance
                 parsedTransaction.creditLimit != null -> true  // Save if credit limit info
                 newBalance != BigDecimal.ZERO -> true  // Save non-zero balances
-                existingAccount != null -> true  // Save to update existing account
-                existingAccount == null -> true  // Create new account even with 0 balance (first time)
-                else -> false
+                existingAccount != null -> true  // Save to update existing account or create new one
+                else -> true  // Create new account even with 0 balance (first time)
             }
 
             if (shouldSaveBalance) {

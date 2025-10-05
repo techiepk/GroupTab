@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,7 +44,7 @@ fun RulesScreen(
         navigationIcon = {
             IconButton(onClick = onNavigateBack) {
                 Icon(
-                    Icons.Default.ArrowBack,
+                    Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Navigate back"
                 )
             }
@@ -481,7 +482,7 @@ private fun BatchApplyDialog(
                             )
                         }
 
-                        Divider()
+                        HorizontalDivider()
 
                         Text(
                             text = "Transactions processed: ${result.totalProcessed}",
@@ -493,6 +494,15 @@ private fun BatchApplyDialog(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
+
+                        if (result.totalDeleted > 0) {
+                            Text(
+                                text = "Transactions blocked (soft deleted): ${result.totalDeleted}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
 
                         if (result.errors.isNotEmpty()) {
                             Text(
