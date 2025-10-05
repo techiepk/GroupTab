@@ -1,6 +1,8 @@
 package com.pennywiseai.parser.core.bank
 
 import com.pennywiseai.parser.core.TransactionType
+import java.math.BigDecimal
+import java.time.LocalDateTime
 
 /**
  * Parser for IndusInd Bank SMS messages (India)
@@ -39,7 +41,8 @@ class IndusIndBankParser : BankParser() {
             lower.contains("debited") -> TransactionType.EXPENSE
             lower.contains("purchase") -> TransactionType.EXPENSE
             lower.contains("deposit") -> TransactionType.INVESTMENT
-            lower.contains("FD") -> TransactionType.INVESTMENT
+            lower.contains("fd") -> TransactionType.INVESTMENT
+            lower.contains("ach") -> TransactionType.INVESTMENT
             else -> super.extractTransactionType(message)
         }
     }
@@ -52,6 +55,90 @@ class IndusIndBankParser : BankParser() {
         val isAchOrNach = lower.contains("ach db") || lower.contains("ach cr") || lower.contains("nach")
         if (isAchOrNach) return false
         return super.detectIsCard(message)
+    }
+
+    /**
+     * Balance update information (similar to HDFC's BalanceUpdateInfo)
+     */
+    data class BalanceUpdateInfo(
+        val bankName: String,
+        val accountLast4: String,
+        val balance: BigDecimal,
+        val asOfDate: LocalDateTime? = null
+    )
+
+    /**
+     * Detect balance-only notifications (not transactions).
+     * Examples:
+     *  - "Your A/C 2134***12345 has Avl BAL of INR 1,234.56 as on 05/10/25 04:10 AM ..."
+     */
+    fun isBalanceUpdateNotification(message: String): Boolean {
+        val lower = message.lowercase()
+        val hasBalanceCue = lower.contains("avl bal") ||
+                lower.contains("available bal") ||
+                lower.contains("account balance") ||
+                lower.contains("a/c balance")
+        val hasTxnVerb = listOf("debited", "credited", "withdrawn", "spent", "transferred")
+            .any { lower.contains(it) }
+        return hasBalanceCue && lower.contains("as on") && !hasTxnVerb
+    }
+
+    /**
+     * Parse balance-only notifications.
+     */
+    fun parseBalanceUpdate(message: String): BalanceUpdateInfo? {
+        if (!isBalanceUpdateNotification(message)) return null
+
+        // Extract account last4 using existing helper
+        val accountLast4 = extractAccountLast4(message) ?: return null
+
+        // Extract balance amount
+        // Pattern 1: "Avl BAL of INR 1,234.56"
+        val p1 = Regex("""Avl\s*BAL\s+of\s+INR\s*([0-9,]+(?:\.\d{2})?)""", RegexOption.IGNORE_CASE)
+        val balance = p1.find(message)?.let { m ->
+            runCatching { BigDecimal(m.groupValues[1].replace(",", "")) }.getOrNull()
+        } ?: run {
+            // Pattern 2: "Avl BAL INR 1,234.56" | "Available Balance is INR ..." | "Bal INR ..."
+            val p2 = Regex(
+                """(?:Avl\s*BAL|Available\s+Balance(?:\s+is)?|Bal)[:\s]+INR\s*([0-9,]+(?:\.\d{2})?)""",
+                RegexOption.IGNORE_CASE
+            )
+            p2.find(message)?.let { m ->
+                runCatching { BigDecimal(m.groupValues[1].replace(",", "")) }.getOrNull()
+            }
+        } ?: return null
+
+        // Extract optional "as on" date. IndusInd often uses: dd/MM/yy hh:mm AM/PM
+        val datePattern = Regex(
+            """as\s+on\s+(\d{1,2}/\d{1,2}/\d{2})\s+(\d{1,2}:\d{2})\s*(AM|PM)""",
+            RegexOption.IGNORE_CASE
+        )
+        val asOfDate = datePattern.find(message)?.let { match ->
+            val dateParts = match.groupValues[1].split("/")
+            val timeParts = match.groupValues[2].split(":")
+            val ampm = match.groupValues[3].uppercase()
+            runCatching {
+                val day = dateParts[0].toInt()
+                val month = dateParts[1].toInt()
+                val year = 2000 + dateParts[2].toInt()
+                var hour = timeParts[0].toInt()
+                val minute = timeParts[1].toInt()
+                // Convert 12-hour to 24-hour format
+                hour = when {
+                    ampm == "PM" && hour < 12 -> hour + 12
+                    ampm == "AM" && hour == 12 -> 0
+                    else -> hour
+                }
+                LocalDateTime.of(year, month, day, hour, minute)
+            }.getOrNull()
+        }
+
+        return BalanceUpdateInfo(
+            bankName = getBankName(),
+            accountLast4 = accountLast4,
+            balance = balance,
+            asOfDate = asOfDate
+        )
     }
 
     override fun isTransactionMessage(message: String): Boolean {

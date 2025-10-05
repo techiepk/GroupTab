@@ -138,6 +138,33 @@ class IndusIndBankParserTest {
     }
 
     @Test
+    fun `indusind balance update parsing`() {
+        val parser = IndusIndBankParser()
+
+        val message = "Your A/C 2134***12345 has Avl BAL of INR 1,234.56 as on 05/10/25 04:10 AM. Download IndusMobile from PlayStore - IndusInd Bank"
+
+        // Should be detected as a balance update (not a transaction)
+        org.junit.jupiter.api.Assertions.assertTrue(parser.isBalanceUpdateNotification(message))
+
+        val info = parser.parseBalanceUpdate(message)
+        org.junit.jupiter.api.Assertions.assertNotNull(info)
+        info!!
+
+        // Bank name matches IndusInd
+        org.junit.jupiter.api.Assertions.assertEquals("IndusInd Bank", info.bankName)
+
+        // Account last4 should be last 4 of 12345 -> 2345
+        org.junit.jupiter.api.Assertions.assertEquals("2345", info.accountLast4)
+
+        // Balance parsed
+        org.junit.jupiter.api.Assertions.assertEquals(java.math.BigDecimal("1234.56"), info.balance)
+
+        // Date parsed (dd/MM/yy hh:mm a)
+        val expectedDate = java.time.LocalDateTime.of(2025, 10, 5, 4, 10)
+        org.junit.jupiter.api.Assertions.assertEquals(expectedDate, info.asOfDate)
+    }
+
+    @Test
     fun `factory resolves indusind`() {
         val cases = listOf(
             SimpleTestCase(

@@ -110,7 +110,9 @@ abstract class PennyWiseDatabase : RoomDatabase() {
                 val cursor = db.query("PRAGMA table_info(transactions)")
                 var hasSenderColumn = false
                 while (cursor.moveToNext()) {
-                    val columnName = cursor.getString(cursor.getColumnIndex("name"))
+                    val nameIndex = cursor.getColumnIndex("name")
+                    if (nameIndex == -1) continue
+                    val columnName = cursor.getString(nameIndex)
                     if (columnName == "sms_sender") {
                         hasSenderColumn = true
                         break
@@ -127,7 +129,9 @@ abstract class PennyWiseDatabase : RoomDatabase() {
                 val cursor2 = db.query("PRAGMA table_info(unrecognized_sms)")
                 var hasIsDeletedColumn = false
                 while (cursor2.moveToNext()) {
-                    val columnName = cursor2.getString(cursor2.getColumnIndex("name"))
+                    val nameIndex2 = cursor2.getColumnIndex("name")
+                    if (nameIndex2 == -1) continue
+                    val columnName = cursor2.getString(nameIndex2)
                     if (columnName == "is_deleted") {
                         hasIsDeletedColumn = true
                         break
