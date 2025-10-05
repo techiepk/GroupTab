@@ -37,10 +37,15 @@ class TestBancolombiaParser {
         val paymentMessage = "Pagaste $2.000.000 de tu tarjeta"
         val receiveMessage = "Recibiste $100.000,25 de Maria"
 
-        assertEquals(TransactionType.EXPENSE, parser.extractTransactionType(transferMessage))
-        assertEquals(TransactionType.EXPENSE, parser.extractTransactionType(purchaseMessage))
-        assertEquals(TransactionType.EXPENSE, parser.extractTransactionType(paymentMessage))
-        assertEquals(TransactionType.INCOME, parser.extractTransactionType(receiveMessage))
+        val transfer = parser.parse(transferMessage, "87400", System.currentTimeMillis())
+        val purchase = parser.parse(purchaseMessage, "87400", System.currentTimeMillis())
+        val payment = parser.parse(paymentMessage, "87400", System.currentTimeMillis())
+        val receive = parser.parse(receiveMessage, "87400", System.currentTimeMillis())
+
+        assertEquals(TransactionType.EXPENSE, transfer?.type)
+        assertEquals(TransactionType.EXPENSE, purchase?.type)
+        assertEquals(TransactionType.EXPENSE, payment?.type)
+        assertEquals(TransactionType.INCOME, receive?.type)
     }
 
     @Test
@@ -51,7 +56,7 @@ class TestBancolombiaParser {
 
         assertNotNull(parsed1)
         assertEquals(BigDecimal("1000000"), parsed1?.amount)
-        assertEquals(TransactionType.EXPENSE, parsed1?.transactionType)
+        assertEquals(TransactionType.EXPENSE, parsed1?.type)
     }
 
     @Test
@@ -62,7 +67,7 @@ class TestBancolombiaParser {
 
         assertNotNull(parsed2)
         assertEquals(BigDecimal("500.50"), parsed2?.amount)
-        assertEquals(TransactionType.EXPENSE, parsed2?.transactionType)
+        assertEquals(TransactionType.EXPENSE, parsed2?.type)
     }
 
     @Test
@@ -73,7 +78,7 @@ class TestBancolombiaParser {
 
         assertNotNull(parsed3)
         assertEquals(BigDecimal("1000000.75"), parsed3?.amount)
-        assertEquals(TransactionType.EXPENSE, parsed3?.transactionType)
+        assertEquals(TransactionType.EXPENSE, parsed3?.type)
     }
 
     @Test
@@ -84,7 +89,7 @@ class TestBancolombiaParser {
 
         assertNotNull(parsed4)
         assertEquals(BigDecimal("2500000.00"), parsed4?.amount)
-        assertEquals(TransactionType.INCOME, parsed4?.transactionType)
+        assertEquals(TransactionType.INCOME, parsed4?.type)
     }
 
     @Test
@@ -112,10 +117,15 @@ class TestBancolombiaParser {
         val payment = "Pagaste $2.000 tarjeta"
         val receive = "Recibiste $100.000 de empresa"
 
-        assertEquals("Transferencia", parser.extractMerchant(transfer, "87400"))
-        assertEquals("Compra", parser.extractMerchant(purchase, "87400"))
-        assertEquals("Pago", parser.extractMerchant(payment, "87400"))
-        assertEquals("Dinero recibido", parser.extractMerchant(receive, "87400"))
+        val parsedTransfer = parser.parse(transfer, "87400", System.currentTimeMillis())
+        val parsedPurchase = parser.parse(purchase, "87400", System.currentTimeMillis())
+        val parsedPayment = parser.parse(payment, "87400", System.currentTimeMillis())
+        val parsedReceive = parser.parse(receive, "87400", System.currentTimeMillis())
+
+        assertEquals("Transferencia", parsedTransfer?.merchant)
+        assertEquals("Compra", parsedPurchase?.merchant)
+        assertEquals("Pago", parsedPayment?.merchant)
+        assertEquals("Dinero recibido", parsedReceive?.merchant)
     }
 
     @Test

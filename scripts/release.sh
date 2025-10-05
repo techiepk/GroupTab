@@ -98,6 +98,8 @@ if [ "$USE_CLAUDE" = true ] && [ -n "$LAST_TAG" ]; then
     # Create prompt for Claude
     CLAUDE_PROMPT="Generate concise, user-friendly release notes for version $NEXT_VERSION of PennyWise (an Android expense tracker app that parses bank SMS messages).
 
+    Just return the release notes, don't include any other text. We will directly copy the release notes to the RELEASE_NOTES.md file.
+
 Based on these git commits since $LAST_TAG:
 $COMMITS
 

@@ -51,7 +51,8 @@ object BankParserFactory {
         LaxmiBankParser(),  // Laxmi Sunrise Bank (Nepal)
         CBEBankParser(),  // Commercial Bank of Ethiopia
         EverestBankParser(),  // Everest Bank (Nepal)
-        BancolombiaParser()  // Bancolombia (Colombia)
+        BancolombiaParser(),  // Bancolombia (Colombia)
+        MashreqBankParser()  // Mashreq Bank (UAE)
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
