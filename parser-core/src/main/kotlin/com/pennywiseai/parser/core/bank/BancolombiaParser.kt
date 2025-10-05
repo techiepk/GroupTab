@@ -36,14 +36,15 @@ class BancolombiaParser : BankParser() {
     }
 
     override fun extractAmount(message: String): BigDecimal? {
-        // Super flexible: Find ANY number after transaction keywords
-        // Handles any format: "20.00", "30,000.00", "$50000", etc.
+        // Colombian format: dots for thousands (1.000), commas for decimals (,50)
+        // Example: $1.000.000,50 = 1 million pesos and 50 centavos
         val pattern = Regex("""(Transferiste|Compraste|Pagaste|Recibiste)\s+\$?([0-9.,]+)""", RegexOption.IGNORE_CASE)
         pattern.find(message)?.let { match ->
-            // Clean up the number - remove commas and any non-digit except period
+            // Convert Colombian format to standard format for BigDecimal
             val amount = match.groupValues[2]
-                .replace(",", "")
-                .replace("$", "")
+                .replace(".", "")   // Remove thousand separators (dots)
+                .replace(",", ".")  // Convert decimal separator (comma to dot)
+                .replace("$", "")   // Remove currency symbol
                 .trim()
             return try {
                 BigDecimal(amount)
