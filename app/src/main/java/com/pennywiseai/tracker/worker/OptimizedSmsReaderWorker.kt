@@ -14,6 +14,7 @@ import com.pennywiseai.parser.core.bank.FederalBankParser
 import com.pennywiseai.parser.core.bank.HDFCBankParser
 import com.pennywiseai.parser.core.bank.IndianBankParser
 import com.pennywiseai.parser.core.bank.SBIBankParser
+import com.pennywiseai.parser.core.bank.IndusIndBankParser
 import com.pennywiseai.tracker.data.database.entity.AccountBalanceEntity
 import com.pennywiseai.tracker.data.database.entity.TransactionType
 import com.pennywiseai.tracker.data.database.entity.UnrecognizedSmsEntity
@@ -979,6 +980,29 @@ private suspend fun processSubscriptionNotifications(
                 }
             }
             SubscriptionResult(false, 0) // Continue with transaction parsing
+        }
+
+        is IndusIndBankParser -> {
+            // Balance-only updates for IndusInd (hook like HDFC)
+            if (parser.isBalanceUpdateNotification(sms.body)) {
+                val balanceUpdateInfo = parser.parseBalanceUpdate(sms.body)
+                if (balanceUpdateInfo != null) {
+                    try {
+                        accountBalanceRepository.insertBalanceUpdate(
+                            bankName = balanceUpdateInfo.bankName,
+                            accountLast4 = balanceUpdateInfo.accountLast4,
+                            balance = balanceUpdateInfo.balance,
+                            timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime,
+                            currency = parser.getCurrency()
+                        )
+                        Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName}")
+                        return SubscriptionResult(true, 0) // Skip transaction parsing for balance updates
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error saving IndusInd balance update: ${e.message}")
+                    }
+                }
+            }
+            SubscriptionResult(false, 0)
         }
 
         else -> SubscriptionResult(false, 0) // Continue with transaction parsing for other banks

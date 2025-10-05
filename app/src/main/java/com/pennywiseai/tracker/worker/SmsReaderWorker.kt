@@ -11,6 +11,7 @@ import com.pennywiseai.tracker.core.Constants
 import com.pennywiseai.parser.core.bank.BankParserFactory
 import com.pennywiseai.parser.core.bank.HDFCBankParser
 import com.pennywiseai.parser.core.bank.IndianBankParser
+import com.pennywiseai.parser.core.bank.IndusIndBankParser
 import com.pennywiseai.parser.core.bank.SBIBankParser
 import com.pennywiseai.parser.core.ParsedTransaction
 import com.pennywiseai.tracker.data.mapper.toEntity
@@ -198,6 +199,27 @@ class SmsReaderWorker @AssistedInject constructor(
                                         Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName}")
                                     } catch (e: Exception) {
                                         Log.e(TAG, "Error saving balance update: ${e.message}")
+                                    }
+                                }
+                                continue // Skip transaction parsing
+                            }
+                        }
+                        is IndusIndBankParser -> {
+                            // Balance-only updates for IndusInd (same flow as HDFC)
+                            if (parser.isBalanceUpdateNotification(sms.body)) {
+                                val balanceUpdateInfo = parser.parseBalanceUpdate(sms.body)
+                                if (balanceUpdateInfo != null) {
+                                    try {
+                                        accountBalanceRepository.insertBalanceUpdate(
+                                            bankName = balanceUpdateInfo.bankName,
+                                            accountLast4 = balanceUpdateInfo.accountLast4,
+                                            balance = balanceUpdateInfo.balance,
+                                            timestamp = balanceUpdateInfo.asOfDate ?: smsDateTime,
+                                            currency = parser.getCurrency()
+                                        )
+                                        Log.d(TAG, "Saved balance update for ${balanceUpdateInfo.bankName}")
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error saving IndusInd balance update: ${e.message}")
                                     }
                                 }
                                 continue // Skip transaction parsing
