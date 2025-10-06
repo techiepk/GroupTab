@@ -43,6 +43,7 @@ object BankParserFactory {
         UCOBankParser(),
         AUBankParser(),
         YesBankParser(),
+        BandhanBankParser(),
         ADCBParser(),  // Abu Dhabi Commercial Bank (UAE)
         FABParser(),  // First Abu Dhabi Bank (UAE)
         CitiBankParser(),  // Citi Bank (USA)
