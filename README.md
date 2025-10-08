@@ -68,8 +68,9 @@ Supporting **40+ banks** across **5 countries** with **multi-currency** capabili
 ### 🇺🇸 USA (3 banks) - USD $
 - **Citi Bank**, **Discover Card**, **Old Hickory Credit Union**
 
-### 🇦🇪 UAE (1 bank) - AED د.إ
+### 🇦🇪 UAE (2 banks) - AED د.إ
 - **First Abu Dhabi Bank (FAB)**
+- **Abu Dhabi Commercial Bank (ADCB)**
 
 ### 🇳🇵 Nepal (2 banks) - NPR ₨
 - **Laxmi Sunrise Bank**, **Everest Bank**
