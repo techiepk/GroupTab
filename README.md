@@ -52,7 +52,7 @@ For Android users worldwide who want automatic expense tracking from bank SMS �
 
 ## Supported Banks & Countries
 
-Supporting **40+ banks** across **5 countries** with **multi-currency** capabilities:
+Supporting **41+ banks** across **5 countries** with **multi-currency** capabilities:
 
 ### 🇮🇳 India (34 banks) - INR ₹
 - **HDFC Bank**, **State Bank of India (SBI)**, **ICICI Bank**
@@ -65,8 +65,8 @@ Supporting **40+ banks** across **5 countries** with **multi-currency** capabili
 - **Indian Overseas Bank**, **Airtel Payments Bank**, **AMEX**
 - **OneCard**, **UCO Bank**, **AU Bank**, and more...
 
-### 🇺🇸 USA (3 banks) - USD $
-- **Citi Bank**, **Discover Card**, **Old Hickory Credit Union**
+### 🇺🇸 USA (4 banks) - USD $
+- **Citi Bank**, **Discover Card**, **Old Hickory Credit Union**, **Charles Schwab**
 
 ### 🇦🇪 UAE (2 banks) - AED د.إ
 - **First Abu Dhabi Bank (FAB)**

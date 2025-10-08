@@ -53,7 +53,8 @@ object BankParserFactory {
         CBEBankParser(),  // Commercial Bank of Ethiopia
         EverestBankParser(),  // Everest Bank (Nepal)
         BancolombiaParser(),  // Bancolombia (Colombia)
-        MashreqBankParser()  // Mashreq Bank (UAE)
+        MashreqBankParser(),  // Mashreq Bank (UAE)
+        CharlesSchwabParser()  // Charles Schwab (USA)
         // Add more bank parsers here as we implement them
         // IndusIndBankParser(),
         // etc.
