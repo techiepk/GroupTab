@@ -11,6 +11,8 @@ class USParsersTest {
     fun `factory resolves US parsers and parses sample messages`() {
         val citiMessage = "Citi Alert: A \$3.01 transaction was made at BP#1234E on card ending in 1234. View details at citi.com/citimobileapp"
         val discoverMessage = "Discover Card Alert: A transaction of \$25.00 at WWW.XXX.ORG on February 21, 2025. No Action needed. See it at https://app.discover.com/ACTVT. Text STOP to end"
+        val charlesSchwabMessage = "A \$7.44 debit card transaction was debited from account ending 1234. Reply STOP to end Schwab Text Alerts."
+        val charlesSchwabACHMessage = "A \$22.07 ACH was debited from account ending 3456. Reply STOP to end Schwab Text Alerts."
 
         ParserTestUtils.printSectionHeader("US Bank Parser Factory Tests")
 
@@ -46,6 +48,36 @@ class USParsersTest {
                 description = "Discover Card primary sender"
             ),
             SimpleTestCase(
+                bankName = "Charles Schwab",
+                sender = "SCHWAB",
+                currency = "USD",
+                message = charlesSchwabMessage,
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("7.44"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "1234",
+                    isFromCard = true
+                ),
+                shouldHandle = true,
+                description = "Charles Schwab primary sender"
+            ),
+            SimpleTestCase(
+                bankName = "Charles Schwab",
+                sender = "24465",
+                currency = "USD",
+                message = charlesSchwabACHMessage,
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("22.07"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "3456",
+                    isFromCard = false
+                ),
+                shouldHandle = true,
+                description = "Charles Schwab numeric sender"
+            ),
+            SimpleTestCase(
                 bankName = "Citi Bank",
                 sender = "CITI",
                 currency = "USD",
@@ -74,6 +106,21 @@ class USParsersTest {
                 ),
                 shouldHandle = true,
                 description = "Discover Card alphanumeric sender"
+            ),
+            SimpleTestCase(
+                bankName = "Charles Schwab",
+                sender = "CHARLES SCHWAB",
+                currency = "USD",
+                message = charlesSchwabMessage,
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("7.44"),
+                    currency = "USD",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "1234",
+                    isFromCard = true
+                ),
+                shouldHandle = true,
+                description = "Charles Schwab alphanumeric sender"
             )
         )
 
