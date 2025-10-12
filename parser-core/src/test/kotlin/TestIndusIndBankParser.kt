@@ -111,12 +111,76 @@ class IndusIndBankParserTest {
                     balance = BigDecimal("400.20"),
                     isFromCard = false
                 )
+            ),
+            ParserTestCase(
+                name = "UPI credit from various sender IDs - JK",
+                message = "A/C *XX0000 credited by Rs 300.00 from abcd@upiid. RRN:123456789098. Avl Bal:00.00. Not you? Call 18602677777 - IndusInd bank",
+                sender = "JK-INDUSB-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("300.00"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    merchant = "abcd",
+                    accountLast4 = "0000",
+                    reference = "123456789098",
+                    balance = BigDecimal("0.00")
+                )
+            ),
+            ParserTestCase(
+                name = "UPI credit from various sender IDs - JX",
+                message = "A/C *XX0000 credited by Rs 890.00 from abcd@upiid. RRN:123456789098. Avl Bal:00.00. Not you? Call 18602677777 - IndusInd bank",
+                sender = "JX-INDUSB-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("890.00"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    merchant = "abcd",
+                    accountLast4 = "0000",
+                    reference = "123456789098",
+                    balance = BigDecimal("0.00")
+                )
+            ),
+            ParserTestCase(
+                name = "UPI credit from various sender IDs - JD",
+                message = "A/C *XX0000 credited by Rs 890.00 from abcd@upiid. RRN:123456789098. Avl Bal:00.00. Not you? Call 18602677777 - IndusInd bank",
+                sender = "JD-INDUSB-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("890.00"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    merchant = "abcd",
+                    accountLast4 = "0000",
+                    reference = "123456789098",
+                    balance = BigDecimal("0.00")
+                )
+            ),
+            ParserTestCase(
+                name = "Deposit interest from JM sender - should not parse",
+                message = "Net interest INR 96.61 paid on your IndusInd Deposit No 371***060020 on 30/06/25. Call 18602677777 for assistance - IndusInd Bank",
+                sender = "JM-INDUSB-S",
+                shouldParse = false
+            ),
+            ParserTestCase(
+                name = "IMPS credit",
+                message = "Your IndusInd Account 15XXXXX0000 has been credited for INR 116.56 towards IMPS/500200000290. Call 18602677777 to report issue-IndusInd Bank",
+                sender = "JM-INDUSB-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("116.56"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    merchant = "IMPS",
+                    accountLast4 = "0000"
+                )
             )
         )
 
         val handleChecks = listOf(
             "AD-INDUSB-S" to true,
             "VM-INDUSIND-S" to true,
+            "JK-INDUSB-S" to true,
+            "JX-INDUSB-S" to true,
+            "JD-INDUSB-S" to true,
+            "JM-INDUSB-S" to true,
             "INDUSB" to true,
             "INDUSIND" to true,
             "AX-HDFC-S" to false
