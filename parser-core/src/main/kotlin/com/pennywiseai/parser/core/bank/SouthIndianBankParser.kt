@@ -104,6 +104,18 @@ class SouthIndianBankParser : BankParser() {
     }
     
     override fun extractMerchant(message: String, sender: String): String? {
+        // For IMPS transactions, extract from "Info: IMPS/xxx/reference/MERCHANT" format
+        if (message.contains("IMPS", ignoreCase = true) && message.contains("Info:", ignoreCase = true)) {
+            // Pattern for "Info: IMPS/FDRL/528005821348/EPIFI ACCOUN." - capture everything up to period
+            val impsPattern = Regex("""Info:\s*IMPS/[^/]+/[^/]+/([^.]+)""", RegexOption.IGNORE_CASE)
+            impsPattern.find(message)?.let { match ->
+                val merchant = match.groupValues[1].trim()
+                if (merchant.isNotEmpty()) {
+                    return cleanMerchantName(merchant)
+                }
+            }
+        }
+
         // For UPI transactions, try to extract UPI ID or merchant name
         if (message.contains("UPI", ignoreCase = true)) {
             // Pattern for "Info:UPI/IPOS/number/MERCHANT NAME on" format
@@ -114,7 +126,7 @@ class SouthIndianBankParser : BankParser() {
                     return cleanMerchantName(merchant)
                 }
             }
-            
+
             // Check for "to" pattern (e.g., "to merchant@upi")
             val toPattern = Regex("""to\s+([^,\s]+(?:@[^\s,]+)?)""", RegexOption.IGNORE_CASE)
             toPattern.find(message)?.let { match ->
@@ -123,7 +135,7 @@ class SouthIndianBankParser : BankParser() {
                     return cleanMerchantName(merchant)
                 }
             }
-            
+
             // Check for "from" pattern for incoming transfers
             if (message.contains("credit", ignoreCase = true)) {
                 val fromPattern = Regex("""from\s+([^,\s]+(?:@[^\s,]+)?)""", RegexOption.IGNORE_CASE)
@@ -134,7 +146,7 @@ class SouthIndianBankParser : BankParser() {
                     }
                 }
             }
-            
+
             // Default to UPI Transaction
             return "UPI Transaction"
         }
@@ -185,18 +197,29 @@ class SouthIndianBankParser : BankParser() {
     }
     
     override fun extractReference(message: String): String? {
+        // Pattern for IMPS reference in "Info: IMPS/xxx/reference/merchant" format
+        if (message.contains("IMPS", ignoreCase = true) && message.contains("Info:", ignoreCase = true)) {
+            val impsRefPattern = Regex("""Info:\s*IMPS/[^/]+/([^/]+)/""", RegexOption.IGNORE_CASE)
+            impsRefPattern.find(message)?.let { match ->
+                val ref = match.groupValues[1].trim()
+                if (ref.isNotEmpty()) {
+                    return ref
+                }
+            }
+        }
+
         // Pattern for RRN (e.g., "RRN:523273398527")
         val rrnPattern = Regex("""RRN[:\s]*(\d{12})""", RegexOption.IGNORE_CASE)
         rrnPattern.find(message)?.let { match ->
             return match.groupValues[1].trim()
         }
-        
+
         // Pattern for reference number
         val refPattern = Regex("""Ref(?:erence)?[:\s]*([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
         refPattern.find(message)?.let { match ->
             return match.groupValues[1].trim()
         }
-        
+
         return super.extractReference(message)
     }
     
