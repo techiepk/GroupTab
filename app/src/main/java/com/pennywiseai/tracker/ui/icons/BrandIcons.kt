@@ -179,8 +179,16 @@ object BrandIcons {
     
     fun getIconResource(merchantName: String): Int? {
         val normalized = merchantName.lowercase()
+
+        // Special handling for "cred" to avoid matching "credit/credited" banking terms
+        if (normalized.contains("cred") && !normalized.contains("credit")) {
+            brandMappings["cred"]?.let { return it }
+        }
+
         return brandMappings.entries
-            .firstOrNull { (key, _) -> normalized.contains(key) }
+            .firstOrNull { (key, _) ->
+                key != "cred" && normalized.contains(key)
+            }
             ?.value
     }
     
