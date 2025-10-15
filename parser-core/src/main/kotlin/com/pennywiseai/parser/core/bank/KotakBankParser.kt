@@ -35,7 +35,7 @@ class KotakBankParser : BankParser() {
 
         upiMatch?.let { match ->
             val upiId = match.groupValues[1].trim()
-            
+
             // Extract merchant name from UPI ID
             val merchantName = when {
                 // Handle "upiXXX@bank" format - remove "upi" prefix
@@ -49,6 +49,11 @@ class KotakBankParser : BankParser() {
                     val bankCode = upiId.substringAfter("@")
 
                     when {
+                        // Check if this is a generated payment app QR code ID
+                        isPaymentAppGeneratedId(name) -> {
+                            // For generated IDs like "paytmqr...", extract merchant from domain
+                            extractMerchantFromBankCode(bankCode) ?: cleanMerchantName(name)
+                        }
                         // Valid UPI ID with meaningful content (not just all digits)
                         name.isNotEmpty() && (!name.all { it.isDigit() } || name.contains("-") || name.contains("_")) -> {
                             // For phone numbers or IDs with separators, try to get meaningful merchant name
@@ -69,7 +74,7 @@ class KotakBankParser : BankParser() {
                     }
                 }
             }
-            
+
             if (merchantName != null) {
                 // For other merchants, check validation
                 if (isValidMerchantName(merchantName)) {
@@ -83,6 +88,41 @@ class KotakBankParser : BankParser() {
         
         // Fall back to generic extraction
         return super.extractMerchant(message, sender)
+    }
+
+    /**
+     * Checks if the UPI username looks like a generated ID from a payment app
+     * rather than a human-readable username or phone number.
+     */
+    private fun isPaymentAppGeneratedId(name: String): Boolean {
+        val lowerName = name.lowercase()
+
+        // Common patterns for generated QR code IDs
+        val generatedIdPrefixes = listOf(
+            "paytmqr",          // Paytm QR codes: paytmqr288005050101t74afkchmxjd
+            "phonepeqr",        // PhonePe QR codes
+            "phonepe.qr",       // PhonePe QR codes (alternative)
+            "gpay",             // Google Pay generated IDs
+            "amazonpayqr",      // Amazon Pay QR codes
+            "bhimqr",           // BHIM QR codes
+            "bharatpeqr",       // BharatPe QR codes
+            "freechargeqr",     // Freecharge QR codes
+            "mobikwikqr"        // MobiKwik QR codes
+        )
+
+        // Check if name starts with any known generated ID prefix
+        if (generatedIdPrefixes.any { lowerName.startsWith(it) }) {
+            return true
+        }
+
+        // Check if name looks like a random generated ID (mix of letters and numbers, long length)
+        // Typical pattern: starts with a known prefix or is very long with random alphanumeric characters
+        if (name.length > 20 && name.any { it.isLetter() } && name.any { it.isDigit() }) {
+            // This looks like a generated ID rather than a meaningful name
+            return true
+        }
+
+        return false
     }
 
     /**
